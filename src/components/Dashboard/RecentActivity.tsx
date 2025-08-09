@@ -1,4 +1,4 @@
-import { LinkOutlined, CalendarOutlined, TagOutlined, StarOutlined } from '@ant-design/icons';
+import { Link, Calendar, Tag, Star } from 'lucide-react';
 import { useScrapedItems } from '../../hooks/useDatabase';
 import { format } from 'date-fns';
 import { faIR } from 'date-fns/locale';

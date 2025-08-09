@@ -6,13 +6,12 @@ import DashboardPage from './components/Dashboard/DashboardPage';
 import ScrapingPage from './components/Scraping/ScrapingPage';
 import DataPage from './components/Data/DataPage';
 import AnalyticsPage from './components/Analytics/AnalyticsPage';
-import ProxyPage from './components/Proxies/ProxyPage';
+import ProxyTestingPanel from './components/Proxies/ProxyTestingPanel';
 import SettingsPage from './components/Settings/SettingsPage';
 import HelpPage from './components/Help/HelpPage';
 import LoginPage from './components/Auth/LoginPage';
 import PrivateRoute from './components/Auth/PrivateRoute';
 import LoadingScreen from './components/LoadingScreen';
-import TestAuthFlow from './components/Auth/TestAuthFlow';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -46,7 +45,6 @@ function App() {
         <Routes>
           {/* Public routes */}
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/test-auth" element={<TestAuthFlow />} />
 
           {/* Protected routes */}
           <Route path="/" element={<PrivateRoute />}>
@@ -60,7 +58,7 @@ function App() {
                     <Route path="/scraping" element={<ScrapingPage />} />
                     <Route path="/data" element={<DataPage />} />
                     <Route path="/analytics" element={<AnalyticsPage />} />
-                    <Route path="/proxies" element={<ProxyPage />} />
+                    <Route path="/proxies" element={<ProxyTestingPanel />} />
                     <Route path="/settings" element={<SettingsPage />} />
                     <Route path="/help" element={<HelpPage />} />
                   </Routes>

@@ -9,8 +9,8 @@ import {
   AlertOutlined,
   BellOutlined,
   SearchOutlined,
-  SwapOutlined
-} from '@ant-design/icons';
+  SwapHorizontal
+} from 'lucide-react';
 import { PageType } from '../types';
 import CommandPalette, { CommandItem } from './CommandPalette';
 

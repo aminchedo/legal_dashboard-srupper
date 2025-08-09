@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { GlobalOutlined, CaretRightOutlined, StopOutlined, DeleteOutlined, SettingOutlined, WarningOutlined } from '@ant-design/icons';
+import { Globe, Play, Square, Trash2, Settings, AlertTriangle } from 'lucide-react';
 import { webScraper } from '../../services/webScraper';
 import { useScrapingSources } from '../../hooks/useDatabase';
 import { ScrapingSettings, ScrapedItem } from '../../types';

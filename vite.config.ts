@@ -20,8 +20,8 @@ export default defineConfig(({ mode }) => {
                 '@hooks': fileURLToPath(new URL('./src/hooks', import.meta.url)),
                 '@services': fileURLToPath(new URL('./src/services', import.meta.url)),
                 '@assets': fileURLToPath(new URL('./src/assets', import.meta.url)),
+                'antd/es': 'antd/lib',
                 'react-router-dom': 'react-router-dom/dist/index.js',
-                '@ant-design/icons': fileURLToPath(new URL('./src/icons/antd-stub.tsx', import.meta.url)),
             },
         },
 

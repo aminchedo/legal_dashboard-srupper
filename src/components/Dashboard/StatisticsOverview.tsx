@@ -1,4 +1,4 @@
-import { FileTextOutlined, FolderOpenOutlined, StarOutlined, AreaChartOutlined, DashboardOutlined } from '@ant-design/icons';
+import { FileText, FolderOpen, Star, AreaChart, LayoutDashboard } from 'lucide-react';
 import MetricCard from '../MetricCard';
 
 export default function StatisticsOverview() {

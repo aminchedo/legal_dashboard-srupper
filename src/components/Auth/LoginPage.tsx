@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Card, Form, Input, Button, message, Tabs } from 'antd';
-import { UserOutlined, LockOutlined, MailOutlined } from '@ant-design/icons';
+import { User, Lock, Mail } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const { TabPane } = Tabs;

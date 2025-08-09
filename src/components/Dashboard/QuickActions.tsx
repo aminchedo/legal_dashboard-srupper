@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { CaretRightOutlined, ExperimentOutlined, FileTextOutlined, BarChartOutlined, SettingOutlined, ExclamationOutlined } from '@ant-design/icons';
+import { PlayCircle, FlaskConical, FileText, BarChart2, Settings, OctagonAlert } from 'lucide-react';
 import { Button } from '../ui/button';
 
 interface Props {

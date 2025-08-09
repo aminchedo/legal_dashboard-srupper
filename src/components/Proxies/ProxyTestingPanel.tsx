@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Card, Input, Button, message, Divider, Switch, List } from 'antd';
-import { RobotOutlined, SearchOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
+import { Bot, Search, CheckCircle2, XCircle } from 'lucide-react';
 
 const ProxyTestingPanel: React.FC = () => {
     const [testUrl, setTestUrl] = useState('https://httpbin.org/ip');
