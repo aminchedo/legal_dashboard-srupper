@@ -9,6 +9,7 @@ import AnalyticsPage from './components/Analytics/AnalyticsPage';
 import ProxyPage from './components/Proxies/ProxyPage';
 import SettingsPage from './components/Settings/SettingsPage';
 import HelpPage from './components/Help/HelpPage';
+import RecordingPage from './components/Recording/RecordingPage';
 import LoginPage from './components/Auth/LoginPage';
 import PrivateRoute from './components/Auth/PrivateRoute';
 import LoadingScreen from './components/LoadingScreen';
@@ -61,6 +62,7 @@ function App() {
                     <Route path="/data" element={<DataPage />} />
                     <Route path="/analytics" element={<AnalyticsPage />} />
                     <Route path="/proxies" element={<ProxyPage />} />
+                    <Route path="/recording" element={<RecordingPage />} />
                     <Route path="/settings" element={<SettingsPage />} />
                     <Route path="/help" element={<HelpPage />} />
                   </Routes>
