@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Legal Dashboard Viewer</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .controls { margin: 20px 0; }
+        button { padding: 10px 20px; margin: 5px; background: #007cba; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        iframe { width: 100%; height: 80vh; border: 1px solid #ccc; }
+        .info { background: #f0f8ff; padding: 15px; margin: 10px 0; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>🎬 Legal Dashboard Live Viewer</h1>
+    
+    <div class="info">
+        <h3>📋 Instructions:</h3>
+        <ol>
+            <li>Run: <code>./simple-demo.sh</code></li>
+            <li>Click "Load Dashboard" below</li>
+            <li>See your legal dashboard in action!</li>
+        </ol>
+    </div>
+    
+    <div class="controls">
+        <button onclick="loadDashboard()">🔄 Load Dashboard</button>
+        <button onclick="loadBackend()">📊 Load Backend API</button>
+        <button onclick="checkStatus()">✅ Check Status</button>
+    </div>
+    
+    <iframe id="viewer" src="about:blank"></iframe>
+    
+    <script>
+        function loadDashboard() {
+            document.getElementById('viewer').src = 'http://localhost:5173';
+        }
+        
+        function loadBackend() {
+            document.getElementById('viewer').src = 'http://localhost:3001/health';
+        }
+        
+        function checkStatus() {
+            fetch('http://localhost:3001/health')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('viewer').src = 'data:text/html,<h1>✅ Backend OK</h1><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                })
+                .catch(e => {
+                    document.getElementById('viewer').src = 'data:text/html,<h1>❌ Backend Failed</h1><p>' + e.message + '</p>';
+                });
+        }
+        
+        // Auto-load on page load
+        setTimeout(loadDashboard, 1000);
+    </script>
+</body>
+</html>

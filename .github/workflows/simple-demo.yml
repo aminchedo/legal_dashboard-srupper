@@ -1,0 +1,76 @@
+name: 🎬 Simple Legal Dashboard Demo
+
+on:
+  workflow_dispatch:
+
+jobs:
+  demo:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Install Dependencies
+      run: |
+        cd frontend && npm install
+        cd ../backend && npm install
+
+    - name: Start Servers
+      run: |
+        # Start backend
+        cd backend
+        node server.js &
+        sleep 10
+        
+        # Start frontend  
+        cd ../frontend
+        npm run dev &
+        sleep 15
+
+    - name: Test Servers Are Running
+      run: |
+        echo "🧪 Testing servers..."
+        
+        # Test backend
+        curl -v http://localhost:3001/health || echo "Backend failed"
+        
+        # Test frontend - save the actual HTML
+        curl -v http://localhost:5173 > dashboard.html || echo "Frontend 5173 failed"
+        curl -v http://localhost:5177 > dashboard-alt.html || echo "Frontend 5177 failed"
+        
+        # Show what we got
+        echo "📄 Dashboard HTML preview:"
+        head -50 dashboard.html || echo "No dashboard.html"
+        
+        echo "📊 File sizes:"
+        ls -la *.html
+
+    - name: Save Server Responses
+      run: |
+        # Get backend API responses
+        curl http://localhost:3001/api/dashboard/statistics > backend-stats.json || echo "{\"error\":\"failed\"}" > backend-stats.json
+        curl http://localhost:3001/api/dashboard/activity > backend-activity.json || echo "{\"error\":\"failed\"}" > backend-activity.json
+        
+        # Create simple visual report
+        echo "<html><body>" > visual-report.html
+        echo "<h1>Legal Dashboard Demo Report</h1>" >> visual-report.html
+        echo "<h2>Backend Status</h2>" >> visual-report.html
+        echo "<pre>" >> visual-report.html
+        curl -s http://localhost:3001/health >> visual-report.html || echo "Backend offline" >> visual-report.html
+        echo "</pre>" >> visual-report.html
+        echo "<h2>Frontend HTML Preview</h2>" >> visual-report.html
+        echo "<iframe src='data:text/html;base64," >> visual-report.html
+        cat dashboard.html | base64 -w 0 >> visual-report.html 2>/dev/null || echo "No HTML available" >> visual-report.html
+        echo "' width='100%' height='600px'></iframe>" >> visual-report.html
+        echo "</body></html>" >> visual-report.html
+        
+        echo "✅ Visual report created"
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: legal-dashboard-demo
+        path: |
+          *.html
+          *.json
