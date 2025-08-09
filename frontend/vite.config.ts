@@ -29,7 +29,7 @@ export default defineConfig(({ mode }) => {
         // Development server configuration
         server: {
             host: true,
-            port: 5177,
+            port: 5173,
             strictPort: true,
             open: true, // Auto-open browser
             cors: true,
@@ -45,7 +45,7 @@ export default defineConfig(({ mode }) => {
 
         // Preview configuration
         preview: {
-            port: 5177,
+            port: 5173,
             host: true,
             cors: true,
         },
