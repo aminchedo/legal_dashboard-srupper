@@ -17,7 +17,7 @@ router.post('/discover-free', proxyController.discoverFreeProxies);
 // ADD intelligent scraping route
 router.post('/scrape-intelligent', authMiddleware, async (req, res) => {
     const { sourceId } = req.body;
-    const userId = (req as any).user.id;
+    const userId = req.user?.id || 'system';
 
     try {
         const result = await scrapingService.scrapeWithIntelligence(sourceId, userId);

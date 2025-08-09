@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
-import Joi, { Schema } from 'joi';
+import { Schema } from 'joi';
 import { HttpError } from './error.middleware';
 
 export function validateBody(schema: Schema) {

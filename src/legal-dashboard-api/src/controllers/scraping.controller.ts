@@ -17,7 +17,7 @@ export async function start(req: Request, res: Response) {
       });
     }
 
-    // @ts-ignore - User is attached by auth middleware
+
     const userId = req.user?.id || 'system';
 
     const jobId = await scrapingService.createJob(
@@ -266,7 +266,7 @@ export async function health(req: Request, res: Response) {
  */
 export async function rotate(req: Request, res: Response) {
   try {
-    // @ts-ignore
+
     const userId = req.user?.id || 'system';
     const db = databaseService.getClient();
     const sources = db.query<{ id: string; name: string; url: string; base_url: string }>(
@@ -278,7 +278,9 @@ export async function rotate(req: Request, res: Response) {
       try {
         const host = new URL(url).hostname.replace(/^www\./, '');
         byHost.set(host, { id: s.id, name: s.name, url });
-      } catch { }
+      } catch {
+        // Invalid URL format, skip this source
+      }
     }
     const planHosts = [
       // Cycle 1

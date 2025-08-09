@@ -1,5 +1,4 @@
 import { Request, Response } from 'express';
-import { body, validationResult } from 'express-validator';
 import { authService } from '@services/auth.service';
 import { HttpError } from '@middleware/error.middleware';
 

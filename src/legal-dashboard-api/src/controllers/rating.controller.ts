@@ -16,7 +16,7 @@ export async function rateDocument(req: Request, res: Response) {
       });
     }
     
-    // @ts-ignore - User is attached by auth middleware
+
     const userId = req.user?.id || 'system';
     
     const rating = await ratingService.rateDocument(
@@ -43,7 +43,7 @@ export async function getUserRating(req: Request, res: Response) {
   try {
     const { id } = req.params;
     
-    // @ts-ignore - User is attached by auth middleware
+
     const userId = req.user?.id || 'system';
     
     const rating = await ratingService.getUserRating(id, userId);
@@ -99,7 +99,7 @@ export async function deleteRating(req: Request, res: Response) {
   try {
     const { id } = req.params;
     
-    // @ts-ignore - User is attached by auth middleware
+
     const userId = req.user?.id || 'system';
     
     const success = await ratingService.deleteRating(id, userId);

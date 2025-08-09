@@ -8,7 +8,7 @@ export interface DocumentRecord {
     status: 'draft' | 'published' | 'archived';
     language?: string | null;
     keywords: string[];
-    metadata: Record<string, any>;
+    metadata: Record<string, unknown>;
     version: number;
     hash: string;
     created_at: string;
@@ -24,7 +24,7 @@ export interface DocumentVersion {
     version: number;
     title: string;
     content: string;
-    metadata: Record<string, any>;
+    metadata: Record<string, unknown>;
     hash: string;
     created_at: string;
     created_by: string;

@@ -290,7 +290,7 @@ class AnalyticsService {
         documentIds.map(id => documentService.getDocumentById(id))
       );
       
-      const validDocuments = documents.filter(doc => doc !== null) as any[];
+      const validDocuments = documents.filter(doc => doc !== null);
       
       if (validDocuments.length === 0) {
         return null;

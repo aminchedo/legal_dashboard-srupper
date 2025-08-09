@@ -1,7 +1,9 @@
 import { Request, Response } from 'express';
 import { Server, Socket } from 'socket.io';
+import { Server as HttpServer } from 'http';
 import { logger } from '../utils/logger';
 import { config } from '../utils/config';
+import { DocumentUpdateData, ScrapingProgressData } from '../types/websocket.types';
 
 let io: Server | null = null;
 
@@ -16,7 +18,7 @@ const connectedUsers = new Map<string, SocketUser>();
 
 export function attachSocket(server: unknown): void {
     if (io) return;
-    io = new Server(server as any, {
+    io = new Server(server as HttpServer, {
         cors: {
             origin: config.CORS_ORIGIN,
             credentials: true
@@ -87,11 +89,7 @@ function setupSocketEvents(socketIo: Server): void {
         });
 
         // Document updates (for collaborative editing)
-        socket.on('document_update', (data: {
-            documentId: string;
-            changes: any;
-            version: number;
-        }) => {
+        socket.on('document_update', (data: DocumentUpdateData) => {
             const user = connectedUsers.get(socket.id);
             if (!user) {
                 socket.emit('error', { message: 'Authentication required' });
@@ -109,12 +107,7 @@ function setupSocketEvents(socketIo: Server): void {
         });
 
         // Handle scraping status updates
-        socket.on('scraping_progress', (data: {
-            jobId: string;
-            progress: number;
-            status: string;
-            details?: any;
-        }) => {
+        socket.on('scraping_progress', (data: ScrapingProgressData) => {
             emitSystemEvent('scraping_update', data);
         });
 
@@ -154,7 +147,7 @@ function setupSocketEvents(socketIo: Server): void {
 }
 
 // Helper function to emit system events
-export function emitSystemEvent(event: string, data: any): void {
+export function emitSystemEvent(event: string, data: Record<string, unknown>): void {
     if (!io) return;
     io.emit(event, {
         ...data,
@@ -164,7 +157,7 @@ export function emitSystemEvent(event: string, data: any): void {
 }
 
 // Function to emit document events to specific document room
-export function emitDocumentEvent(documentId: string, event: string, data: any): void {
+export function emitDocumentEvent(documentId: string, event: string, data: Record<string, unknown>): void {
     if (!io) return;
     const roomId = `document:${documentId}`;
     io.to(roomId).emit(event, {

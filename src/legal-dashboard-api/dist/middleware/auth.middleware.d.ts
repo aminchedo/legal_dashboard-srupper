@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 export interface AuthPayload {
+    id: string;
     sub: string;
     email: string;
     role: 'user' | 'admin';

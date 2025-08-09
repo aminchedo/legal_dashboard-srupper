@@ -13,7 +13,7 @@ export async function processSingle(req: Request, res: Response) {
       return res.status(400).json({ error: 'File path is required' });
     }
 
-    // @ts-ignore - User is attached by auth middleware
+
     const userId = req.user?.id || 'system';
 
     const result = await ocrService.processFile({ filePath, language }, userId);
@@ -39,7 +39,7 @@ export async function processAndSave(req: Request, res: Response) {
       return res.status(400).json({ error: 'File path is required' });
     }
 
-    // @ts-ignore - User is attached by auth middleware
+
     const userId = req.user?.id || 'system';
 
     const result = await ocrService.processAndCreateDocument(
@@ -72,7 +72,7 @@ export async function batchProcess(req: Request, res: Response) {
       return res.status(400).json({ error: 'Files array is required' });
     }
 
-    // @ts-ignore - User is attached by auth middleware
+
     const userId = req.user?.id || 'system';
 
     const jobIds = await ocrService.startBatchProcessing(

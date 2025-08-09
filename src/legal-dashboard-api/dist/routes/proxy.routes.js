@@ -12,7 +12,7 @@ router.put('/settings', proxy_controller_1.proxyController.updateProxySettings);
 router.post('/discover-free', proxy_controller_1.proxyController.discoverFreeProxies);
 router.post('/scrape-intelligent', auth_middleware_1.requireAuth, async (req, res) => {
     const { sourceId } = req.body;
-    const userId = req.user.id;
+    const userId = req.user?.id || 'system';
     try {
         const result = await scraping_service_1.scrapingService.scrapeWithIntelligence(sourceId, userId);
         res.json(result);

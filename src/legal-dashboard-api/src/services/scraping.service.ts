@@ -8,6 +8,7 @@ import { emitSystemEvent } from '@controllers/websocket.controller';
 import { scrapingQueue } from '@queue/queue.config';
 import { URL } from 'url';
 import { ResilientProxyRotator } from './proxy.service';
+import { ScrapingResult, ScrapingSourceRaw } from '../types/scraping.types';
 
 interface ScrapingSource {
   id: string;
@@ -31,7 +32,7 @@ interface ScrapingJobRecord {
   source_id: string;
   status: 'pending' | 'running' | 'completed' | 'failed';
   progress: number;
-  result?: any;
+  result?: ScrapingResult;
   error?: string | null;
   created_at: string;
   updated_at?: string | null;
@@ -251,13 +252,13 @@ class ScrapingService {
    */
   async listSources(): Promise<(ScrapingSource & { url?: string; category?: string; priority?: number; status?: string })[]> {
     try {
-      const results = this.db.query<any>(
+      const results = this.db.query<ScrapingSourceRaw>(
         `SELECT * FROM scraping_sources ORDER BY priority ASC, created_at DESC`
       );
       return results.map((s) => ({
         ...s,
-        selectors: typeof (s as any).selectors === 'string' ? JSON.parse((s as any).selectors) : (s as any).selectors,
-        headers: typeof (s as any).headers === 'string' && (s as any).headers ? JSON.parse((s as any).headers) : (s as any).headers
+        selectors: typeof s.selectors === 'string' ? JSON.parse(s.selectors) : s.selectors,
+        headers: typeof s.headers === 'string' && s.headers ? JSON.parse(s.headers) : s.headers
       }));
     } catch (error) {
       logger.error('Failed to list scraping sources', error);
@@ -332,11 +333,11 @@ class ScrapingService {
 
       // Parse JSON fields if they exist
       if (source.selectors && typeof source.selectors === 'string') {
-        source.selectors = JSON.parse(source.selectors as any);
+        source.selectors = JSON.parse(source.selectors);
       }
 
       if (source.headers && typeof source.headers === 'string') {
-        source.headers = JSON.parse(source.headers as any);
+        source.headers = JSON.parse(source.headers);
       }
 
       return source;
@@ -353,7 +354,7 @@ class ScrapingService {
     url: string,
     sourceId: string,
     depth: number = 1,
-    filters = {},
+    _filters = {},
     userId: string,
     progressCallback?: (progress: number) => void
   ): Promise<{
@@ -398,7 +399,7 @@ class ScrapingService {
 
     const fetchWithRetry = async (targetUrl: string, headers?: Record<string, string>): Promise<string> => {
       const maxAttempts = Math.max(1, Math.min(5, proxies.length ? proxies.length : 3));
-      let lastError: any = null;
+      let lastError: Error | null = null;
       for (let attempt = 0; attempt < maxAttempts; attempt++) {
         const proxy = rotator.getProxy();
         const axiosConfig: AxiosRequestConfig = {
@@ -428,7 +429,7 @@ class ScrapingService {
                   parsed.username || parsed.password
                     ? { username: decodeURIComponent(parsed.username), password: decodeURIComponent(parsed.password) }
                     : undefined,
-              } as any;
+              };
             }
           } catch (e) {
             logger.warn(`Invalid proxy URL skipped: ${proxy}`);
@@ -439,8 +440,8 @@ class ScrapingService {
           const res = await axios.request<string>(axiosConfig);
           bytesProcessed += res.data ? Buffer.byteLength(res.data, 'utf8') : 0;
           return res.data;
-        } catch (err: any) {
-          lastError = err;
+        } catch (err: unknown) {
+          lastError = err instanceof Error ? err : new Error(String(err));
           if (proxy) rotator.blacklistProxy(proxy);
           const delay = 500 * (attempt + 1);
           await new Promise((r) => setTimeout(r, delay));
@@ -554,7 +555,7 @@ class ScrapingService {
   }
 
   // ADD intelligent scraping method
-  async scrapeWithIntelligence(sourceId: string, userId: string, options: any = {}) {
+  async scrapeWithIntelligence(sourceId: string, userId: string, options: Record<string, unknown> = {}) {
     const source = await this.getSource(sourceId);
 
     if (!source) {
@@ -579,11 +580,13 @@ class ScrapingService {
 
       logger.info('🔄 Falling back to proxy scraping...');
       // Using existing scrapeUrl as the main scraping method
-      result = await this.scrapeUrl(source.base_url, sourceId, options.depth || 1, options.filters, userId);
+      result = await this.scrapeUrl(source.base_url, sourceId, Number(options.depth) || 1, (options.filters as Record<string, unknown>) || {}, userId);
 
       return { success: true, ...result };
-    } catch (error: any) {
-      logger.error(`❌ Intelligent scraping failed: ${error.message}`);
+    } catch (error: unknown) {
+      const { getErrorMessage } = await import('@utils/error-handler');
+      const errorMessage = getErrorMessage(error);
+      logger.error(`❌ Intelligent scraping failed: ${errorMessage}`);
       throw error;
     }
   }
@@ -594,7 +597,7 @@ class ScrapingService {
     return iranianDomains.some(domain => url.includes(domain));
   }
 
-  private async attemptDirectScraping(source: ScrapingSource, userId: string, options: any) {
+  private async attemptDirectScraping(source: ScrapingSource, userId: string, _options: Record<string, unknown>) {
     try {
       // Use same logic as existing scrapeSource but without proxy
       const response = await axios.get(source.base_url, {
@@ -654,10 +657,11 @@ class ScrapingService {
         method: 'direct',
         message: `Scraped ${documents.length} documents via direct connection`,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const { getErrorMessage } = await import('@utils/error-handler');
       return {
         success: false,
-        error: error.message,
+        error: getErrorMessage(error),
         method: 'direct',
       };
     }
