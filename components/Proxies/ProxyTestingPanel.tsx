@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Activity, Globe, Loader2, Network, PlayCircle, Settings2 } from 'lucide-react';
+import { ThunderboltOutlined, GlobalOutlined, LoadingOutlined, ClusterOutlined, PlayCircleOutlined, SettingOutlined } from '@ant-design/icons';
 import { ProxyRecord } from '../../types';
 import { databaseService } from '../../lib/database';
 

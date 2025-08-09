@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Server, Database, PlugZap, CloudLightning, HardDrive, MemoryStick } from 'lucide-react';
+import { CloudServerOutlined, DatabaseOutlined, ThunderboltOutlined, CloudOutlined, HddOutlined, UsbOutlined } from '@ant-design/icons';
 
 type Health = {
     backend: 'online' | 'offline';

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { RotateCw } from 'lucide-react';
+import { ReloadOutlined } from '@ant-design/icons';
 import { useRotationSettings, useSaveRotationSettings } from '../../hooks/useProxies';
 import { ProxyRotationSettings } from '../../types';
 

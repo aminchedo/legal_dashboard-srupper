@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { BarChart3, Gauge, LineChart, PieChart } from 'lucide-react';
+import { BarChartOutlined, DashboardOutlined, LineChartOutlined, PieChartOutlined } from '@ant-design/icons';
 import { ProxyRecord, ProxyTestResult } from '../../types';
 import { databaseService } from '../../lib/database';
 

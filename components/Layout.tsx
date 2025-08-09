@@ -1,16 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  BarChart3,
-  Database,
-  Globe,
-  Home,
-  Menu,
-  Settings,
-  Scale,
-  Bell,
-  Search,
-  Shuffle
-} from 'lucide-react';
+  BarChartOutlined,
+  DatabaseOutlined,
+  GlobalOutlined,
+  HomeOutlined,
+  MenuOutlined,
+  SettingOutlined,
+  AlertOutlined,
+  BellOutlined,
+  SearchOutlined,
+  SwapOutlined
+} from '@ant-design/icons';
 import { PageType } from '../types';
 import CommandPalette, { CommandItem } from './CommandPalette';
 
@@ -21,11 +21,11 @@ interface LayoutProps {
 }
 
 const navigationItems = [
-  { id: 'dashboard' as PageType, label: 'داشبورد کلی', icon: Home },
-  { id: 'scraping' as PageType, label: 'وب اسکرپینگ', icon: Globe },
-  { id: 'data' as PageType, label: 'داده‌های جمع‌آوری شده', icon: Database },
-  { id: 'analytics' as PageType, label: 'تحلیل و گزارش', icon: BarChart3 },
-  { id: 'proxies' as PageType, label: 'پروکسی‌ها', icon: Shuffle },
+  { id: 'dashboard' as PageType, label: 'داشبورد کلی', icon: HomeOutlined },
+  { id: 'scraping' as PageType, label: 'وب اسکرپینگ', icon: GlobalOutlined },
+  { id: 'data' as PageType, label: 'داده‌های جمع‌آوری شده', icon: DatabaseOutlined },
+  { id: 'analytics' as PageType, label: 'تحلیل و گزارش', icon: BarChartOutlined },
+  { id: 'proxies' as PageType, label: 'پروکسی‌ها', icon: SwapOutlined },
 ];
 
 export default function Layout({ children, currentPage, onPageChange }: LayoutProps) {
@@ -166,10 +166,10 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
                 onClick={() => setSidebarOpen(!sidebarOpen)}
                 className="md:hidden p-2 rounded-md hover:bg-white/10 transition-colors"
               >
-                <Menu size={24} />
+                <MenuOutlined />
               </button>
               <div className="flex items-center gap-3">
-                <Scale className="text-yellow-400 animate-float" size={32} />
+                <AlertOutlined className="text-yellow-400" />
                 <div>
                   <h1 className="text-xl font-bold">داشبورد حقوقی ایران</h1>
                   <p className="text-blue-200 text-sm">سامانه هوشمند مدیریت اطلاعات حقوقی</p>
@@ -179,7 +179,7 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
             <div className="flex items-center gap-3 flex-1 max-w-xl">
               {/* Global search */}
               <div className="hidden md:flex items-center gap-2 flex-1 bg-white/10 hover:bg-white/15 border border-white/20 rounded-lg px-3 py-1.5">
-                <Search size={18} className="text-blue-100" />
+                <SearchOutlined className="text-blue-100" />
                 <input
                   ref={searchInputRef}
                   value={globalQuery}
@@ -210,7 +210,7 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
                 aria-label="notifications"
                 title={language === 'fa' ? 'اعلان‌ها' : 'Notifications'}
               >
-                <Bell size={18} />
+                <BellOutlined />
                 <span className="absolute -top-0.5 -left-0.5 w-2 h-2 bg-yellow-400 rounded-full" />
               </button>
               <button
@@ -220,7 +220,7 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
               >
                 {darkMode ? '☀️ روشن' : '🌙 تاریک'}
               </button>
-              <Settings
+              <SettingOutlined
                 onClick={() => onPageChange('settings')}
                 size={20}
                 className="text-blue-200 hover:text-white cursor-pointer transition-colors"
@@ -243,7 +243,7 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
         `}>
           <nav className="h-full overflow-y-auto py-6">
             <div className="px-4 space-y-2">
-              {[...navigationItems, { id: 'settings' as any, label: 'تنظیمات', icon: Settings }, { id: 'help' as any, label: 'راهنما', icon: Scale }].map((item) => {
+              {[...navigationItems, { id: 'settings' as any, label: 'تنظیمات', icon: SettingOutlined }, { id: 'help' as any, label: 'راهنما', icon: AlertOutlined }].map((item) => {
                 const Icon = item.icon;
                 const isActive = currentPage === item.id;
 
