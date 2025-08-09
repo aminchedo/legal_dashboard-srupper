@@ -3,14 +3,16 @@ import { documentService } from '@services/document.service';
 
 // Mock dependencies
 jest.mock('@services/database.service', () => {
+  const mockTransaction = {
+    begin: jest.fn(),
+    commit: jest.fn(),
+    rollback: jest.fn()
+  };
+  
   const mockClient = {
     query: jest.fn(),
     run: jest.fn(),
-    transaction: jest.fn().mockReturnValue({
-      begin: jest.fn(),
-      commit: jest.fn(),
-      rollback: jest.fn()
-    })
+    transaction: jest.fn().mockReturnValue(mockTransaction)
   };
   
   return {
@@ -24,13 +26,24 @@ jest.mock('@controllers/websocket.controller', () => ({
   emitDocumentEvent: jest.fn()
 }));
 
-// Get access to the mocked database client
-const mockDb = jest.requireMock('@services/database.service').databaseService.getClient();
+// Get access to the mocked database client - properly typed
+let mockDb: any;
 
 describe('Document Service', () => {
   beforeEach(() => {
     // Clear mock calls before each test
     jest.clearAllMocks();
+    
+    // Get the mocked database client
+    mockDb = (jest.requireMock('@services/database.service') as any).databaseService.getClient();
+    
+    // Reset transaction mocks
+    const mockTransaction = {
+      begin: jest.fn(),
+      commit: jest.fn(),
+      rollback: jest.fn()
+    };
+    mockDb.transaction.mockReturnValue(mockTransaction);
   });
   
   afterEach(() => {
@@ -130,7 +143,7 @@ describe('Document Service', () => {
         category: null,
         source: null,
         score: null,
-        status: 'draft',
+        status: 'draft' as const,
         language: null,
         keywords: [],
         metadata: {},
@@ -168,7 +181,7 @@ describe('Document Service', () => {
         category: null,
         source: null,
         score: null,
-        status: 'draft',
+        status: 'draft' as const,
         language: null,
         keywords: [],
         metadata: {},

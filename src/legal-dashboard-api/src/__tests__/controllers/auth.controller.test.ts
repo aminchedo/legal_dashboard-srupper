@@ -14,9 +14,9 @@ describe('Auth Controller', () => {
         jest.clearAllMocks();
         req = { body: {}, headers: {} };
         res = {
-            json: jest.fn().mockReturnThis(),
-            status: jest.fn().mockReturnThis(),
-            send: jest.fn().mockReturnThis()
+            json: jest.fn().mockReturnThis() as any,
+            status: jest.fn().mockReturnThis() as any,
+            send: jest.fn().mockReturnThis() as any
         };
         mockAuthService = authService as jest.Mocked<typeof authService>;
     });

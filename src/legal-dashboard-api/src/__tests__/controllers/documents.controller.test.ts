@@ -2,6 +2,7 @@ import { describe, expect, test, jest, beforeEach } from '@jest/globals';
 import { Request, Response } from 'express';
 import * as documentsController from '@controllers/documents.controller';
 import { documentService } from '@services/document.service';
+import { DocumentRecord } from '@models/document.model';
 
 // Mock the document service
 jest.mock('@services/document.service');
@@ -28,17 +29,19 @@ describe('Documents Controller', () => {
       params: {},
       query: {},
       body: {},
-      // Add mock user for auth
+      // Add mock user for auth - fixing AuthPayload structure
       user: {
         id: 'test-user-id',
-        username: 'testuser'
+        sub: 'test-user-id',
+        email: 'test@example.com',
+        role: 'user' as const
       }
     };
     
     mockResponse = {
-      json: jest.fn().mockReturnThis(),
-      status: jest.fn().mockReturnThis(),
-      send: jest.fn().mockReturnThis()
+      json: jest.fn().mockReturnThis() as any,
+      status: jest.fn().mockReturnThis() as any,
+      send: jest.fn().mockReturnThis() as any
     };
     
     // Get the mocked document service
@@ -47,9 +50,44 @@ describe('Documents Controller', () => {
   
   describe('list', () => {
     test('should return a list of documents', async () => {
-      // Arrange
+      // Arrange - Create proper DocumentRecord objects
+      const mockDocuments: DocumentRecord[] = [
+        {
+          id: 'doc1',
+          title: 'Document 1',
+          content: 'Content 1',
+          status: 'published',
+          keywords: [],
+          metadata: {},
+          version: 1,
+          hash: 'hash1',
+          created_at: '2023-01-01T00:00:00Z',
+          updated_at: null,
+          published_at: null,
+          archived_at: null,
+          created_by: 'user1',
+          updated_by: null
+        },
+        {
+          id: 'doc2',
+          title: 'Document 2',
+          content: 'Content 2',
+          status: 'draft',
+          keywords: [],
+          metadata: {},
+          version: 1,
+          hash: 'hash2',
+          created_at: '2023-01-01T00:00:00Z',
+          updated_at: null,
+          published_at: null,
+          archived_at: null,
+          created_by: 'user1',
+          updated_by: null
+        }
+      ];
+      
       const mockResult = {
-        items: [{ id: 'doc1', title: 'Document 1' }, { id: 'doc2', title: 'Document 2' }],
+        items: mockDocuments,
         total: 2,
         page: 1,
         pageCount: 1
@@ -90,8 +128,23 @@ describe('Documents Controller', () => {
   
   describe('getById', () => {
     test('should return a document when found', async () => {
-      // Arrange
-      const mockDocument = { id: 'doc123', title: 'Test Document' };
+      // Arrange - Create proper DocumentRecord object
+      const mockDocument: DocumentRecord = {
+        id: 'doc123',
+        title: 'Test Document',
+        content: 'Test content',
+        status: 'published',
+        keywords: [],
+        metadata: {},
+        version: 1,
+        hash: 'hash123',
+        created_at: '2023-01-01T00:00:00Z',
+        updated_at: null,
+        published_at: null,
+        archived_at: null,
+        created_by: 'user1',
+        updated_by: null
+      };
       mockRequest.params = { id: 'doc123' };
       mockDocumentService.getDocumentById.mockResolvedValueOnce(mockDocument);
       
@@ -121,7 +174,22 @@ describe('Documents Controller', () => {
     test('should create a document and return it', async () => {
       // Arrange
       const newDocument = { title: 'New Document', content: 'Content' };
-      const createdDocument = { id: 'new-id', ...newDocument };
+      const createdDocument: DocumentRecord = {
+        id: 'new-id',
+        title: 'New Document',
+        content: 'Content',
+        status: 'draft',
+        keywords: [],
+        metadata: {},
+        version: 1,
+        hash: 'hash123',
+        created_at: '2023-01-01T00:00:00Z',
+        updated_at: null,
+        published_at: null,
+        archived_at: null,
+        created_by: 'test-user-id',
+        updated_by: null
+      };
       mockRequest.body = newDocument;
       mockDocumentService.createDocument.mockResolvedValueOnce(createdDocument);
       
@@ -142,7 +210,22 @@ describe('Documents Controller', () => {
     test('should update a document and return it', async () => {
       // Arrange
       const documentUpdate = { title: 'Updated Title' };
-      const updatedDocument = { id: 'doc123', ...documentUpdate };
+      const updatedDocument: DocumentRecord = {
+        id: 'doc123',
+        title: 'Updated Title',
+        content: 'Original content',
+        status: 'draft',
+        keywords: [],
+        metadata: {},
+        version: 2,
+        hash: 'hash456',
+        created_at: '2023-01-01T00:00:00Z',
+        updated_at: '2023-01-02T00:00:00Z',
+        published_at: null,
+        archived_at: null,
+        created_by: 'user1',
+        updated_by: 'test-user-id'
+      };
       mockRequest.params = { id: 'doc123' };
       mockRequest.body = documentUpdate;
       mockDocumentService.updateDocument.mockResolvedValueOnce(updatedDocument);
@@ -178,7 +261,24 @@ describe('Documents Controller', () => {
     test('should return search results', async () => {
       // Arrange
       const searchResults = {
-        results: [{ id: 'doc1', title: 'Test', snippet: 'Test content' }],
+        results: [{
+          id: 'doc1',
+          title: 'Test',
+          content: 'Test content full',
+          status: 'published' as const,
+          keywords: [],
+          metadata: {},
+          version: 1,
+          hash: 'hash1',
+          created_at: '2023-01-01T00:00:00Z',
+          updated_at: null,
+          published_at: null,
+          archived_at: null,
+          created_by: 'user1',
+          updated_by: null,
+          snippet: 'Test content',
+          rank: 1
+        }],
         total: 1,
         page: 1,
         pageCount: 1
