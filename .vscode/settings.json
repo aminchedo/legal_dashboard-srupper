@@ -1,3 +1,13 @@
 {
-    "git.ignoreLimitWarning": true
+    "git.ignoreLimitWarning": true,
+    "githubActions.workflows.pinned.refresh.enabled": true,
+    "githubActions.org-features": false,
+    "githubActions.remote-name": "origin",
+    "yaml.schemas": {
+        "https://json.schemastore.org/github-workflow.json": ".github/workflows/*.yml"
+    },
+    "yaml.customTags": [
+        "!reference sequence"
+    ],
+    "githubActions.workflows.pinned.workflows": []
 }
