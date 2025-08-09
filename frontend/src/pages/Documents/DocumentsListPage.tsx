@@ -1,19 +1,11 @@
 import { useState, useMemo, useEffect } from 'react';
-import { 
-  SearchOutlined, 
-  ExternalLinkOutlined, 
-  TagOutlined, 
-  StarOutlined, 
-  CalendarOutlined, 
-  FileTextOutlined, 
-  DeleteOutlined 
-} from '@ant-design/icons';
+import { Search, ExternalLink, Tag, Star, Calendar, FileText, Trash2 } from '@ant-design/icons';
 import { useDocuments, useStatistics } from '../../hooks/useDatabase';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from '../../services/apiClient';
+import { apiClient } from '../../lib/apiClient';
 import { format } from 'date-fns';
 import { faIR } from 'date-fns/locale';
-import { Badge } from '../../components/ui';
+import CategoryBadge from '../CategoryBadge';
 
 const useDeleteDocument = () => {
   const queryClient = useQueryClient();
@@ -105,7 +97,7 @@ export default function DataPage() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {/* Search */}
           <div className="relative">
-            <SearchOutlined className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+            <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
             <input
               type="text"
               placeholder="جستجو در عناوین..."
@@ -161,7 +153,7 @@ export default function DataPage() {
       {/* Results Count */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-gray-600">
-          <FileTextOutlined size={20} />
+          <FileText size={20} />
           {pagination && (
             <span>
               نمایش {displayItems.length.toLocaleString('fa-IR')} آیتم از {pagination.totalItems.toLocaleString('fa-IR')} نتیجه
@@ -186,7 +178,7 @@ export default function DataPage() {
         ) : displayItems.length === 0 ? (
           // Empty state
           <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
-            <FileTextOutlined size={48} className="text-gray-300 mx-auto mb-4" />
+            <FileText size={48} className="text-gray-300 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">هیچ آیتمی یافت نشد</h3>
             <p className="text-gray-500">
               {filters.query ? 'جستجوی شما نتیجه‌ای نداشت' : 'هنوز آیتمی جمع‌آوری نشده است'}
@@ -207,7 +199,7 @@ export default function DataPage() {
                     {/* Metadata */}
                     <div className="flex flex-wrap items-center gap-4 mb-4 text-sm text-gray-500">
                       <div className="flex items-center gap-1">
-                        <ExternalLinkOutlined size={14} />
+                        <ExternalLink size={14} />
                         <a
                           href={item.url}
                           target="_blank"
@@ -219,12 +211,12 @@ export default function DataPage() {
                       </div>
 
                       <div className="flex items-center gap-1">
-                        <CalendarOutlined size={14} />
+                        <Calendar size={14} />
                         <span>{format(new Date(item.createdAt), 'yyyy/MM/dd', { locale: faIR })}</span>
                       </div>
 
                       <div className="flex items-center gap-1">
-                        <StarOutlined size={14} />
+                        <Star size={14} />
                         <span>{(item.ratingScore * 100).toFixed(0)}%</span>
                       </div>
 
@@ -235,9 +227,9 @@ export default function DataPage() {
 
                     {/* Category Tag */}
                     <div className="flex items-center gap-2 mb-4">
-                      <Badge
+                      <CategoryBadge
                         category={item.category}
-                        icon={<TagOutlined size={14} />}
+                        icon={<Tag size={14} />}
                         color="#3B82F6"
                         variant="filled"
                         size="md"
@@ -275,7 +267,7 @@ export default function DataPage() {
                       className="flex items-center justify-center w-10 h-10 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                       title="مشاهده اصل"
                     >
-                      <ExternalLinkOutlined size={18} />
+                      <ExternalLink size={18} />
                     </a>
 
                     <button
@@ -284,7 +276,7 @@ export default function DataPage() {
                       title="حذف"
                       disabled={deleteMutation.isPending}
                     >
-                      <DeleteOutlined size={18} />
+                      <Trash2 size={18} />
                     </button>
                   </div>
                 </div>

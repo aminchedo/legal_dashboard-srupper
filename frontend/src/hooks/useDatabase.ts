@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from '../lib/apiClient';
+import { apiClient } from '../services/apiClient';
 import { ScrapedItem, DatabaseStats } from '../types';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
