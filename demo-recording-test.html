@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Screen Recording Demo - Standalone Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .card h3 {
+            color: #1e293b;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .button {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+
+        .button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-record {
+            background: #dc2626;
+            color: white;
+        }
+
+        .btn-record:hover:not(:disabled) {
+            background: #b91c1c;
+        }
+
+        .btn-stop {
+            background: #6b7280;
+            color: white;
+        }
+
+        .btn-stop:hover:not(:disabled) {
+            background: #4b5563;
+        }
+
+        .btn-download {
+            background: #059669;
+            color: white;
+        }
+
+        .btn-download:hover:not(:disabled) {
+            background: #047857;
+        }
+
+        .btn-toggle {
+            background: #3b82f6;
+            color: white;
+            padding: 8px 16px;
+            font-size: 0.9rem;
+        }
+
+        .btn-toggle:hover:not(:disabled) {
+            background: #2563eb;
+        }
+
+        .btn-toggle.off {
+            background: #6b7280;
+        }
+
+        .recording-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin: 15px 0;
+        }
+
+        .recording-dot {
+            width: 12px;
+            height: 12px;
+            background: #dc2626;
+            border-radius: 50%;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .video-container {
+            width: 100%;
+            aspect-ratio: 16/9;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .video-preview {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .video-placeholder {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6b7280;
+            text-align: center;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .info-item {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .info-item strong {
+            color: #1e293b;
+        }
+
+        .error {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #b91c1c;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        .instructions {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            color: #1e40af;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+        }
+
+        .instructions h4 {
+            margin-bottom: 10px;
+        }
+
+        .instructions ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+
+        .instructions li {
+            margin: 5px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .instructions li:before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: #3b82f6;
+            font-weight: bold;
+        }
+
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📹 Screen Recording Demo</h1>
+            <p>Test your browser's screen recording capabilities with this standalone demo</p>
+        </div>
+
+        <div class="content">
+            <div id="error-message" class="error" style="display: none;"></div>
+
+            <div class="grid">
+                <!-- Controls Column -->
+                <div class="card">
+                    <h3>🎮 Recording Controls</h3>
+                    
+                    <div class="controls">
+                        <button id="audio-toggle" class="button btn-toggle">
+                            🎤 Audio: ON
+                        </button>
+
+                        <div id="recording-status" style="display: none;" class="recording-status">
+                            <div class="recording-dot"></div>
+                            <span id="timer">00:00</span>
+                        </div>
+
+                        <button id="start-btn" class="button btn-record">
+                            ▶️ Start Recording
+                        </button>
+
+                        <button id="stop-btn" class="button btn-stop" disabled>
+                            ⏹️ Stop Recording
+                        </button>
+
+                        <button id="download-btn" class="button btn-download" disabled>
+                            ⬇️ Download Recording
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Preview Column -->
+                <div class="card">
+                    <h3>👁️ Live Preview</h3>
+                    <div class="video-container">
+                        <video id="preview" class="video-preview" muted playsinline></video>
+                        <div id="placeholder" class="video-placeholder">
+                            <div>
+                                <div style="font-size: 3rem; margin-bottom: 10px;">🖥️</div>
+                                <div>Preview will appear here when recording starts</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recording Information -->
+            <div class="card">
+                <h3>📊 Recording Information</h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <strong>Format:</strong> <span id="format">WebM (VP9 + Opus)</span>
+                    </div>
+                    <div class="info-item">
+                        <strong>Quality:</strong> <span id="quality">Up to 1080p</span>
+                    </div>
+                    <div class="info-item">
+                        <strong>Audio:</strong> <span id="audio-status">Enabled</span>
+                    </div>
+                    <div class="info-item">
+                        <strong>Status:</strong> <span id="recording-info">Ready to start</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Instructions -->
+            <div class="instructions">
+                <h4>📝 How to use this demo:</h4>
+                <ul>
+                    <li>Click "Start Recording" to begin screen capture</li>
+                    <li>Select which screen or window you want to share</li>
+                    <li>The recording will appear in the preview area above</li>
+                    <li>Click "Stop Recording" when you're finished</li>
+                    <li>Download your recording as a WebM video file</li>
+                    <li>This demo works in Chrome 72+, Firefox 66+, and Safari 13+</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class ScreenRecorder {
+            constructor() {
+                this.mediaRecorder = null;
+                this.stream = null;
+                this.recordedBlobs = [];
+                this.isRecording = false;
+                this.audioEnabled = true;
+                this.recordingTime = 0;
+                this.timer = null;
+
+                this.initializeElements();
+                this.bindEvents();
+            }
+
+            initializeElements() {
+                this.startBtn = document.getElementById('start-btn');
+                this.stopBtn = document.getElementById('stop-btn');
+                this.downloadBtn = document.getElementById('download-btn');
+                this.audioToggle = document.getElementById('audio-toggle');
+                this.preview = document.getElementById('preview');
+                this.placeholder = document.getElementById('placeholder');
+                this.errorMessage = document.getElementById('error-message');
+                this.recordingStatus = document.getElementById('recording-status');
+                this.timerElement = document.getElementById('timer');
+                this.audioStatus = document.getElementById('audio-status');
+                this.recordingInfo = document.getElementById('recording-info');
+            }
+
+            bindEvents() {
+                this.startBtn.addEventListener('click', () => this.startRecording());
+                this.stopBtn.addEventListener('click', () => this.stopRecording());
+                this.downloadBtn.addEventListener('click', () => this.downloadRecording());
+                this.audioToggle.addEventListener('click', () => this.toggleAudio());
+            }
+
+            showError(message) {
+                this.errorMessage.textContent = message;
+                this.errorMessage.style.display = 'block';
+                setTimeout(() => {
+                    this.errorMessage.style.display = 'none';
+                }, 5000);
+            }
+
+            hideError() {
+                this.errorMessage.style.display = 'none';
+            }
+
+            toggleAudio() {
+                if (this.isRecording) return;
+                
+                this.audioEnabled = !this.audioEnabled;
+                this.audioToggle.textContent = `🎤 Audio: ${this.audioEnabled ? 'ON' : 'OFF'}`;
+                this.audioToggle.className = `button btn-toggle ${this.audioEnabled ? '' : 'off'}`;
+                this.audioStatus.textContent = this.audioEnabled ? 'Enabled' : 'Disabled';
+            }
+
+            formatTime(seconds) {
+                const mins = Math.floor(seconds / 60);
+                const secs = seconds % 60;
+                return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            }
+
+            startTimer() {
+                this.recordingTime = 0;
+                this.timer = setInterval(() => {
+                    this.recordingTime++;
+                    this.timerElement.textContent = this.formatTime(this.recordingTime);
+                }, 1000);
+            }
+
+            stopTimer() {
+                if (this.timer) {
+                    clearInterval(this.timer);
+                    this.timer = null;
+                }
+            }
+
+            async startRecording() {
+                try {
+                    this.hideError();
+                    this.recordedBlobs = [];
+
+                    // Request screen capture
+                    const displayMediaOptions = {
+                        video: {
+                            mediaSource: 'screen',
+                            width: { ideal: 1920 },
+                            height: { ideal: 1080 }
+                        },
+                        audio: this.audioEnabled
+                    };
+
+                    let stream = await navigator.mediaDevices.getDisplayMedia(displayMediaOptions);
+
+                    // If audio is enabled but not captured from screen sharing, try to add microphone
+                    if (this.audioEnabled && stream.getAudioTracks().length === 0) {
+                        try {
+                            const audioStream = await navigator.mediaDevices.getUserMedia({ 
+                                audio: { 
+                                    echoCancellation: true,
+                                    noiseSuppression: true 
+                                } 
+                            });
+                            
+                            // Combine streams
+                            const combinedStream = new MediaStream([
+                                ...stream.getVideoTracks(),
+                                ...audioStream.getAudioTracks()
+                            ]);
+                            stream = combinedStream;
+                        } catch (audioError) {
+                            console.warn('Could not capture microphone audio:', audioError);
+                        }
+                    }
+
+                    this.stream = stream;
+
+                    // Show preview
+                    this.preview.srcObject = stream;
+                    this.preview.play();
+                    this.placeholder.style.display = 'none';
+
+                    // Setup MediaRecorder
+                    const options = { mimeType: 'video/webm;codecs=vp9,opus' };
+                    if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                        options.mimeType = 'video/webm;codecs=vp8,opus';
+                        if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                            options.mimeType = 'video/webm';
+                        }
+                    }
+
+                    this.mediaRecorder = new MediaRecorder(stream, options);
+
+                    this.mediaRecorder.addEventListener('dataavailable', (event) => {
+                        if (event.data && event.data.size > 0) {
+                            this.recordedBlobs.push(event.data);
+                        }
+                    });
+
+                    this.mediaRecorder.addEventListener('stop', () => {
+                        console.log('Recording stopped');
+                        this.recordingInfo.textContent = 'Ready to download';
+                        this.downloadBtn.disabled = false;
+                    });
+
+                    this.mediaRecorder.start(1000); // Collect data every second
+                    this.isRecording = true;
+
+                    // Update UI
+                    this.startBtn.disabled = true;
+                    this.stopBtn.disabled = false;
+                    this.audioToggle.disabled = true;
+                    this.recordingStatus.style.display = 'flex';
+                    this.recordingInfo.textContent = 'Recording...';
+
+                    this.startTimer();
+
+                    console.log('Recording started');
+
+                } catch (error) {
+                    console.error('Error starting recording:', error);
+                    this.showError('Failed to start recording. Please ensure you grant screen sharing permissions and use a supported browser.');
+                }
+            }
+
+            stopRecording() {
+                if (!this.mediaRecorder || !this.isRecording) return;
+
+                this.mediaRecorder.stop();
+                this.isRecording = false;
+
+                // Stop all tracks
+                if (this.stream) {
+                    this.stream.getTracks().forEach(track => track.stop());
+                }
+
+                // Clear preview
+                this.preview.srcObject = null;
+                this.placeholder.style.display = 'flex';
+
+                // Update UI
+                this.startBtn.disabled = false;
+                this.stopBtn.disabled = true;
+                this.audioToggle.disabled = false;
+                this.recordingStatus.style.display = 'none';
+
+                this.stopTimer();
+
+                console.log('Recording stopped');
+            }
+
+            downloadRecording() {
+                if (this.recordedBlobs.length === 0) return;
+
+                const blob = new Blob(this.recordedBlobs, { type: 'video/webm' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                
+                a.href = url;
+                a.download = `screen-recording-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.webm`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                
+                URL.revokeObjectURL(url);
+                
+                console.log('Recording downloaded');
+            }
+        }
+
+        // Initialize the recorder when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            // Check for browser support
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+                document.getElementById('error-message').textContent = 
+                    'Your browser does not support screen recording. Please use Chrome 72+, Firefox 66+, or Safari 13+.';
+                document.getElementById('error-message').style.display = 'block';
+                return;
+            }
+
+            new ScreenRecorder();
+        });
+    </script>
+</body>
+</html>
