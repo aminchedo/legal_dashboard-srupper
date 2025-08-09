@@ -35,8 +35,7 @@ const MOCK_ACTIVITY_DATA = {
 
 // --- API ENDPOINTS ---
 app.get('/health', (req, res) => {
-    console.log('GET /health -> Health check requested.');
-    res.json({ status: 'ok' });
+    res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
 app.get('/api/dashboard/statistics', (req, res) => {
