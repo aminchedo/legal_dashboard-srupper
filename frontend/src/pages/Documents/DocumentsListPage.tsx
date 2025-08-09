@@ -1,11 +1,11 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Search, ExternalLink, Tag, Star, Calendar, FileText, Trash2 } from '@ant-design/icons';
+import { Search, ExternalLink, Tag, Star, Calendar, FileText, Trash2 } from 'lucide-react';
 import { useDocuments, useStatistics } from '../../hooks/useDatabase';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from '../../lib/apiClient';
+import { apiClient } from '../../services/apiClient';
 import { format } from 'date-fns';
 import { faIR } from 'date-fns/locale';
-import CategoryBadge from '../CategoryBadge';
+import CategoryBadge from '../../components/ui/Badge';
 
 const useDeleteDocument = () => {
   const queryClient = useQueryClient();

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ReloadOutlined } from '@ant-design/icons';
-import { useRotationSettings, useSaveRotationSettings } from '../../hooks/useProxies';
-import { ProxyRotationSettings } from '../../types';
+import { useRotationSettings, useSaveRotationSettings } from '../../../hooks/useProxies';
+import { ProxyRotationSettings } from '../../../types';
 
 export default function ProxyRotationPanel() {
     const { data: settings } = useRotationSettings();

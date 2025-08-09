@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ThunderboltOutlined, GlobalOutlined, LoadingOutlined, ClusterOutlined, PlayCircleOutlined, SettingOutlined } from '@ant-design/icons';
-import { ProxyRecord } from '../../types';
-import { databaseService } from '../../lib/database';
+import { ProxyRecord } from '../../../types';
+// import { databaseService } from '../../lib/database';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
@@ -40,18 +40,18 @@ export default function ProxyTestingPanel({ items, onAfterTest }: Props) {
             while (queue.length) {
                 const p = queue.shift()!;
                 // update status to testing
-                await databaseService.addOrUpdateProxy({ ...p, status: 'testing' });
+                // await databaseService.addOrUpdateProxy({ ...p, status: 'testing' });
                 const result = await testProxy(p, testUrl, abort.signal);
-                await databaseService.addProxyTestResult({
-                    id: `${p.id}-${Date.now()}`,
-                    proxyId: p.id,
-                    testedAt: new Date(),
-                    success: result.success,
-                    latencyMs: result.latency,
-                    statusCode: result.statusCode ?? 0,
-                    errorMessage: result.errorMessage ?? '',
-                    testUrl,
-                });
+                // await databaseService.addProxyTestResult({
+                //     id: `${p.id}-${Date.now()}`,
+                //     proxyId: p.id,
+                //     testedAt: new Date(),
+                //     success: result.success,
+                //     latencyMs: result.latency,
+                //     statusCode: result.statusCode ?? 0,
+                //     errorMessage: result.errorMessage ?? '',
+                //     testUrl,
+                // });
                 completed++;
                 setProgress(Math.round((completed / items.length) * 100));
             }

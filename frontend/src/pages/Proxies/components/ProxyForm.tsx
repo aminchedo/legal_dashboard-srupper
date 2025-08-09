@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { CloseOutlined } from '@ant-design/icons';
-import { ProxyRecord, ProxyType } from '../../types';
+import { ProxyRecord, ProxyType } from '../../../types';
 
 interface Props {
     open: boolean;
