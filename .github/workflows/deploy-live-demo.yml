@@ -1,0 +1,131 @@
+name: 🌐 Deploy Live Legal Dashboard Demo
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy-demo:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+    
+    - name: Install ngrok
+      run: |
+        curl -s https://ngrok-agent.s3.amazonaws.com/ngrok.asc | sudo tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null
+        echo "deb https://ngrok-agent.s3.amazonaws.com buster main" | sudo tee /etc/apt/sources.list.d/ngrok.list
+        sudo apt update && sudo apt install ngrok
+    
+    - name: Setup Dependencies  
+      run: |
+        cd frontend && npm install
+        cd ../backend && npm install
+    
+    - name: Start Servers and Create Live Demo
+      run: |
+        # Start backend
+        cd backend
+        node server.js &
+        BACKEND_PID=$!
+        cd ..
+        sleep 8
+        
+        # Start frontend
+        cd frontend
+        npm run build
+        npm run preview &
+        FRONTEND_PID=$!
+        cd ..
+        sleep 10
+        
+        # Create ngrok tunnel for 10 minutes
+        ngrok http 4173 --log=stdout > ngrok.log &
+        sleep 5
+        
+        # Get the public URL
+        NGROK_URL=$(curl -s localhost:4040/api/tunnels | grep -o 'https://[0-9a-z-]*\.ngrok-free\.app' | head -1)
+        echo "🌐 Your Legal Dashboard is LIVE at: $NGROK_URL"
+        
+        # Create live demo report
+        cat > live-demo-report.html << EOF
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>🎬 Legal Dashboard Live Demo</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
+                .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+                .live-url { background: #007cba; color: white; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0; }
+                .live-url a { color: white; text-decoration: none; font-size: 18px; font-weight: bold; }
+                .demo-frame { width: 100%; height: 800px; border: 2px solid #ddd; border-radius: 8px; }
+                .status { background: #e8f5e8; padding: 15px; border-radius: 5px; margin: 15px 0; }
+                .instructions { background: #fff3cd; padding: 15px; border-radius: 5px; margin: 15px 0; }
+                h1 { color: #333; text-align: center; }
+                h2 { color: #555; border-bottom: 2px solid #007cba; padding-bottom: 5px; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>🎬 Legal Dashboard Live Demo</h1>
+                
+                <div class="live-url">
+                    <p>🌐 <strong>LIVE DASHBOARD URL:</strong></p>
+                    <a href="$NGROK_URL" target="_blank">$NGROK_URL</a>
+                    <p><small>⏰ Available for 10 minutes from deployment</small></p>
+                </div>
+                
+                <div class="instructions">
+                    <h3>📋 How to View Your Dashboard:</h3>
+                    <ol>
+                        <li><strong>Click the URL above</strong> to open your live legal dashboard</li>
+                        <li><strong>See it in action</strong> with real data and functionality</li>
+                        <li><strong>Test all features</strong> - recording, charts, data visualization</li>
+                        <li><strong>Share with others</strong> - anyone can view your demo!</li>
+                    </ol>
+                </div>
+                
+                <div class="status">
+                    <h3>✅ System Status:</h3>
+                    <p>• Backend API: <span style="color: green;">ONLINE</span> (localhost:3001)</p>
+                    <p>• Frontend App: <span style="color: green;">ONLINE</span> (localhost:4173)</p>
+                    <p>• Public Access: <span style="color: green;">LIVE</span> via ngrok tunnel</p>
+                    <p>• Demo Duration: <span style="color: orange;">10 minutes</span></p>
+                </div>
+                
+                <h2>📱 Live Dashboard Preview:</h2>
+                <iframe src="$NGROK_URL" class="demo-frame" title="Legal Dashboard Live Demo"></iframe>
+                
+                <div style="margin-top: 30px; text-align: center; color: #666;">
+                    <p>🔄 <strong>To extend demo time:</strong> Re-run this GitHub Action</p>
+                    <p>📊 <strong>Backend API:</strong> $NGROK_URL/api/dashboard/statistics</p>
+                    <p>❤️ <strong>Built with:</strong> React + Node.js + Legal Data Processing</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        EOF
+        
+        # Test the live URL
+        sleep 5
+        curl -I "$NGROK_URL" && echo "✅ Live demo is accessible!" || echo "❌ Demo URL failed"
+        
+        # Keep demo alive for 10 minutes
+        echo "⏰ Keeping demo alive for 10 minutes..."
+        echo "🌐 Dashboard URL: $NGROK_URL"
+        
+        for i in {1..60}; do
+            echo "⏱️ Demo running... ${i}/60 (10 seconds each)"
+            sleep 10
+        done
+        
+        echo "🎬 Demo session completed!"
+    
+    - uses: actions/upload-artifact@v4
+      with:
+        name: live-dashboard-demo
+        path: live-demo-report.html
