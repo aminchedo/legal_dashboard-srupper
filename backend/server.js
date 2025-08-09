@@ -5,7 +5,6 @@
 const express = require('express');
 const cors = require('cors');
 const app = express();
-const PORT = 3001;
 
 app.use(cors());
 
@@ -48,6 +47,32 @@ app.get('/api/dashboard/activity', (req, res) => {
     res.json(MOCK_ACTIVITY_DATA);
 });
 
-app.listen(PORT, () => {
-    console.log(`Backend server running on http://localhost:${PORT}`);
+// Handle port already in use
+const PORT = process.env.PORT || 3001;
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, shutting down gracefully');
+  server.close(() => {
+    console.log('Process terminated');
+  });
+});
+
+process.on('SIGINT', () => {
+  console.log('SIGINT received, shutting down gracefully');
+  server.close(() => {
+    console.log('Process terminated');
+  });
+});
+
+// Start server with error handling
+const server = app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Legal Dashboard Backend running on port ${PORT}`);
+}).on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.log(`❌ Port ${PORT} is already in use`);
+    process.exit(1);
+  } else {
+    throw err;
+  }
 });
