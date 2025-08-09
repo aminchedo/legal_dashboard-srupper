@@ -13,19 +13,23 @@ async function seed() {
     try {
         db.run(`ALTER TABLE scraping_sources ADD COLUMN url TEXT`);
     }
-    catch { }
+    catch {
+    }
     try {
         db.run(`ALTER TABLE scraping_sources ADD COLUMN category TEXT`);
     }
-    catch { }
+    catch {
+    }
     try {
         db.run(`ALTER TABLE scraping_sources ADD COLUMN priority INTEGER DEFAULT 2`);
     }
-    catch { }
+    catch {
+    }
     try {
         db.run(`ALTER TABLE scraping_sources ADD COLUMN status TEXT DEFAULT 'active'`);
     }
-    catch { }
+    catch {
+    }
     const adminEmail = 'admin@example.com';
     const existing = db.query('SELECT COUNT(1) as count FROM users WHERE email = ?', [adminEmail]);
     if (existing[0]?.count) {

@@ -1,4 +1,37 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -219,7 +252,7 @@ class ScrapingService {
             throw error;
         }
     }
-    async scrapeUrl(url, sourceId, depth = 1, filters = {}, userId, progressCallback) {
+    async scrapeUrl(url, sourceId, depth = 1, _filters = {}, userId, progressCallback) {
         let source = await this.getSource(sourceId);
         if (!source) {
             const origin = (() => { try {
@@ -297,7 +330,7 @@ class ScrapingService {
                     return res.data;
                 }
                 catch (err) {
-                    lastError = err;
+                    lastError = err instanceof Error ? err : new Error(String(err));
                     if (proxy)
                         rotator.blacklistProxy(proxy);
                     const delay = 500 * (attempt + 1);
@@ -404,11 +437,13 @@ class ScrapingService {
                 }
             }
             logger_1.logger.info('🔄 Falling back to proxy scraping...');
-            result = await this.scrapeUrl(source.base_url, sourceId, options.depth || 1, options.filters, userId);
+            result = await this.scrapeUrl(source.base_url, sourceId, Number(options.depth) || 1, options.filters || {}, userId);
             return { success: true, ...result };
         }
         catch (error) {
-            logger_1.logger.error(`❌ Intelligent scraping failed: ${error.message}`);
+            const { getErrorMessage } = await Promise.resolve().then(() => __importStar(require('../utils/error-handler')));
+            const errorMessage = getErrorMessage(error);
+            logger_1.logger.error(`❌ Intelligent scraping failed: ${errorMessage}`);
             throw error;
         }
     }
@@ -416,7 +451,7 @@ class ScrapingService {
         const iranianDomains = ['majlis.ir', 'dolat.ir', 'dadgostari.ir'];
         return iranianDomains.some(domain => url.includes(domain));
     }
-    async attemptDirectScraping(source, userId, options) {
+    async attemptDirectScraping(source, userId, _options) {
         try {
             const response = await axios_1.default.get(source.base_url, {
                 timeout: 30000,
@@ -467,9 +502,10 @@ class ScrapingService {
             };
         }
         catch (error) {
+            const { getErrorMessage } = await Promise.resolve().then(() => __importStar(require('../utils/error-handler')));
             return {
                 success: false,
-                error: error.message,
+                error: getErrorMessage(error),
                 method: 'direct',
             };
         }

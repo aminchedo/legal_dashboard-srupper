@@ -4,6 +4,7 @@ import { config } from '@utils/config';
 import { HttpError } from './error.middleware';
 
 export interface AuthPayload {
+    id: string;
     sub: string;
     email: string;
     role: 'user' | 'admin';
@@ -17,7 +18,7 @@ export function requireAuth(req: Request, _res: Response, next: NextFunction): v
     if (!token) throw new HttpError(401, 'Unauthorized');
     try {
         const payload = jwt.verify(token, config.JWT_SECRET) as AuthPayload;
-        (req as any).user = payload;
+        req.user = payload;
         next();
     } catch {
         throw new HttpError(401, 'Invalid token');
@@ -25,7 +26,7 @@ export function requireAuth(req: Request, _res: Response, next: NextFunction): v
 }
 
 export function requireAdmin(req: Request, _res: Response, next: NextFunction): void {
-    const user = (req as any).user as AuthPayload | undefined;
+    const user = req.user;
     if (!user) throw new HttpError(401, 'Unauthorized');
     if (user.role !== 'admin') throw new HttpError(403, 'Forbidden');
     next();

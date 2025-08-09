@@ -72,7 +72,6 @@ export async function getById(req: Request, res: Response) {
  */
 export async function create(req: Request, res: Response) {
   try {
-    // @ts-ignore - User is attached by auth middleware
     const userId = req.user?.id || 'system';
     const documentData = req.body;
 
@@ -94,7 +93,6 @@ export async function create(req: Request, res: Response) {
 export async function update(req: Request, res: Response) {
   try {
     const { id } = req.params;
-    // @ts-ignore - User is attached by auth middleware
     const userId = req.user?.id || 'system';
     const documentData = req.body;
 
@@ -238,7 +236,6 @@ export async function getVersion(req: Request, res: Response) {
 export async function revertToVersion(req: Request, res: Response) {
   try {
     const { id, version } = req.params;
-    // @ts-ignore - User is attached by auth middleware
     const userId = req.user?.id || 'system';
 
     const document = await documentService.revertToVersion(

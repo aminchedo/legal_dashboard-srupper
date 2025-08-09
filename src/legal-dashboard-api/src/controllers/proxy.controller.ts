@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import axios, { AxiosRequestConfig } from 'axios';
 import { logger } from '@utils/logger';
+import { ProxyTestResult, ProxySettings, ProxyConfig } from '../types/proxy.types';
 
 class ProxyController {
     // ADD intelligent features
@@ -29,7 +30,8 @@ class ProxyController {
             });
 
         } catch (error) {
-            return res.status(500).json({ success: false, error: (error as any)?.message || 'unknown error' });
+            const { getErrorMessage } = await import('@utils/error-handler');
+            return res.status(500).json({ success: false, error: getErrorMessage(error) });
         }
     }
 
@@ -160,7 +162,7 @@ class ProxyController {
         return workingProxies;
     }
 
-    private async testWithRotatingProxy(url: string): Promise<{ success: boolean;[key: string]: any }> {
+    private async testWithRotatingProxy(url: string): Promise<ProxyTestResult> {
         // This is a placeholder for the actual rotating proxy test logic.
         // You would integrate your ResilientProxyRotator here.
         logger.info(`Testing with rotating proxy for URL: ${url}`);
@@ -168,11 +170,11 @@ class ProxyController {
         return { success: false, error: 'Proxy rotation not fully implemented in this mock.' };
     }
 
-    private updateIntelligentSettings(settings: { [key: string]: any }) {
+    private updateIntelligentSettings(settings: ProxySettings) {
         // This is a placeholder for updating settings.
         // In a real application, this would write to a config file or a database.
         logger.info('Updating intelligent proxy settings', settings);
-        Object.entries(settings).forEach(([key, value]) => {
+        Object.entries(settings).forEach(([_key, _value]) => {
             // A simple in-memory update for demonstration.
             // Note: process.env is read-only for the current process.
             // This won't actually change the environment variables.
@@ -214,7 +216,7 @@ class ProxyController {
                             parsed.username || parsed.password
                                 ? { username: decodeURIComponent(parsed.username), password: decodeURIComponent(parsed.password) }
                                 : undefined,
-                    } as any;
+                    } as ProxyConfig;
                 } catch (e) {
                     return res.status(400).json({ error: 'Invalid proxy URL' });
                 }
@@ -224,10 +226,12 @@ class ProxyController {
                 const response = await axios.request(config);
                 const latencyMs = Date.now() - startedAt;
                 return res.json({ success: true, statusCode: response.status, latencyMs });
-            } catch (err: any) {
+            } catch (err: unknown) {
                 const latencyMs = Date.now() - startedAt;
-                logger.warn('Proxy test failed', err?.message || err);
-                return res.json({ success: false, errorMessage: err?.message || 'network error', latencyMs });
+                const { getErrorMessage } = await import('@utils/error-handler');
+                const errorMessage = getErrorMessage(err);
+                logger.warn('Proxy test failed', errorMessage);
+                return res.json({ success: false, errorMessage, latencyMs });
             }
         } catch (error) {
             logger.error('Failed to test proxy', error);

@@ -3,14 +3,11 @@ import crypto from 'crypto';
 import { databaseService } from './database.service';
 import {
     DocumentRecord,
-    DocumentVersion,
-    DocumentSearch,
-    DocumentRating,
-    DocumentTag,
-    DocumentTagRelation
+    DocumentVersion
 } from '@models/document.model';
 import { logger } from '@utils/logger';
 import { emitDocumentEvent } from '@controllers/websocket.controller';
+import { DocumentRecordRaw, DocumentVersionRaw } from '../types/database.types';
 
 class DocumentService {
     private db = databaseService.getClient();
@@ -329,7 +326,7 @@ class DocumentService {
             const sortColumn = validSortColumns.includes(sortBy) ? sortBy : 'created_at';
             const order = sortOrder === 'asc' ? 'ASC' : 'DESC';
 
-            const results = this.db.query<any>(`
+            const results = this.db.query<DocumentRecordRaw>(`
         SELECT * FROM documents
         ${whereClause}
         ORDER BY ${sortColumn} ${order}
@@ -406,7 +403,7 @@ class DocumentService {
             const total = countResult[0]?.count || 0;
 
             // Execute search with snippet highlighting
-            const results = this.db.query<any>(`
+            const results = this.db.query<DocumentRecordRaw & { title_snippet: string; content_snippet: string; rank: number }>(`
         SELECT 
           d.*,
           snippet(documents_fts, 0, ?, ?, '...', 64) as title_snippet,
@@ -468,7 +465,7 @@ class DocumentService {
         documentId: string
     ): Promise<DocumentVersion[]> {
         try {
-            const versions = this.db.query<any>(`
+            const versions = this.db.query<DocumentVersionRaw>(`
         SELECT * FROM document_versions
         WHERE document_id = ?
         ORDER BY version DESC
@@ -492,7 +489,7 @@ class DocumentService {
         version: number
     ): Promise<DocumentVersion | null> {
         try {
-            const docVersion = this.db.query<any>(`
+            const docVersion = this.db.query<DocumentVersionRaw>(`
         SELECT * FROM document_versions
         WHERE document_id = ? AND version = ?
       `, [documentId, version])[0];

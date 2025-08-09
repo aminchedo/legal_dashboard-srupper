@@ -214,7 +214,8 @@ async function rotate(req, res) {
                 const host = new URL(url).hostname.replace(/^www\./, '');
                 byHost.set(host, { id: s.id, name: s.name, url });
             }
-            catch { }
+            catch {
+            }
         }
         const planHosts = [
             'qavanin.ir', 'rrk.ir', 'majlis.ir',

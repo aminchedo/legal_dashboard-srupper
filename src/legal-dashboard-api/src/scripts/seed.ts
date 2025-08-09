@@ -9,10 +9,18 @@ async function seed(): Promise<void> {
     // Ensure scraping_sources table has required columns; if not, try to add them (tolerate errors if exist)
     try {
         db.run(`ALTER TABLE scraping_sources ADD COLUMN url TEXT`);
-    } catch { }
-    try { db.run(`ALTER TABLE scraping_sources ADD COLUMN category TEXT`); } catch { }
-    try { db.run(`ALTER TABLE scraping_sources ADD COLUMN priority INTEGER DEFAULT 2`); } catch { }
-    try { db.run(`ALTER TABLE scraping_sources ADD COLUMN status TEXT DEFAULT 'active'`); } catch { }
+    } catch {
+        // Column already exists, ignore error
+    }
+    try { db.run(`ALTER TABLE scraping_sources ADD COLUMN category TEXT`); } catch {
+        // Column already exists, ignore error
+    }
+    try { db.run(`ALTER TABLE scraping_sources ADD COLUMN priority INTEGER DEFAULT 2`); } catch {
+        // Column already exists, ignore error
+    }
+    try { db.run(`ALTER TABLE scraping_sources ADD COLUMN status TEXT DEFAULT 'active'`); } catch {
+        // Column already exists, ignore error
+    }
     const adminEmail = 'admin@example.com';
     const existing = db.query<{ count: number }>('SELECT COUNT(1) as count FROM users WHERE email = ?', [adminEmail]);
     if (existing[0]?.count) {

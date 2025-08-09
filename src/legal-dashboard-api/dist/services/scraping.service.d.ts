@@ -1,3 +1,4 @@
+import { ScrapingResult } from '../types/scraping.types';
 interface ScrapingSource {
     id: string;
     name: string;
@@ -19,7 +20,7 @@ interface ScrapingJobRecord {
     source_id: string;
     status: 'pending' | 'running' | 'completed' | 'failed';
     progress: number;
-    result?: any;
+    result?: ScrapingResult;
     error?: string | null;
     created_at: string;
     updated_at?: string | null;
@@ -76,12 +77,12 @@ declare class ScrapingService {
         status?: string;
     }>;
     getSource(sourceId: string): Promise<ScrapingSource | null>;
-    scrapeUrl(url: string, sourceId: string, depth: number | undefined, filters: {} | undefined, userId: string, progressCallback?: (progress: number) => void): Promise<{
+    scrapeUrl(url: string, sourceId: string, depth: number | undefined, _filters: {} | undefined, userId: string, progressCallback?: (progress: number) => void): Promise<{
         documentsCreated: number;
         pagesProcessed: number;
         bytesProcessed: number;
     }>;
-    scrapeWithIntelligence(sourceId: string, userId: string, options?: any): Promise<{
+    scrapeWithIntelligence(sourceId: string, userId: string, options?: Record<string, unknown>): Promise<{
         success: boolean;
         documents: {
             url?: string;
@@ -95,7 +96,7 @@ declare class ScrapingService {
         error?: undefined;
     } | {
         success: boolean;
-        error: any;
+        error: string;
         method: string;
         documents?: undefined;
         message?: undefined;
