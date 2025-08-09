@@ -40,7 +40,6 @@
     "**/tmp/**",
     "**/backup_*/**",
     "servers/**",
-    "src/**",
     "vite.config.ts"
   ]
 }
