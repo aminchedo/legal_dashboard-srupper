@@ -1,20 +1,40 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/bash
+echo "🎬 Starting Legal Dashboard Demo..."
 
-cat << 'EOF'
-Demo: Dashboard + API
+# Kill existing processes
+pkill -f "vite" || true
+pkill -f "node.*3001" || true
+sleep 2
 
-Steps:
-1) In one terminal, start the backend (port 3001):
-   npm run start --prefix backend
+# Start backend
+if [ -d "backend" ]; then
+    echo "🚀 Starting backend..."
+    cd backend
+    npm start &
+    BACKEND_PID=$!
+    cd ..
+fi
 
-2) In another terminal, start the frontend (port 5177):
-   npm run dev --prefix frontend
+sleep 8
 
-3) Verify API endpoints:
-   curl http://localhost:3001/api/dashboard/statistics
-   curl http://localhost:3001/api/dashboard/activity
+# Start frontend
+if [ -d "frontend" ]; then
+    echo "🌐 Starting frontend..."
+    cd frontend
+    npm run dev &
+    FRONTEND_PID=$!
+    cd ..
+fi
 
-4) Open the app in the browser:
-   http://localhost:5177/
-EOF
+sleep 15
+
+# Test endpoints
+echo "🧪 Testing..."
+curl -f http://localhost:3001/health || echo "Backend failed"
+curl -f http://localhost:5173 || echo "Frontend failed"
+
+echo "✅ Demo running!"
+sleep 30
+
+# Cleanup
+kill $BACKEND_PID $FRONTEND_PID 2>/dev/null || true
