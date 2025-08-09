@@ -1,15 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  BarChartOutlined,
-  DatabaseOutlined,
-  GlobalOutlined,
-  HomeOutlined,
-  MenuOutlined,
-  SettingOutlined,
-  AlertOutlined,
-  BellOutlined,
-  SearchOutlined,
-  SwapHorizontal
+  BarChart2 as BarChartOutlined,
+  Database,
+  Globe as GlobalOutlined,
+  Home as HomeOutlined,
+  Menu as MenuOutlined,
+  Settings as SettingOutlined,
+  OctagonAlert as AlertOutlined,
+  Bell,
+  Search,
+  Shuffle as SwapOutlined
 } from 'lucide-react';
 import { PageType } from '../types';
 import CommandPalette, { CommandItem } from './CommandPalette';
@@ -23,7 +23,7 @@ interface LayoutProps {
 const navigationItems = [
   { id: 'dashboard' as PageType, label: 'داشبورد کلی', icon: HomeOutlined },
   { id: 'scraping' as PageType, label: 'وب اسکرپینگ', icon: GlobalOutlined },
-  { id: 'data' as PageType, label: 'داده‌های جمع‌آوری شده', icon: DatabaseOutlined },
+  { id: 'data' as PageType, label: 'داده‌های جمع‌آوری شده', icon: Database },
   { id: 'analytics' as PageType, label: 'تحلیل و گزارش', icon: BarChartOutlined },
   { id: 'proxies' as PageType, label: 'پروکسی‌ها', icon: SwapOutlined },
 ];
