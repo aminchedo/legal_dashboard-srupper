@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { GlobalOutlined, CaretRightOutlined, StopOutlined, DeleteOutlined, SettingOutlined, WarningOutlined } from '@ant-design/icons';
-import { webScraper } from '../../lib/webScraper';
+import { webScraper } from '../../services/webScraper';
 import { useScrapingSources } from '../../hooks/useDatabase';
 import { ScrapingSettings, ScrapedItem } from '../../types';
 
