@@ -21,7 +21,7 @@ export default defineConfig(({ mode }) => {
                 '@services': fileURLToPath(new URL('./src/services', import.meta.url)),
                 '@assets': fileURLToPath(new URL('./src/assets', import.meta.url)),
                 'react-router-dom': 'react-router-dom/dist/index.js',
-                '@ant-design/icons': fileURLToPath(new URL('./src/icons/antd-stub.tsx', import.meta.url)),
+
             },
         },
 

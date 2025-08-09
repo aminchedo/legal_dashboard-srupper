@@ -2,12 +2,12 @@ import { useMemo, useState } from 'react';
 import { DownloadOutlined, FilterOutlined, GlobalOutlined, PlusOutlined, ReloadOutlined, SearchOutlined, SettingOutlined, UploadOutlined } from '@ant-design/icons';
 import { useProxies, useProxyBulkImport, useProxyDelete, useProxyUpsert } from '../../hooks/useProxies';
 import { ProxyRecord, ProxyType } from '../../types';
-import ProxyTable from './ProxyTable';
-import ProxyForm from './ProxyForm';
-import ProxyTestingPanel from './ProxyTestingPanel';
-import ProxyRotationPanel from './ProxyRotationPanel';
-import ProxyAnalyticsPanel from './ProxyAnalyticsPanel.tsx';
-import { databaseService } from '../../lib/database';
+import ProxyTable from './components/ProxiesTable';
+import ProxyForm from './components/ProxyForm';
+// import ProxyTestingPanel from './ProxyTestingPanel';
+import ProxyRotationPanel from './components/ProxyRotationPanel';
+// import ProxyAnalyticsPanel from './ProxyAnalyticsPanel.tsx';
+// import { databaseService } from '../../lib/database';
 
 export default function ProxyPage() {
     const [query, setQuery] = useState('');
@@ -143,9 +143,9 @@ export default function ProxyPage() {
                     />
                 </div>
                 <div className="space-y-6">
-                    <ProxyTestingPanel items={proxies || []} onAfterTest={() => refetch()} />
+                    {/* <ProxyTestingPanel items={proxies || []} onAfterTest={() => refetch()} /> */}
                     <ProxyRotationPanel />
-                    <ProxyAnalyticsPanel />
+                    {/* <ProxyAnalyticsPanel /> */}
                 </div>
             </div>
 

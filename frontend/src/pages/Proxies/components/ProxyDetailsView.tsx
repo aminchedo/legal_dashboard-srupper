@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { BarChartOutlined, DashboardOutlined, LineChartOutlined, PieChartOutlined } from '@ant-design/icons';
-import { ProxyRecord, ProxyTestResult } from '../../types';
-import { databaseService } from '../../lib/database';
+import { ProxyRecord, ProxyTestResult } from '../../../types';
+// import { databaseService } from '../../lib/database';
 
 interface AnalyticsSummary {
     total: number;
@@ -19,8 +19,9 @@ export default function ProxyAnalyticsPanel() {
         const load = async () => {
             setLoading(true);
             try {
-                const tests = await databaseService.listProxyTestResults(100);
+                // const tests = await databaseService.listProxyTestResults(100);
                 if (!alive) return;
+                const tests: any[] = []; // Mock empty array for now
                 const total = tests.length;
                 const successes = tests.filter(t => t.success).length;
                 const successRate = total ? Math.round((successes / total) * 100) : 0;

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { CheckCircleOutlined, SafetyCertificateOutlined, ClockCircleOutlined, GlobalOutlined, EnvironmentOutlined, ClusterOutlined, EditOutlined, FieldTimeOutlined, WarningOutlined, CloseCircleOutlined } from '@ant-design/icons';
-import { ProxyRecord, ProxyType } from '../../types';
+import { ProxyRecord, ProxyType } from '../../../types';
 
 interface Props {
     isLoading: boolean;
