@@ -1,4 +1,4 @@
-import { ExternalLink, Calendar, Tag, Star } from 'lucide-react';
+import { LinkOutlined, CalendarOutlined, TagOutlined, StarOutlined } from '@ant-design/icons';
 import { useScrapedItems } from '../../hooks/useDatabase';
 import { format } from 'date-fns';
 import { faIR } from 'date-fns/locale';
@@ -86,7 +86,7 @@ export default function RecentActivity() {
                 className="flex items-center justify-center w-8 h-8 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                 title="مشاهده اصل"
               >
-                <ExternalLink size={16} />
+                <LinkOutlined />
               </a>
             </div>
           </div>

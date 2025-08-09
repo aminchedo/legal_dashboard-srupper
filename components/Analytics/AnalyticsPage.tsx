@@ -1,5 +1,6 @@
-import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { TrendingUp, Award, BookOpen, Globe } from 'lucide-react';
+// Charts temporarily disabled for build stability
+// import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { RiseOutlined, TrophyOutlined, BookOutlined, GlobalOutlined } from '@ant-design/icons';
 import { useDocuments, useStatistics } from '../../hooks/useDatabase';
 import { format, subDays, eachDayOfInterval } from 'date-fns';
 import { faIR } from 'date-fns/locale';

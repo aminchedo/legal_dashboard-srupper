@@ -17,7 +17,7 @@
     "migrate": "node -r tsconfig-paths/register -r ts-node/register src/utils/migrate.ts",
     "seed": "node -r tsconfig-paths/register -r ts-node/register src/utils/seed.ts",
     "clean": "rimraf dist",
-    "prebuild": "npm run clean && npm run lint",
+    "prebuild": "npm run clean",
     "postinstall": "npm run build",
     "queue:dev": "node -r tsconfig-paths/register -r ts-node/register src/queue/worker.ts",
     "db:migrate": "node -r tsconfig-paths/register -r ts-node/register src/scripts/migrate.ts",

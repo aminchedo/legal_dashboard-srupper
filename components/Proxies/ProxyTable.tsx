@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { BadgeCheck, CheckCircle2, Clock3, Globe2, MapPin, Network, Pencil, Timer, TriangleAlert, XCircle } from 'lucide-react';
+import { CheckCircleOutlined, SafetyCertificateOutlined, ClockCircleOutlined, GlobalOutlined, EnvironmentOutlined, ClusterOutlined, EditOutlined, FieldTimeOutlined, WarningOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { ProxyRecord, ProxyType } from '../../types';
 
 interface Props {
@@ -92,10 +92,10 @@ export default function ProxyTable({ isLoading, items, selected, onSelectedChang
                                 <td className="p-3">{p.port}</td>
                                 <td className="p-3">{p.type}</td>
                                 <td className="p-3">
-                                    {p.status === 'online' && <span className="inline-flex items-center gap-1 text-green-700"><CheckCircle2 size={16} /> آنلاین</span>}
-                                    {p.status === 'offline' && <span className="inline-flex items-center gap-1 text-red-700"><XCircle size={16} /> آفلاین</span>}
-                                    {p.status === 'testing' && <span className="inline-flex items-center gap-1 text-yellow-700"><Timer size={16} /> درحال تست</span>}
-                                    {p.status === 'unknown' && <span className="inline-flex items-center gap-1 text-gray-600"><TriangleAlert size={16} /> نامشخص</span>}
+                                    {p.status === 'online' && <span className="inline-flex items-center gap-1 text-green-700"><CheckCircleOutlined /> آنلاین</span>}
+                                    {p.status === 'offline' && <span className="inline-flex items-center gap-1 text-red-700"><CloseCircleOutlined /> آفلاین</span>}
+                                    {p.status === 'testing' && <span className="inline-flex items-center gap-1 text-yellow-700"><ClockCircleOutlined /> درحال تست</span>}
+                                    {p.status === 'unknown' && <span className="inline-flex items-center gap-1 text-gray-600"><WarningOutlined /> نامشخص</span>}
                                 </td>
                                 <td className="p-3">{p.lastLatencyMs ? `${p.lastLatencyMs} ms` : '-'}</td>
                                 <td className="p-3">{p.lastTestedAt ? new Date(p.lastTestedAt).toLocaleString('fa-IR') : '-'}</td>
@@ -106,7 +106,7 @@ export default function ProxyTable({ isLoading, items, selected, onSelectedChang
                                     </div>
                                 </td>
                                 <td className="p-3">
-                                    <button onClick={() => onEdit(p)} className="text-blue-600 hover:text-blue-700 inline-flex items-center gap-1"><Pencil size={16} /> ویرایش</button>
+                                    <button onClick={() => onEdit(p)} className="text-blue-600 hover:text-blue-700 inline-flex items-center gap-1"><EditOutlined /> ویرایش</button>
                                 </td>
                             </tr>
                         ))}

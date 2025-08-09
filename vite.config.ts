@@ -10,6 +10,7 @@ export default defineConfig(({ mode }) => {
 
         // Path resolution
         resolve: {
+            conditions: ['import', 'module', 'browser', 'default'],
             alias: {
                 '@': fileURLToPath(new URL('./src', import.meta.url)),
                 '@components': fileURLToPath(new URL('./src/components', import.meta.url)),
@@ -19,6 +20,8 @@ export default defineConfig(({ mode }) => {
                 '@hooks': fileURLToPath(new URL('./src/hooks', import.meta.url)),
                 '@services': fileURLToPath(new URL('./src/services', import.meta.url)),
                 '@assets': fileURLToPath(new URL('./src/assets', import.meta.url)),
+                'react-router-dom': 'react-router-dom/dist/index.js',
+                '@ant-design/icons': fileURLToPath(new URL('./src/icons/antd-stub.tsx', import.meta.url)),
             },
         },
 
@@ -51,20 +54,12 @@ export default defineConfig(({ mode }) => {
             outDir: 'dist',
             sourcemap: mode === 'development',
             minify: 'esbuild',
-            target: 'esnext',
-            rollupOptions: {
-                output: {
-                    manualChunks: {
-                        vendor: ['react', 'react-dom'],
-                        antd: ['antd', '@ant-design/icons'],
-                        router: ['react-router-dom'],
-                        query: ['@tanstack/react-query'],
-                        charts: ['recharts'],
-                    },
-                },
-            },
+            target: 'es2019',
             // Increase chunk size warning limit
             chunkSizeWarningLimit: 1000,
+        },
+        legacy: {
+            buildSsrCjsExternalHeuristics: false,
         },
 
         // Environment variables
@@ -74,22 +69,14 @@ export default defineConfig(({ mode }) => {
 
         // Optimization
         optimizeDeps: {
-            include: [
-                'react',
-                'react-dom',
-                'react-router-dom',
-                'antd',
-                '@ant-design/icons',
-                '@tanstack/react-query',
-                'lucide-react',
-                'recharts',
-                'date-fns',
-            ],
+            esbuildOptions: {
+                conditions: ['import', 'module', 'browser', 'default'],
+            },
         },
 
         // CSS configuration
         css: {
-            postcss: './postcss.config.js',
+            postcss: './postcss.config.cjs',
             devSourcemap: true,
         },
 

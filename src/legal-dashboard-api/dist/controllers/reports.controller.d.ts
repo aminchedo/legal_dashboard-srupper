@@ -1,0 +1,10 @@
+import { Request, Response } from 'express';
+export declare function summary(_req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
+export declare function performance(_req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
+export declare function userActivity(_req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
+export declare function documentAnalytics(_req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
+export declare function exportCsv(_req: Request, res: Response): Promise<void>;
+export declare function cacheStats(_req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
+export declare function notificationStats(_req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
+export declare function systemHealth(_req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
+export declare function trends(_req: Request, res: Response): Promise<Response<any, Record<string, any>>>;

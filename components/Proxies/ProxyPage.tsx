@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Download, Filter, Globe, Plus, RefreshCw, Search, Settings, Upload } from 'lucide-react';
+import { DownloadOutlined, FilterOutlined, GlobalOutlined, PlusOutlined, ReloadOutlined, SearchOutlined, SettingOutlined, UploadOutlined } from '@ant-design/icons';
 import { useProxies, useProxyBulkImport, useProxyDelete, useProxyUpsert } from '../../hooks/useProxies';
 import { ProxyRecord, ProxyType } from '../../types';
 import ProxyTable from './ProxyTable';
