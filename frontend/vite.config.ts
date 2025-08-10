@@ -8,6 +8,9 @@ export default defineConfig(({ mode }) => {
 
     return {
         plugins: [react()],
+        
+        // Base path for GitHub Pages deployment
+        base: process.env.NODE_ENV === 'production' ? '/legal_dashboard-srupper/' : '/',
 
         // Path resolution
         resolve: {
