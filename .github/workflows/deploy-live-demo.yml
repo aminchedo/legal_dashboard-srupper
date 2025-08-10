@@ -1,4 +1,4 @@
-name: 🌐 Deploy Live Legal Dashboard Demo
+name: 🌐 Deploy Live Legal Dashboard Demo (Fixed)
 
 on:
   workflow_dispatch:
@@ -15,22 +15,23 @@ jobs:
       with:
         node-version: '18'
     
-    - name: Setup ngrok with Auth
+    - name: Setup ngrok with Auth Check
       env:
         NGROK_AUTHTOKEN: ${{ secrets.NGROK_AUTHTOKEN }}
       run: |
         # Install ngrok
         curl -s https://ngrok-agent.s3.amazonaws.com/ngrok.asc | sudo tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null
         echo "deb https://ngrok-agent.s3.amazonaws.com buster main" | sudo tee /etc/apt/sources.list.d/ngrok.list
-        sudo apt update && sudo apt install -y ngrok jq
+        sudo apt update && sudo apt install ngrok
         
-        # Configure with authtoken
-        if [ -n "$NGROK_AUTHTOKEN" ]; then
+        # Check if authtoken exists
+        if [ -z "$NGROK_AUTHTOKEN" ]; then
+          echo "⚠️ NGROK_AUTHTOKEN not found - using LocalTunnel instead"
+          npm install -g localtunnel
+          export USE_LOCALTUNNEL=true
+        else
           ngrok config add-authtoken $NGROK_AUTHTOKEN
           echo "✅ ngrok authenticated"
-        else
-          echo "❌ NGROK_AUTHTOKEN not found in secrets"
-          exit 1
         fi
     
     - name: Setup Dependencies  
@@ -38,7 +39,9 @@ jobs:
         cd frontend && npm install
         cd ../backend && npm install
     
-    - name: Deploy Live Demo
+    - name: Deploy Live Demo (Auto-fallback)
+      env:
+        NGROK_AUTHTOKEN: ${{ secrets.NGROK_AUTHTOKEN }}
       run: |
         # Start backend
         cd backend
@@ -55,33 +58,43 @@ jobs:
         cd ..
         sleep 10
         
-        # Create ngrok tunnel
-        ngrok http 5173 --log=stdout > ngrok.log &
-        NGROK_PID=$!
-        sleep 8
-        
-        # Get the public URL
-        NGROK_URL=$(curl -s localhost:4040/api/tunnels | jq -r '.tunnels[0].public_url' 2>/dev/null || echo "")
-        
-        if [ -z "$NGROK_URL" ]; then
-          echo "❌ Failed to get ngrok URL, trying alternative method..."
-          NGROK_URL=$(grep -o 'https://[0-9a-z-]*\.ngrok-free\.app' ngrok.log | head -1)
+        # Use LocalTunnel or ngrok based on availability
+        if [ -z "$NGROK_AUTHTOKEN" ]; then
+          echo "🚀 Using LocalTunnel (no auth required)..."
+          lt --port 5173 --subdomain legal-dashboard-$(date +%s) > tunnel.log &
+          TUNNEL_PID=$!
+          sleep 10
+          
+          # Get LocalTunnel URL
+          DEMO_URL=$(grep -o 'https://legal-dashboard-[0-9]*\.loca\.lt' tunnel.log | head -1)
+          TUNNEL_TYPE="LocalTunnel"
+          
+        else
+          echo "🚀 Using ngrok (authenticated)..."
+          ngrok http 5173 --log=stdout > ngrok.log &
+          TUNNEL_PID=$!
+          sleep 8
+          
+          # Get ngrok URL
+          DEMO_URL=$(curl -s localhost:4040/api/tunnels | jq -r '.tunnels[0].public_url' 2>/dev/null || grep -o 'https://[0-9a-z-]*\.ngrok-free\.app' ngrok.log | head -1)
+          TUNNEL_TYPE="ngrok"
         fi
         
-        echo "🌐 Your Legal Dashboard is LIVE at: $NGROK_URL"
+        echo "🌐 Your Legal Dashboard is LIVE at: $DEMO_URL"
+        echo "📡 Tunnel Type: $TUNNEL_TYPE"
         
         # Test the URL
         sleep 5
-        if [ -n "$NGROK_URL" ]; then
-          curl -I "$NGROK_URL" && echo "✅ Live demo is accessible!" || echo "❌ Demo URL test failed"
+        if [ -n "$DEMO_URL" ]; then
+          curl -I "$DEMO_URL" && echo "✅ Live demo is accessible!" || echo "❌ Demo URL test failed"
         fi
         
-        # Create live demo report
+        # Create comprehensive demo report
         cat > live-demo-report.html << EOF
         <!DOCTYPE html>
         <html>
         <head>
-            <title>🎬 Legal Dashboard Live Demo</title>
+            <title>🎬 Legal Dashboard Live Demo ($TUNNEL_TYPE)</title>
             <style>
                 body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
                 .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
@@ -89,7 +102,10 @@ jobs:
                 .live-url a { color: white; text-decoration: none; font-size: 18px; font-weight: bold; }
                 .demo-frame { width: 100%; height: 800px; border: 2px solid #ddd; border-radius: 8px; }
                 .status { background: #e8f5e8; padding: 15px; border-radius: 5px; margin: 15px 0; }
+                .tunnel-info { background: #fff3cd; padding: 15px; border-radius: 5px; margin: 15px 0; }
                 h1 { color: #333; text-align: center; }
+                .feature-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin: 20px 0; }
+                .feature-item { background: #f8f9fa; padding: 15px; border-radius: 5px; border-left: 4px solid #007cba; }
             </style>
         </head>
         <body>
@@ -98,48 +114,79 @@ jobs:
                 
                 <div class="live-url">
                     <p>🌐 <strong>LIVE DASHBOARD URL:</strong></p>
-                    <a href="$NGROK_URL" target="_blank">$NGROK_URL</a>
-                    <p><small>⏰ Available for 2 hours from deployment</small></p>
+                    <a href="$DEMO_URL" target="_blank">$DEMO_URL</a>
+                    <p><small>⏰ Available for 60 minutes via $TUNNEL_TYPE</small></p>
+                </div>
+                
+                <div class="tunnel-info">
+                    <h3>📡 Tunnel Information:</h3>
+                    <p><strong>Type:</strong> $TUNNEL_TYPE</p>
+                    <p><strong>Authentication:</strong> $([ -z "$NGROK_AUTHTOKEN" ] && echo "Not required (LocalTunnel)" || echo "ngrok authenticated")</p>
+                    <p><strong>Duration:</strong> 60 minutes</p>
+                    <p><strong>Public Access:</strong> Anyone can view this URL</p>
                 </div>
                 
                 <div class="status">
                     <h3>✅ System Status:</h3>
-                    <p>• Backend API: ONLINE (port 3001)</p>
-                    <p>• Frontend App: ONLINE (port 5173)</p>
-                    <p>• Public Access: LIVE via ngrok tunnel</p>
-                    <p>• Demo URL: <a href="$NGROK_URL" target="_blank">$NGROK_URL</a></p>
+                    <div class="feature-list">
+                        <div class="feature-item">
+                            <strong>🚀 Backend API</strong><br>
+                            Status: ONLINE<br>
+                            Port: 3001
+                        </div>
+                        <div class="feature-item">
+                            <strong>🌐 Frontend App</strong><br>
+                            Status: ONLINE<br>
+                            Port: 5173
+                        </div>
+                        <div class="feature-item">
+                            <strong>📡 Public Tunnel</strong><br>
+                            Status: ACTIVE<br>
+                            Type: $TUNNEL_TYPE
+                        </div>
+                        <div class="feature-item">
+                            <strong>⏰ Demo Duration</strong><br>
+                            Available: 60 minutes<br>
+                            Auto-renewal: Re-run workflow
+                        </div>
+                    </div>
                 </div>
                 
                 <h2>📱 Live Dashboard Preview:</h2>
-                <iframe src="$NGROK_URL" class="demo-frame" title="Legal Dashboard Live Demo"></iframe>
+                <iframe src="$DEMO_URL" class="demo-frame" title="Legal Dashboard Live Demo"></iframe>
                 
                 <div style="margin-top: 30px; text-align: center; color: #666;">
-                    <p>🔄 <strong>To extend demo time:</strong> Re-run this GitHub Action</p>
-                    <p>📊 <strong>Backend API:</strong> $NGROK_URL/api/dashboard/statistics</p>
-                    <p>❤️ <strong>Built with:</strong> React + Node.js + Legal Data Processing</p>
+                    <h3>🔗 Quick Links:</h3>
+                    <p>📊 <strong>Backend API Health:</strong> <a href="$DEMO_URL/api/dashboard/statistics" target="_blank">$DEMO_URL/api/dashboard/statistics</a></p>
+                    <p>📈 <strong>Dashboard Data:</strong> <a href="$DEMO_URL/api/dashboard/activity" target="_blank">$DEMO_URL/api/dashboard/activity</a></p>
+                    <p>🔄 <strong>To extend demo:</strong> Re-run this GitHub Action workflow</p>
+                    <p>💾 <strong>To setup locally:</strong> Clone repo → Run ./simple-demo.sh</p>
                 </div>
             </div>
         </body>
         </html>
         EOF
         
-        # Keep demo alive for 2 hours (free ngrok limit)
-        echo "⏰ Keeping demo alive for 2 hours (ngrok free limit)..."
-        echo "🌐 Dashboard URL: $NGROK_URL"
+        # Keep demo alive for 60 minutes
+        echo "⏰ Keeping demo alive for 60 minutes..."
+        echo "🌐 Dashboard URL: $DEMO_URL"
+        echo "📡 Tunnel Type: $TUNNEL_TYPE"
         
-        # Run for 2 hours (120 minutes)
-        for i in {1..120}; do
-            echo "⏱️ Demo running... ${i}/120 minutes"
+        # Run for 60 minutes
+        for i in {1..60}; do
+            echo "⏱️ Demo running... ${i}/60 minutes ($TUNNEL_TYPE)"
             sleep 60
         done
         
         # Cleanup
-        kill $BACKEND_PID $FRONTEND_PID $NGROK_PID 2>/dev/null || true
+        kill $BACKEND_PID $FRONTEND_PID $TUNNEL_PID 2>/dev/null || true
         echo "🎬 Demo session completed!"
     
     - uses: actions/upload-artifact@v4
+      if: always()
       with:
-        name: live-dashboard-demo-ngrok
+        name: live-demo-auto-fallback
         path: |
           live-demo-report.html
+          tunnel.log
           ngrok.log
