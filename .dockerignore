@@ -2,100 +2,91 @@
 .git
 .gitignore
 .gitmodules
-.github/
+.gitattributes
+
+# GitHub Actions and CI/CD
+.github
+.gitlab-ci.yml
+.travis.yml
+.circleci
 
 # Documentation
+README.md
+CHANGELOG.md
+CONTRIBUTING.md
+LICENSE
 *.md
-README*
-CHANGELOG*
-LICENSE*
 docs/
-examples/
 
-# IDE and editor files
-.vscode/
-.idea/
+# Development files
+.vscode
+.idea
 *.swp
 *.swo
 *~
-.DS_Store
-Thumbs.db
 
-# Node.js dependencies and build artifacts
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.npm
-.yarn-integrity
-.next/
+# Environment files
+.env
+.env.local
+.env.*.local
+.envrc
+
+# Dependencies that will be installed in container
+node_modules
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Build artifacts
 dist/
 build/
-
-# Python cache and virtual environments
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-.env*
+*.egg-info/
 .pytest_cache/
 .coverage
 htmlcov/
 
-# Temporary and cache files
-temp/
-tmp/
-*.tmp
-*.temp
-*.log
-*.pid
-*.seed
-*.pid.lock
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
 
-# Development and testing
-test/
-tests/
-spec/
-.nyc_output
-coverage/
-.istanbul/
-.mocha.opts
-
-# Build and deployment scripts
-docker-compose*.yml
-*.sh
-*.bat
-deploy*
-install*
-get-docker.sh
-
-# CI/CD specific files
-.github/
-Dockerfile*
+# Docker files
+Dockerfile
+Dockerfile.*
 .dockerignore
+docker-compose*.yml
 
-# Application specific
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.log
+
+# IDE and editor files
+*.sublime-*
+.vscode/
+.idea/
+
+# Testing
+coverage/
+.nyc_output
+.jest/
+
+# Servers submodule (if it exists and causes issues)
 servers/
-hooks/
-scripts/
-prometheus.yml
-nginx.conf
 
-# Database files
-*.db
-*.sqlite
-*.sqlite3
-
-# Secrets and configuration
-*.pem
-*.key
-*.crt
-*.p12
-secrets/
-config/local.*
+# Large media files (add specific extensions as needed)
+*.mp4
+*.avi
+*.mov
+*.wmv
+*.zip
+*.tar.gz
