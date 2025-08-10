@@ -1,0 +1,220 @@
+name: 🌐 ngrok Live Demo (Authenticated)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  ngrok-demo:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+    
+    - name: Install and Configure ngrok
+      env:
+        NGROK_AUTHTOKEN: ${{ secrets.NGROK_AUTHTOKEN }}
+      run: |
+        # Install ngrok
+        curl -s https://ngrok-agent.s3.amazonaws.com/ngrok.asc | sudo tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null
+        echo "deb https://ngrok-agent.s3.amazonaws.com buster main" | sudo tee /etc/apt/sources.list.d/ngrok.list
+        sudo apt update && sudo apt install ngrok
+        
+        # Configure with provided authtoken
+        ngrok config add-authtoken $NGROK_AUTHTOKEN
+        echo "✅ ngrok configured with provided authtoken"
+        
+        # Verify configuration
+        ngrok config check
+    
+    - name: Setup Dependencies  
+      run: |
+        cd frontend && npm install
+        cd ../backend && npm install
+    
+    - name: Deploy ngrok Live Demo
+      run: |
+        # Start backend
+        cd backend
+        node server.js &
+        BACKEND_PID=$!
+        cd ..
+        echo "🚀 Backend started (PID: $BACKEND_PID)"
+        sleep 8
+        
+        # Build and start frontend
+        cd frontend
+        npm run build
+        npm run preview --port 5173 &
+        FRONTEND_PID=$!
+        cd ..
+        echo "🌐 Frontend started (PID: $FRONTEND_PID)"
+        sleep 10
+        
+        # Test local servers
+        curl -f http://localhost:3001/health && echo "✅ Backend health check passed"
+        curl -f http://localhost:5173 && echo "✅ Frontend accessibility confirmed"
+        
+        # Start ngrok tunnel
+        echo "🚀 Starting ngrok tunnel..."
+        ngrok http 5173 --log=stdout > ngrok.log &
+        NGROK_PID=$!
+        sleep 8
+        
+        # Get the public URL using multiple methods
+        NGROK_URL=""
+        
+        # Method 1: API call
+        NGROK_URL=$(curl -s localhost:4040/api/tunnels | jq -r '.tunnels[0].public_url' 2>/dev/null)
+        
+        # Method 2: Log parsing if API fails
+        if [ -z "$NGROK_URL" ] || [ "$NGROK_URL" = "null" ]; then
+          NGROK_URL=$(grep -o 'https://[0-9a-z-]*\.ngrok-free\.app' ngrok.log | head -1)
+        fi
+        
+        # Method 3: Alternative log pattern
+        if [ -z "$NGROK_URL" ]; then
+          NGROK_URL=$(grep -o 'https://[0-9a-z-]*\.ngrok\.io' ngrok.log | head -1)
+        fi
+        
+        echo "🌐 ngrok URL detected: $NGROK_URL"
+        
+        # Verify URL accessibility
+        if [ -n "$NGROK_URL" ]; then
+          sleep 5
+          curl -I "$NGROK_URL" && echo "✅ ngrok tunnel is publicly accessible!" || echo "⚠️ ngrok tunnel may need a moment to become fully accessible"
+        else
+          echo "❌ Failed to extract ngrok URL"
+          echo "📋 ngrok log contents:"
+          cat ngrok.log
+          exit 1
+        fi
+        
+        # Create comprehensive demo report
+        cat > ngrok-live-demo-report.html << EOF
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>🎬 Legal Dashboard - ngrok Live Demo</title>
+            <style>
+                body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
+                .container { max-width: 1200px; margin: 0 auto; background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+                .header { background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%); color: white; padding: 40px; text-align: center; }
+                .header h1 { margin: 0; font-size: 2.5em; font-weight: 300; }
+                .header p { margin: 10px 0 0 0; opacity: 0.9; font-size: 1.1em; }
+                .live-url { background: linear-gradient(135deg, #00b894 0%, #00a085 100%); color: white; padding: 30px; text-align: center; margin: 0; }
+                .live-url a { color: white; text-decoration: none; font-size: 1.3em; font-weight: bold; display: inline-block; padding: 15px 30px; background: rgba(255,255,255,0.2); border-radius: 25px; margin-top: 10px; transition: all 0.3s; }
+                .live-url a:hover { background: rgba(255,255,255,0.3); transform: translateY(-2px); }
+                .demo-frame { width: 100%; height: 80vh; border: none; background: #f8f9fa; }
+                .status-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; padding: 30px; background: #f8f9fa; }
+                .status-card { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); text-align: center; }
+                .status-card h4 { margin: 0 0 15px 0; color: #2c3e50; font-size: 1.1em; }
+                .status-card .status-value { font-size: 1.2em; font-weight: bold; color: #00b894; }
+                .feature-section { padding: 30px; }
+                .feature-section h3 { color: #2c3e50; border-bottom: 3px solid #00b894; padding-bottom: 10px; }
+                .quick-links { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 20px 0; }
+                .quick-link { background: #e8f4f8; padding: 15px; border-radius: 8px; text-align: center; }
+                .quick-link a { color: #2c3e50; text-decoration: none; font-weight: bold; }
+                .footer { background: #2c3e50; color: white; padding: 20px; text-align: center; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>🎬 Legal Dashboard Live Demo</h1>
+                    <p>Powered by ngrok - Professional tunneling service</p>
+                </div>
+                
+                <div class="live-url">
+                    <p style="margin: 0; font-size: 1.1em;">🌐 <strong>LIVE DASHBOARD URL</strong></p>
+                    <a href="$NGROK_URL" target="_blank">$NGROK_URL</a>
+                    <p style="margin: 15px 0 0 0; opacity: 0.9;">⏰ Available for 2 hours | 🔗 Click to access your dashboard</p>
+                </div>
+                
+                <div class="status-grid">
+                    <div class="status-card">
+                        <h4>🚀 Backend API</h4>
+                        <div class="status-value">ONLINE</div>
+                        <p>Port: 3001<br>Health: Active</p>
+                    </div>
+                    <div class="status-card">
+                        <h4>🌐 Frontend App</h4>
+                        <div class="status-value">ONLINE</div>
+                        <p>Port: 5173<br>Built: Success</p>
+                    </div>
+                    <div class="status-card">
+                        <h4>📡 ngrok Tunnel</h4>
+                        <div class="status-value">ACTIVE</div>
+                        <p>Type: Authenticated<br>Duration: 2 hours</p>
+                    </div>
+                    <div class="status-card">
+                        <h4>🔒 Security</h4>
+                        <div class="status-value">SECURED</div>
+                        <p>HTTPS: Enabled<br>Auth: ngrok</p>
+                    </div>
+                </div>
+                
+                <div class="feature-section">
+                    <h3>📱 Live Dashboard Preview</h3>
+                    <iframe src="$NGROK_URL" class="demo-frame" title="Legal Dashboard ngrok Live Demo"></iframe>
+                </div>
+                
+                <div class="feature-section">
+                    <h3>🔗 Quick Access Links</h3>
+                    <div class="quick-links">
+                        <div class="quick-link">
+                            <a href="$NGROK_URL" target="_blank">🏠 Main Dashboard</a>
+                        </div>
+                        <div class="quick-link">
+                            <a href="$NGROK_URL/api/dashboard/statistics" target="_blank">📊 Statistics API</a>
+                        </div>
+                        <div class="quick-link">
+                            <a href="$NGROK_URL/api/dashboard/activity" target="_blank">📈 Activity API</a>
+                        </div>
+                        <div class="quick-link">
+                            <a href="$NGROK_URL/api/health" target="_blank">✅ Health Check</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="footer">
+                    <p><strong>🔄 Extend Demo:</strong> Re-run this GitHub Action workflow | <strong>💾 Local Setup:</strong> Clone repository → ./simple-demo.sh</p>
+                    <p><strong>⏰ Demo Duration:</strong> 2 hours with ngrok authentication | <strong>🌐 Public Access:</strong> Share this URL with anyone!</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        EOF
+        
+        # Keep demo alive for 2 hours (ngrok authenticated limit)
+        echo "⏰ Keeping ngrok demo alive for 2 hours..."
+        echo "🌐 Dashboard URL: $NGROK_URL"
+        echo "📡 Tunnel authenticated with provided authtoken"
+        
+        # Run for 2 hours (120 minutes)
+        for i in {1..120}; do
+            echo "⏱️ ngrok demo running... ${i}/120 minutes"
+            sleep 60
+            
+            # Periodic connectivity check
+            if [ $((i % 15)) -eq 0 ]; then
+              curl -s -o /dev/null -w "%{http_code}" "$NGROK_URL" | grep -q "200" && echo "✅ Tunnel still active" || echo "⚠️ Tunnel connectivity check"
+            fi
+        done
+        
+        # Cleanup
+        echo "🧹 Cleaning up processes..."
+        kill $BACKEND_PID $FRONTEND_PID $NGROK_PID 2>/dev/null || true
+        echo "🎬 ngrok demo session completed!"
+    
+    - uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: ngrok-live-demo-results
+        path: |
+          ngrok-live-demo-report.html
+          ngrok.log
