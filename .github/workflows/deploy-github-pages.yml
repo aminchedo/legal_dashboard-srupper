@@ -60,7 +60,7 @@ jobs:
                 
                 <div style="text-align: center;">
                     <a href="./index.html" class="btn">🚀 View Dashboard Frontend</a>
-                    <a href="https://github.com/${{ github.repository }}" class="btn">📂 View Source Code</a>
+
                 </div>
                 
                 <h3>🔧 For Full Demo with Backend:</h3>
