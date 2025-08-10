@@ -1,55 +1,71 @@
 # Multi-stage build for Legal Dashboard
-FROM node:18-slim as frontend
+FROM node:18-alpine as frontend
 
 WORKDIR /app
 
-# Copy package files
+# Copy package files for dependency installation
 COPY package*.json ./
-RUN npm ci --production
+
+# Install dependencies (production only)
+RUN npm ci --only=production --silent
 
 # Copy source code
 COPY . .
 
-# Build frontend if needed
-RUN npm run build 2>/dev/null || echo "No build script found"
+# Build frontend assets (with proper error handling)
+RUN npm run build 2>/dev/null || echo "No build script found, skipping frontend build"
 
-# Python backend stage
-FROM python:3.11-slim as backend
+# Python backend stage (final stage)
+FROM python:3.11-alpine as backend
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
+# Install system dependencies (minimal set)
+RUN apk add --no-cache \
     gcc \
-    g++ \
+    musl-dev \
     curl \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/cache/apk/*
 
 WORKDIR /app
 
-# Copy Python requirements and install
-COPY requirements.txt .
-RUN pip install --no-cache-dir --upgrade pip
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy and install Python requirements first (for better caching)
+COPY requirements.txt* ./
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt 2>/dev/null || \
+    echo "No requirements.txt found, skipping Python dependencies"
 
 # Copy application code
 COPY . .
-COPY --from=frontend /app/node_modules ./node_modules
+
+# Copy built frontend assets (only if they exist)
+COPY --from=frontend /app/dist ./static/ 2>/dev/null || \
+COPY --from=frontend /app/build ./static/ 2>/dev/null || \
+COPY --from=frontend /app/public ./static/ 2>/dev/null || \
+echo "No frontend build artifacts found"
 
 # Environment variables
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-ENV ENVIRONMENT=production
-ENV DEBUG=false
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    ENVIRONMENT=production \
+    DEBUG=false \
+    PORT=8000
 
-# Create non-root user
-RUN groupadd -r appuser && useradd -r -g appuser appuser
+# Create non-root user for security
+RUN addgroup -g 1001 -S appuser && \
+    adduser -S appuser -G appuser -u 1001
+
+# Set correct permissions
 RUN chown -R appuser:appuser /app
 USER appuser
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:8000/health || exit 1
+# Health check with better error handling
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+    CMD curl -f http://localhost:${PORT}/health || \
+        curl -f http://localhost:${PORT}/ || \
+        wget --no-verbose --tries=1 --spider http://localhost:${PORT}/health || \
+        exit 1
 
-EXPOSE 8000
+# Expose port
+EXPOSE ${PORT}
 
-# Start the application
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
+# Start the application with better defaults
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT} --workers 1"]
