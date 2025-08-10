@@ -9,6 +9,9 @@ export default defineConfig(({ mode }) => {
     return {
         plugins: [react()],
 
+        // Ensure correct asset paths on GitHub Pages or subpath deployments
+        base: './',
+
         // Path resolution
         resolve: {
             conditions: ['import', 'module', 'browser', 'default'],

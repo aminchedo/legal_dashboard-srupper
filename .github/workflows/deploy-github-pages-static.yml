@@ -29,7 +29,7 @@ jobs:
         run: |
           set -euxo pipefail
           cd frontend
-          npm ci
+          npm ci || npm install
           npm run build
           cd ..
 
@@ -54,6 +54,10 @@ jobs:
           EOF
           sed -i "s|REPO_PLACEHOLDER|${{ github.repository }}|g" frontend/dist/demo-landing-page.html
           sed -i "s|DATE_PLACEHOLDER|$(date -u +"%Y-%m-%d %H:%M UTC")|g" frontend/dist/demo-landing-page.html
+
+      - name: Verify build output exists
+        run: |
+          test -d frontend/dist && [ "$(ls -A frontend/dist)" ] || (echo "❌ Build output missing in frontend/dist"; ls -la frontend || true; exit 1)
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
