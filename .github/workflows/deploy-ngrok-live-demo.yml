@@ -72,8 +72,8 @@ jobs:
       - name: Install dependencies (frontend + backend)
         run: |
           set -euxo pipefail
-          cd frontend && npm ci
-          cd ../backend && npm ci
+          cd frontend && (npm ci || npm install)
+          cd ../backend && (npm ci || npm install)
 
       - name: Start backend and frontend with logging
         run: |
