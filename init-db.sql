@@ -1,95 +1,41 @@
 -- Legal Dashboard Database Initialization Script
--- This script sets up the basic database structure
 
--- Create extension for UUID generation
+
+-- Create extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pg_trgm";
 
--- Create users table
+-- Create tables for legal dashboard
 CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    username VARCHAR(255) UNIQUE NOT NULL,
+    username VARCHAR(50) UNIQUE NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
-    is_active BOOLEAN DEFAULT TRUE,
-    is_admin BOOLEAN DEFAULT FALSE,
+    full_name VARCHAR(100),
+    role VARCHAR(20) DEFAULT 'user',
+    is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create legal_documents table
+<
 CREATE TABLE IF NOT EXISTS legal_documents (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    title VARCHAR(500) NOT NULL,
+    title VARCHAR(255) NOT NULL,
     content TEXT,
-    document_type VARCHAR(100),
-    source_url VARCHAR(1000),
-    domain VARCHAR(255),
-    status VARCHAR(50) DEFAULT 'active',
+    document_type VARCHAR(50),
+    file_path VARCHAR(500),
+    file_size BIGINT,
+    mime_type VARCHAR(100),
+    uploaded_by UUID REFERENCES users(id),
+    status VARCHAR(20) DEFAULT 'active',
+    tags TEXT[],
+    metadata JSONB,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create dashboard_statistics table
-CREATE TABLE IF NOT EXISTS dashboard_statistics (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    total_items INTEGER DEFAULT 0,
-    recent_items INTEGER DEFAULT 0,
-    categories JSONB,
-    avg_rating DECIMAL(3,3),
-    success_rate DECIMAL(5,2),
-    weekly_trend JSONB,
-    monthly_growth DECIMAL(5,2),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
 
--- Create activity_log table
-CREATE TABLE IF NOT EXISTS activity_log (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    title VARCHAR(500) NOT NULL,
-    domain VARCHAR(255),
-    status VARCHAR(50) NOT NULL,
-    details JSONB,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
--- Create indexes for performance
-CREATE INDEX IF NOT EXISTS idx_legal_documents_status ON legal_documents(status);
-CREATE INDEX IF NOT EXISTS idx_legal_documents_created_at ON legal_documents(created_at);
-CREATE INDEX IF NOT EXISTS idx_activity_log_status ON activity_log(status);
-CREATE INDEX IF NOT EXISTS idx_activity_log_created_at ON activity_log(created_at);
-CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
-CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
-
--- Insert sample data
-INSERT INTO dashboard_statistics (total_items, recent_items, categories, avg_rating, success_rate, weekly_trend, monthly_growth) 
-VALUES (
-    47582,
-    1843,
-    '{"Legal": 12450, "Economic": 8920, "Social": 7830, "Cultural": 6240, "Technical": 5100}',
-    0.891,
-    94.1,
-    '[
-        {"day": "Mon", "success": 231},
-        {"day": "Tue", "success": 295},
-        {"day": "Wed", "success": 374},
-        {"day": "Thu", "success": 345},
-        {"day": "Fri", "success": 396},
-        {"day": "Sat", "success": 281},
-        {"day": "Sun", "success": 150}
-    ]',
-    18.3
-) ON CONFLICT DO NOTHING;
-
--- Insert sample activity data
-INSERT INTO activity_log (title, domain, status, details) VALUES
-    ('Labor Law - 2024 Amendment', 'dastour.ir', 'completed', '{"description": "Successfully processed labor law amendment"}'),
-    ('E-Commerce Regulations Act', 'majles.ir', 'completed', '{"description": "E-commerce regulations updated"}'),
-    ('Data Protection Directive', 'president.ir', 'processing', '{"description": "Data protection directive under review"}'),
-    ('New Import/Export Tariffs', 'customs.ir', 'failed', '{"description": "Failed to process tariff updates"}'),
-    ('National Cultural Development Plan', 'farhang.gov.ir', 'completed', '{"description": "Cultural development plan approved"}')
-ON CONFLICT DO NOTHING;
-
--- Create a function to update the updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -98,14 +44,41 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
--- Create triggers to automatically update the updated_at column
-CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users 
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_legal_documents_updated_at BEFORE UPDATE ON legal_documents 
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+-- Create triggers for automatic timestamp updates
+CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_legal_documents_updated_at BEFORE UPDATE ON legal_documents FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_legal_cases_updated_at BEFORE UPDATE ON legal_cases FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_case_notes_updated_at BEFORE UPDATE ON case_notes FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_time_entries_updated_at BEFORE UPDATE ON time_entries FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_billing_updated_at BEFORE UPDATE ON billing FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- Grant permissions to the legal_user
+-- Insert default admin user (password: admin123 - change this in production!)
+INSERT INTO users (username, email, password_hash, full_name, role) 
+VALUES ('admin', 'admin@legal-dashboard.com', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj4J/HS.iK2.', 'System Administrator', 'admin')
+ON CONFLICT (username) DO NOTHING;
+
+-- Insert sample data for testing
+INSERT INTO legal_cases (case_number, title, description, case_type, status, priority, client_name, court_name, filing_date) 
+VALUES 
+    ('CASE-2024-001', 'Smith vs. Johnson', 'Contract dispute regarding software development services', 'Civil', 'open', 'high', 'John Smith', 'Superior Court', '2024-01-15'),
+    ('CASE-2024-002', 'Corporate Merger', 'Merger and acquisition documentation review', 'Corporate', 'open', 'medium', 'TechCorp Inc.', 'Business Court', '2024-01-20')
+ON CONFLICT (case_number) DO NOTHING;
+
+-- Grant permissions
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO legal_user;
 GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO legal_user;
 GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO legal_user;
+
+-- Create a view for dashboard statistics
+CREATE OR REPLACE VIEW dashboard_stats AS
+SELECT 
+    (SELECT COUNT(*) FROM legal_cases WHERE status = 'open') as open_cases,
+    (SELECT COUNT(*) FROM legal_cases WHERE status = 'closed') as closed_cases,
+    (SELECT COUNT(*) FROM legal_documents) as total_documents,
+    (SELECT COUNT(*) FROM users WHERE is_active = true) as active_users,
+    (SELECT COALESCE(SUM(hours), 0) FROM time_entries WHERE date >= CURRENT_DATE - INTERVAL '30 days') as hours_this_month,
+    (SELECT COALESCE(SUM(amount), 0) FROM billing WHERE status = 'paid' AND paid_date >= CURRENT_DATE - INTERVAL '30 days') as revenue_this_month;
+
+-- Grant access to the view
+GRANT SELECT ON dashboard_stats TO legal_user;
