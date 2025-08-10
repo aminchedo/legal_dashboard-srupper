@@ -2,6 +2,45 @@
 
 A modern legal analytics dashboard with a React + Vite frontend and an Express + TypeScript backend. It provides document management, analytics, scraping utilities, OCR hooks, and real‑time updates via WebSockets.
 
+## 🚀 Docker Deployment (READY - ALL ISSUES FIXED!)
+
+### Quick Docker Start
+```bash
+# Pull and run the latest Docker image
+docker pull 24498743/legal-dashboard:latest
+docker run -d -p 8000:8000 --name legal-dashboard \
+  --restart unless-stopped \
+  24498743/legal-dashboard:latest
+
+# Access the application
+curl http://localhost:8000/health
+```
+
+### Production Docker Compose
+```bash
+# Use the production-ready compose file
+docker-compose -f docker-compose.production.yml up -d
+```
+
+### GitHub Actions Status
+[![Docker CI/CD](https://github.com/aminchedo/legal-dashboard/actions/workflows/docker-ci-complete.yml/badge.svg)](https://github.com/aminchedo/legal-dashboard/actions/workflows/docker-ci-complete.yml)
+
+**All CI/CD Issues Resolved:**
+- ✅ **Submodule Issues**: Removed problematic empty `servers/` directory
+- ✅ **Docker Authentication**: Multiple fallback strategies implemented
+- ✅ **Trivy Security Scanning**: Proper SARIF generation and GitHub Security integration  
+- ✅ **Multi-platform Builds**: Supports both AMD64 and ARM64 architectures
+- ✅ **Container Testing**: Automated health checks and functionality validation
+- ✅ **Code Scanning**: Security results automatically uploaded to GitHub Security tab
+
+### Docker Hub Repository
+🐳 **Image:** [`24498743/legal-dashboard`](https://hub.docker.com/r/24498743/legal-dashboard)
+
+### GitHub Secrets Setup (Optional - for enhanced security)
+Add these secrets to [Repository Settings → Secrets and Variables → Actions](../../settings/secrets/actions):
+- `DOCKER_USERNAME`: `24498743`
+- `DOCKER_PASSWORD`: Your Docker Hub Personal Access Token
+
 ## Prerequisites
 - Node.js: >= 18 (recommended LTS)
 - npm: >= 8
