@@ -15,18 +15,30 @@ jobs:
       with:
         node-version: '18'
     
-    - name: Install ngrok
+    - name: Setup ngrok with Auth
+      env:
+        NGROK_AUTHTOKEN: ${{ secrets.NGROK_AUTHTOKEN }}
       run: |
+        # Install ngrok
         curl -s https://ngrok-agent.s3.amazonaws.com/ngrok.asc | sudo tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null
         echo "deb https://ngrok-agent.s3.amazonaws.com buster main" | sudo tee /etc/apt/sources.list.d/ngrok.list
-        sudo apt update && sudo apt install ngrok
+        sudo apt update && sudo apt install -y ngrok jq
+        
+        # Configure with authtoken
+        if [ -n "$NGROK_AUTHTOKEN" ]; then
+          ngrok config add-authtoken $NGROK_AUTHTOKEN
+          echo "✅ ngrok authenticated"
+        else
+          echo "❌ NGROK_AUTHTOKEN not found in secrets"
+          exit 1
+        fi
     
     - name: Setup Dependencies  
       run: |
         cd frontend && npm install
         cd ../backend && npm install
     
-    - name: Start Servers and Create Live Demo
+    - name: Deploy Live Demo
       run: |
         # Start backend
         cd backend
@@ -35,21 +47,34 @@ jobs:
         cd ..
         sleep 8
         
-        # Start frontend
+        # Build and start frontend
         cd frontend
         npm run build
-        npm run preview &
+        npm run preview --port 5173 &
         FRONTEND_PID=$!
         cd ..
         sleep 10
         
-        # Create ngrok tunnel for 10 minutes
-        ngrok http 4173 --log=stdout > ngrok.log &
-        sleep 5
+        # Create ngrok tunnel
+        ngrok http 5173 --log=stdout > ngrok.log &
+        NGROK_PID=$!
+        sleep 8
         
         # Get the public URL
-        NGROK_URL=$(curl -s localhost:4040/api/tunnels | grep -o 'https://[0-9a-z-]*\.ngrok-free\.app' | head -1)
+        NGROK_URL=$(curl -s localhost:4040/api/tunnels | jq -r '.tunnels[0].public_url' 2>/dev/null || echo "")
+        
+        if [ -z "$NGROK_URL" ]; then
+          echo "❌ Failed to get ngrok URL, trying alternative method..."
+          NGROK_URL=$(grep -o 'https://[0-9a-z-]*\.ngrok-free\.app' ngrok.log | head -1)
+        fi
+        
         echo "🌐 Your Legal Dashboard is LIVE at: $NGROK_URL"
+        
+        # Test the URL
+        sleep 5
+        if [ -n "$NGROK_URL" ]; then
+          curl -I "$NGROK_URL" && echo "✅ Live demo is accessible!" || echo "❌ Demo URL test failed"
+        fi
         
         # Create live demo report
         cat > live-demo-report.html << EOF
@@ -64,9 +89,7 @@ jobs:
                 .live-url a { color: white; text-decoration: none; font-size: 18px; font-weight: bold; }
                 .demo-frame { width: 100%; height: 800px; border: 2px solid #ddd; border-radius: 8px; }
                 .status { background: #e8f5e8; padding: 15px; border-radius: 5px; margin: 15px 0; }
-                .instructions { background: #fff3cd; padding: 15px; border-radius: 5px; margin: 15px 0; }
                 h1 { color: #333; text-align: center; }
-                h2 { color: #555; border-bottom: 2px solid #007cba; padding-bottom: 5px; }
             </style>
         </head>
         <body>
@@ -76,25 +99,15 @@ jobs:
                 <div class="live-url">
                     <p>🌐 <strong>LIVE DASHBOARD URL:</strong></p>
                     <a href="$NGROK_URL" target="_blank">$NGROK_URL</a>
-                    <p><small>⏰ Available for 10 minutes from deployment</small></p>
-                </div>
-                
-                <div class="instructions">
-                    <h3>📋 How to View Your Dashboard:</h3>
-                    <ol>
-                        <li><strong>Click the URL above</strong> to open your live legal dashboard</li>
-                        <li><strong>See it in action</strong> with real data and functionality</li>
-                        <li><strong>Test all features</strong> - recording, charts, data visualization</li>
-                        <li><strong>Share with others</strong> - anyone can view your demo!</li>
-                    </ol>
+                    <p><small>⏰ Available for 2 hours from deployment</small></p>
                 </div>
                 
                 <div class="status">
                     <h3>✅ System Status:</h3>
-                    <p>• Backend API: <span style="color: green;">ONLINE</span> (localhost:3001)</p>
-                    <p>• Frontend App: <span style="color: green;">ONLINE</span> (localhost:4173)</p>
-                    <p>• Public Access: <span style="color: green;">LIVE</span> via ngrok tunnel</p>
-                    <p>• Demo Duration: <span style="color: orange;">10 minutes</span></p>
+                    <p>• Backend API: ONLINE (port 3001)</p>
+                    <p>• Frontend App: ONLINE (port 5173)</p>
+                    <p>• Public Access: LIVE via ngrok tunnel</p>
+                    <p>• Demo URL: <a href="$NGROK_URL" target="_blank">$NGROK_URL</a></p>
                 </div>
                 
                 <h2>📱 Live Dashboard Preview:</h2>
@@ -110,22 +123,23 @@ jobs:
         </html>
         EOF
         
-        # Test the live URL
-        sleep 5
-        curl -I "$NGROK_URL" && echo "✅ Live demo is accessible!" || echo "❌ Demo URL failed"
-        
-        # Keep demo alive for 10 minutes
-        echo "⏰ Keeping demo alive for 10 minutes..."
+        # Keep demo alive for 2 hours (free ngrok limit)
+        echo "⏰ Keeping demo alive for 2 hours (ngrok free limit)..."
         echo "🌐 Dashboard URL: $NGROK_URL"
         
-        for i in {1..60}; do
-            echo "⏱️ Demo running... ${i}/60 (10 seconds each)"
-            sleep 10
+        # Run for 2 hours (120 minutes)
+        for i in {1..120}; do
+            echo "⏱️ Demo running... ${i}/120 minutes"
+            sleep 60
         done
         
+        # Cleanup
+        kill $BACKEND_PID $FRONTEND_PID $NGROK_PID 2>/dev/null || true
         echo "🎬 Demo session completed!"
     
     - uses: actions/upload-artifact@v4
       with:
-        name: live-dashboard-demo
-        path: live-demo-report.html
+        name: live-dashboard-demo-ngrok
+        path: |
+          live-demo-report.html
+          ngrok.log

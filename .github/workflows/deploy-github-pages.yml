@@ -1,0 +1,83 @@
+name: 📄 Deploy to GitHub Pages
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+    
+    - name: Install and Build
+      run: |
+        cd frontend
+        npm install
+        npm run build
+        
+        # Create a simple index page
+        cat > dist/demo-info.html << EOF
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Legal Dashboard Demo</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
+                .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; }
+                .notice { background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin: 20px 0; }
+                .btn { display: inline-block; padding: 12px 25px; background: #007cba; color: white; text-decoration: none; border-radius: 5px; margin: 10px 5px; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>🎬 Legal Dashboard Demo</h1>
+                
+                <div class="notice">
+                    <strong>⚠️ Note:</strong> This is the frontend-only version. For full functionality with backend API, use the local demo or ngrok deployment.
+                </div>
+                
+                <p><strong>This demo includes:</strong></p>
+                <ul>
+                    <li>✅ Complete frontend interface</li>
+                    <li>✅ All UI components and layouts</li>
+                    <li>✅ Static data visualization</li>
+                    <li>⚠️ Backend API features require local/ngrok deployment</li>
+                </ul>
+                
+                <div style="text-align: center;">
+                    <a href="./index.html" class="btn">🚀 View Dashboard Frontend</a>
+                    <a href="https://github.com/${{ github.repository }}" class="btn">📂 View Source Code</a>
+                </div>
+                
+                <h3>🔧 For Full Demo with Backend:</h3>
+                <ol>
+                    <li>Clone the repository</li>
+                    <li>Run: <code>./simple-demo.sh</code></li>
+                    <li>Open: <code>live-dashboard-viewer.html</code></li>
+                </ol>
+            </div>
+        </body>
+        </html>
+        EOF
+    
+    - uses: actions/configure-pages@v3
+    - uses: actions/upload-pages-artifact@v2
+      with:
+        path: './frontend/dist'
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v2
