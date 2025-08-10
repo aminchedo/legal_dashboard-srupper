@@ -125,3 +125,34 @@ See deploy.yml workflow for required Azure settings.
 ## Contributing
 - Fork, create a feature branch, run `npm run start:quick`, and open a PR.
 - Use `eslint`, `prettier`, and `vitest`/`jest` for quality.
+
+---
+
+## CI/CD: Docker Build & Push (GitHub Actions)
+
+The repository includes a workflow at `.github/workflows/docker-build.yml` that:
+- Builds multi-platform images (linux/amd64, linux/arm64) via Buildx
+- Tags images with `latest` on default branch, branch names, PR numbers (`pr-<num>`), and short SHA (`<branch>-<sha>`)
+- Caches layers with GitHub Actions cache for faster rebuilds
+- Runs a basic container test and a non-blocking Trivy security scan
+- Publishes a run summary with pull/run commands
+
+### Run the container locally
+```bash
+docker pull 24498743/legal-dashboard:latest
+docker run -d -p 8000:8000 --name legal-dashboard 24498743/legal-dashboard:latest
+# Verify
+curl -f http://localhost:8000/health
+```
+
+### Update Docker Hub credentials
+- Replace the temporary values in `docker-build.yml` env:
+  - `DOCKERHUB_USERNAME`
+  - `DOCKERHUB_TOKEN`
+- Recommended: move these into repository secrets and update the workflow to use `${{ secrets.DOCKERHUB_USERNAME }}` and `${{ secrets.DOCKERHUB_TOKEN }}`.
+
+### Common CI issues
+- Login failures: verify the token is valid and not rate-limited.
+- Metadata/tag errors: ensure branch names do not contain invalid Docker tag characters. The metadata action normalizes tags automatically.
+- Buildx context errors: ensure `Dockerfile` is at project root or update `file:` and `context:` accordingly.
+- Health check failures: confirm the app exposes port `8000` and `/health` route is reachable. Container logs will be printed on failure.

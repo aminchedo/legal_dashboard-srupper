@@ -1,0 +1,39 @@
+# Node
+node_modules
+npm-debug.log
+
+# Vite/Build
+/dist
+/build
+.cache
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv
+venv
+
+# Git
+.git
+.gitignore
+
+# Docker
+Dockerfile*
+.dockerignore
+
+# OS/Editor
+.DS_Store
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# Tests and local files
+coverage/
+.env
+.env.*
+*.local
+*.log
+**/.pytest_cache/
