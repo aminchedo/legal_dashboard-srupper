@@ -1,5 +1,9 @@
 # Legal Dashboard – Full Stack
 
+[![Docker Build](https://github.com/24498743/legal-dashboard/actions/workflows/docker-build.yml/badge.svg)](https://github.com/24498743/legal-dashboard/actions/workflows/docker-build.yml)
+[![Docker Hub](https://img.shields.io/docker/pulls/24498743/legal-dashboard)](https://hub.docker.com/r/24498743/legal-dashboard)
+[![Docker Image Size](https://img.shields.io/docker/image-size/24498743/legal-dashboard/latest)](https://hub.docker.com/r/24498743/legal-dashboard)
+
 A modern legal analytics dashboard with a React + Vite frontend and an Express + TypeScript backend. It provides document management, analytics, scraping utilities, OCR hooks, and real‑time updates via WebSockets.
 
 ## Prerequisites
@@ -95,6 +99,37 @@ npm run start:full
 - Backend API: http://localhost:3000
 - Health: `curl http://localhost:3000/health`
 
+## 🚀 CI/CD Pipeline
+
+### Automated Docker Deployment
+- **Trigger:** Push to `main` or `develop` branch
+- **Registry:** Docker Hub
+- **Image:** `24498743/legal-dashboard:latest`
+- **Platforms:** linux/amd64, linux/arm64
+- **Multi-arch Support:** Yes
+
+### Quick Deploy
+```bash
+# Pull and run latest image
+docker pull 24498743/legal-dashboard:latest
+docker run -p 8000:8000 24498743/legal-dashboard:latest
+
+# Or with custom environment
+docker run -p 8000:8000 \
+  -e DATABASE_URL=/app/data/legal.db \
+  -e JWT_SECRET=your-secret-key \
+  24498743/legal-dashboard:latest
+```
+
+### Docker Compose
+```bash
+# Local development with hot reload
+docker-compose up --build
+
+# Production deployment
+docker-compose -f docker-compose.yml up -d
+```
+
 ## Deployment
 
 ### Local Development
@@ -104,8 +139,8 @@ docker-compose up --build
 
 ### Production Deployment
 1. Push to main branch
-2. GitHub Actions automatically builds and deploys
-3. Monitor deployment in Azure Portal
+2. GitHub Actions automatically builds and deploys to Docker Hub
+3. Pull and run the latest image on your production server
 
 ### Manual Docker Deployment
 ```bash
@@ -114,6 +149,22 @@ docker-compose up --build
 
 ### Azure Configuration
 See deploy.yml workflow for required Azure settings.
+
+## ⚠️ Security Notice
+
+**Current Configuration:**
+- Docker Hub credentials are temporarily hardcoded for testing
+- **For production use:** Move credentials to GitHub Secrets
+- **Recommended:** Use `${{ secrets.DOCKER_TOKEN }}` in workflow files
+
+**Production Security Steps:**
+1. Remove hardcoded credentials from workflow files
+2. Set up GitHub repository secrets:
+   - `DOCKER_TOKEN`: Your Docker Hub Personal Access Token
+   - `DOCKER_USERNAME`: Your Docker Hub username
+3. Update workflow to use: `${{ secrets.DOCKER_TOKEN }}`
+4. Enable vulnerability scanning in Docker Hub
+5. Regularly rotate access tokens
 
 ## Troubleshooting
 - Port already in use: stop conflicting processes or change `PORT`/Vite port.
