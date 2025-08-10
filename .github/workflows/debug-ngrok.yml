@@ -1,0 +1,174 @@
+name: 🔍 Debug ngrok Issues
+
+on:
+  workflow_dispatch:
+
+jobs:
+  debug-ngrok:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+    
+    - name: Check Environment
+      run: |
+        echo "🔍 Environment Check:"
+        echo "Node version: $(node --version)"
+        echo "NPM version: $(npm --version)"
+        echo "Working directory: $(pwd)"
+        echo "Available space: $(df -h .)"
+        echo ""
+        echo "📁 Repository structure:"
+        ls -la
+        echo ""
+        echo "📂 Frontend directory:"
+        [ -d "frontend" ] && ls -la frontend/ || echo "Frontend directory not found"
+        echo ""
+        echo "📂 Backend directory:"
+        [ -d "backend" ] && ls -la backend/ || echo "Backend directory not found"
+    
+    - name: Test GitHub Secrets
+      env:
+        NGROK_AUTHTOKEN: ${{ secrets.NGROK_AUTHTOKEN }}
+      run: |
+        echo "🔐 Secrets Check:"
+        if [ -z "$NGROK_AUTHTOKEN" ]; then
+          echo "❌ NGROK_AUTHTOKEN is empty or not set"
+          echo "NGROK_AUTHTOKEN value: '$NGROK_AUTHTOKEN'"
+          exit 1
+        else
+          echo "✅ NGROK_AUTHTOKEN is set (length: ${#NGROK_AUTHTOKEN} characters)"
+          echo "First 10 chars: ${NGROK_AUTHTOKEN:0:10}..."
+        fi
+    
+    - name: Install and Test ngrok
+      env:
+        NGROK_AUTHTOKEN: ${{ secrets.NGROK_AUTHTOKEN }}
+      run: |
+        echo "📥 Installing ngrok..."
+        curl -s https://ngrok-agent.s3.amazonaws.com/ngrok.asc | sudo tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null
+        echo "deb https://ngrok-agent.s3.amazonaws.com buster main" | sudo tee /etc/apt/sources.list.d/ngrok.list
+        sudo apt update && sudo apt install ngrok
+        
+        echo "🔧 Configuring ngrok..."
+        ngrok config add-authtoken $NGROK_AUTHTOKEN
+        
+        echo "✅ Testing ngrok configuration..."
+        ngrok config check || echo "❌ ngrok config check failed"
+        
+        echo "📋 ngrok version and status:"
+        ngrok version
+    
+    - name: Test Dependencies Installation
+      run: |
+        echo "📦 Testing frontend dependencies..."
+        if [ -d "frontend" ]; then
+          cd frontend
+          echo "Frontend package.json exists: $([ -f package.json ] && echo \"YES\" || echo \"NO\")"
+          if [ -f "package.json" ]; then
+            echo "Installing frontend dependencies..."
+            npm install 2>&1 | tee ../frontend-install.log
+            echo "Frontend install exit code: $?"
+          fi
+          cd ..
+        fi
+        
+        echo "📦 Testing backend dependencies..."
+        if [ -d "backend" ]; then
+          cd backend
+          echo "Backend package.json exists: $([ -f package.json ] && echo \"YES\" || echo \"NO\")"
+          if [ -f "package.json" ]; then
+            echo "Installing backend dependencies..."
+            npm install 2>&1 | tee ../backend-install.log
+            echo "Backend install exit code: $?"
+          fi
+          cd ..
+        fi
+    
+    - name: Test Server Startup
+      run: |
+        echo "🚀 Testing server startup..."
+        
+        # Test backend
+        if [ -d "backend" ] && [ -f "backend/package.json" ]; then
+          cd backend
+          echo "Starting backend in test mode..."
+          timeout 10s npm start &
+          BACKEND_PID=$!
+          cd ..
+          sleep 5
+          
+          echo "Testing backend health..."
+          curl -v http://localhost:3001/health || echo "Backend health check failed"
+          curl -v http://localhost:3001 || echo "Backend root failed"
+          
+          # Kill backend
+          kill $BACKEND_PID 2>/dev/null || true
+        fi
+        
+        # Test frontend build
+        if [ -d "frontend" ] && [ -f "frontend/package.json" ]; then
+          cd frontend
+          echo "Testing frontend build..."
+          npm run build 2>&1 | tee ../frontend-build.log
+          echo "Frontend build exit code: $?"
+          
+          if [ -d "dist" ]; then
+            echo "✅ Build successful, dist directory created"
+            ls -la dist/
+          else
+            echo "❌ Build failed, no dist directory"
+          fi
+          cd ..
+        fi
+    
+    - name: Create Test Files
+      run: |
+        echo "📄 Creating test artifact files..."
+        
+        # Create test report
+        cat > debug-report.html << 'EOF'
+        <!DOCTYPE html>
+        <html>
+        <head><title>ngrok Debug Report</title></head>
+        <body>
+            <h1>ngrok Workflow Debug Report</h1>
+            <p>Generated: $(date)</p>
+            <p>This file tests artifact upload functionality.</p>
+        </body>
+        </html>
+        EOF
+        
+        # Create test log
+        echo "Debug log created at $(date)" > debug.log
+        echo "Test line 1" >> debug.log
+        echo "Test line 2" >> debug.log
+        
+        echo "✅ Test files created:"
+        ls -la debug-report.html debug.log
+    
+    - name: Git Diagnostics
+      run: |
+        echo "🔍 Git diagnostics..."
+        echo "Git version: $(git --version)"
+        echo "Git status:"
+        git status || echo "Git status failed"
+        echo "Git remote:"
+        git remote -v || echo "Git remote failed"
+        echo "Git config:"
+        git config --list || echo "Git config failed"
+    
+    - uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: debug-results
+        path: |
+          debug-report.html
+          debug.log
+          frontend-install.log
+          backend-install.log
+          frontend-build.log
+        retention-days: 7
