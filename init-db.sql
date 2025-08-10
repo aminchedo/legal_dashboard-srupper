@@ -1,5 +1,5 @@
 -- Legal Dashboard Database Initialization Script
--- This script runs when the PostgreSQL container starts for the first time
+
 
 -- Create extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS users (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+<
 CREATE TABLE IF NOT EXISTS legal_documents (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     title VARCHAR(255) NOT NULL,
@@ -34,145 +35,7 @@ CREATE TABLE IF NOT EXISTS legal_documents (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS legal_cases (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    case_number VARCHAR(100) UNIQUE NOT NULL,
-    title VARCHAR(255) NOT NULL,
-    description TEXT,
-    case_type VARCHAR(50),
-    status VARCHAR(20) DEFAULT 'open',
-    priority VARCHAR(20) DEFAULT 'medium',
-    assigned_to UUID REFERENCES users(id),
-    client_name VARCHAR(255),
-    client_email VARCHAR(255),
-    client_phone VARCHAR(50),
-    court_name VARCHAR(255),
-    court_location VARCHAR(255),
-    filing_date DATE,
-    hearing_date DATE,
-    due_date DATE,
-    tags TEXT[],
-    metadata JSONB,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
 
-CREATE TABLE IF NOT EXISTS case_documents (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    case_id UUID REFERENCES legal_cases(id) ON DELETE CASCADE,
-    document_id UUID REFERENCES legal_documents(id) ON DELETE CASCADE,
-    document_type VARCHAR(50),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS case_notes (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    case_id UUID REFERENCES legal_cases(id) ON DELETE CASCADE,
-    user_id UUID REFERENCES users(id),
-    title VARCHAR(255),
-    content TEXT NOT NULL,
-    is_private BOOLEAN DEFAULT false,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS case_events (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    case_id UUID REFERENCES legal_cases(id) ON DELETE CASCADE,
-    event_type VARCHAR(50) NOT NULL,
-    title VARCHAR(255) NOT NULL,
-    description TEXT,
-    event_date TIMESTAMP WITH TIME ZONE,
-    location VARCHAR(255),
-    attendees TEXT[],
-    created_by UUID REFERENCES users(id),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS time_entries (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    case_id UUID REFERENCES legal_cases(id) ON DELETE CASCADE,
-    user_id UUID REFERENCES users(id),
-    description TEXT NOT NULL,
-    hours DECIMAL(5,2) NOT NULL,
-    rate DECIMAL(10,2),
-    date DATE NOT NULL,
-    billable BOOLEAN DEFAULT true,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS expenses (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    case_id UUID REFERENCES legal_cases(id) ON DELETE CASCADE,
-    user_id UUID REFERENCES users(id),
-    description TEXT NOT NULL,
-    amount DECIMAL(10,2) NOT NULL,
-    expense_type VARCHAR(50),
-    receipt_path VARCHAR(500),
-    date DATE NOT NULL,
-    billable BOOLEAN DEFAULT true,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS billing (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    case_id UUID REFERENCES legal_cases(id) ON DELETE CASCADE,
-    invoice_number VARCHAR(100) UNIQUE,
-    amount DECIMAL(10,2) NOT NULL,
-    tax_amount DECIMAL(10,2) DEFAULT 0,
-    total_amount DECIMAL(10,2) NOT NULL,
-    status VARCHAR(20) DEFAULT 'draft',
-    due_date DATE,
-    sent_date DATE,
-    paid_date DATE,
-    notes TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
--- Create indexes for better performance
-CREATE INDEX IF NOT EXISTS idx_legal_documents_uploaded_by ON legal_documents(uploaded_by);
-CREATE INDEX IF NOT EXISTS idx_legal_documents_status ON legal_documents(status);
-CREATE INDEX IF NOT EXISTS idx_legal_documents_created_at ON legal_documents(created_at);
-CREATE INDEX IF NOT EXISTS idx_legal_documents_tags ON legal_documents USING GIN(tags);
-
-CREATE INDEX IF NOT EXISTS idx_legal_cases_assigned_to ON legal_cases(assigned_to);
-CREATE INDEX IF NOT EXISTS idx_legal_cases_status ON legal_cases(status);
-CREATE INDEX IF NOT EXISTS idx_legal_cases_case_type ON legal_cases(case_type);
-CREATE INDEX IF NOT EXISTS idx_legal_cases_filing_date ON legal_cases(filing_date);
-CREATE INDEX IF NOT EXISTS idx_legal_cases_hearing_date ON legal_cases(hearing_date);
-CREATE INDEX IF NOT EXISTS idx_legal_cases_tags ON legal_cases USING GIN(tags);
-
-CREATE INDEX IF NOT EXISTS idx_case_documents_case_id ON case_documents(case_id);
-CREATE INDEX IF NOT EXISTS idx_case_documents_document_id ON case_documents(document_id);
-
-CREATE INDEX IF NOT EXISTS idx_case_notes_case_id ON case_notes(case_id);
-CREATE INDEX IF NOT EXISTS idx_case_notes_user_id ON case_notes(user_id);
-CREATE INDEX IF NOT EXISTS idx_case_notes_created_at ON case_notes(created_at);
-
-CREATE INDEX IF NOT EXISTS idx_case_events_case_id ON case_events(case_id);
-CREATE INDEX IF NOT EXISTS idx_case_events_event_date ON case_events(event_date);
-CREATE INDEX IF NOT EXISTS idx_case_events_event_type ON case_events(event_type);
-
-CREATE INDEX IF NOT EXISTS idx_time_entries_case_id ON time_entries(case_id);
-CREATE INDEX IF NOT EXISTS idx_time_entries_user_id ON time_entries(user_id);
-CREATE INDEX IF NOT EXISTS idx_time_entries_date ON time_entries(date);
-
-CREATE INDEX IF NOT EXISTS idx_expenses_case_id ON expenses(case_id);
-CREATE INDEX IF NOT EXISTS idx_expenses_user_id ON expenses(user_id);
-CREATE INDEX IF NOT EXISTS idx_expenses_date ON expenses(date);
-
-CREATE INDEX IF NOT EXISTS idx_billing_case_id ON billing(case_id);
-CREATE INDEX IF NOT EXISTS idx_billing_status ON billing(status);
-CREATE INDEX IF NOT EXISTS idx_billing_due_date ON billing(due_date);
-
--- Create full-text search indexes
-CREATE INDEX IF NOT EXISTS idx_legal_documents_content_fts ON legal_documents USING GIN(to_tsvector('english', title || ' ' || COALESCE(content, '')));
-CREATE INDEX IF NOT EXISTS idx_legal_cases_content_fts ON legal_cases USING GIN(to_tsvector('english', title || ' ' || COALESCE(description, '')));
-CREATE INDEX IF NOT EXISTS idx_case_notes_content_fts ON case_notes USING GIN(to_tsvector('english', title || ' ' || content));
-
--- Create functions for automatic timestamp updates
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -180,6 +43,7 @@ BEGIN
     RETURN NEW;
 END;
 $$ language 'plpgsql';
+
 
 -- Create triggers for automatic timestamp updates
 CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
