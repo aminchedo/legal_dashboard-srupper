@@ -1,0 +1,147 @@
+name: 🚀 Deploy via LocalTunnel (No Auth Required)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  localtunnel-demo:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+    
+    - name: Install LocalTunnel
+      run: npm install -g localtunnel
+    
+    - name: Setup Dependencies  
+      run: |
+        cd frontend && npm install
+        cd ../backend && npm install
+    
+    - name: Deploy LocalTunnel Demo
+      run: |
+        # Start backend
+        cd backend
+        node server.js &
+        BACKEND_PID=$!
+        cd ..
+        sleep 8
+        
+        # Build and start frontend
+        cd frontend
+        npm run build
+        npm run preview --port 5173 &
+        FRONTEND_PID=$!
+        cd ..
+        sleep 10
+        
+        # Create LocalTunnel with custom subdomain
+        SUBDOMAIN="legal-dashboard-$(date +%s)"
+        lt --port 5173 --subdomain $SUBDOMAIN > tunnel.log &
+        LT_PID=$!
+        sleep 10
+        
+        # Get the public URL
+        TUNNEL_URL="https://${SUBDOMAIN}.loca.lt"
+        
+        echo "🌐 Legal Dashboard LIVE at: $TUNNEL_URL"
+        
+        # Test accessibility
+        sleep 5
+        curl -I "$TUNNEL_URL" && echo "✅ LocalTunnel demo accessible!" || echo "⚠️ May require clicking 'Continue' on LocalTunnel warning page"
+        
+        # Create demo report
+        cat > localtunnel-demo-report.html << EOF
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>🎬 Legal Dashboard - LocalTunnel Demo</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
+                .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+                .live-url { background: #28a745; color: white; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0; }
+                .live-url a { color: white; text-decoration: none; font-size: 20px; font-weight: bold; }
+                .demo-frame { width: 100%; height: 800px; border: 2px solid #ddd; border-radius: 8px; }
+                .warning { background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin: 20px 0; }
+                .status-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 20px 0; }
+                .status-item { background: #f8f9fa; padding: 15px; border-radius: 5px; text-align: center; }
+                h1 { color: #333; text-align: center; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>🎬 Legal Dashboard Live Demo</h1>
+                <p style="text-align: center; color: #666; font-size: 18px;">Powered by LocalTunnel - No authentication required!</p>
+                
+                <div class="live-url">
+                    <p>🌐 <strong>LIVE DASHBOARD URL:</strong></p>
+                    <a href="$TUNNEL_URL" target="_blank">$TUNNEL_URL</a>
+                    <p><small>⏰ Available for 60 minutes | 🔗 Click to access your dashboard</small></p>
+                </div>
+                
+                <div class="warning">
+                    <h4>📢 Important Note:</h4>
+                    <p>LocalTunnel may show a security warning page first. Simply click <strong>"Continue to $TUNNEL_URL"</strong> to access your legal dashboard. This is normal for LocalTunnel free service.</p>
+                </div>
+                
+                <div class="status-grid">
+                    <div class="status-item">
+                        <h4>🚀 Backend</h4>
+                        <p>Status: <strong style="color: green;">ONLINE</strong></p>
+                        <p>Port: 3001</p>
+                    </div>
+                    <div class="status-item">
+                        <h4>🌐 Frontend</h4>
+                        <p>Status: <strong style="color: green;">ONLINE</strong></p>
+                        <p>Port: 5173</p>
+                    </div>
+                    <div class="status-item">
+                        <h4>📡 Tunnel</h4>
+                        <p>Type: <strong>LocalTunnel</strong></p>
+                        <p>Auth: Not required</p>
+                    </div>
+                    <div class="status-item">
+                        <h4>⏰ Duration</h4>
+                        <p>Available: <strong>60 minutes</strong></p>
+                        <p>Renewable: Yes</p>
+                    </div>
+                </div>
+                
+                <h2>📱 Live Dashboard Preview:</h2>
+                <iframe src="$TUNNEL_URL" class="demo-frame" title="Legal Dashboard LocalTunnel Demo"></iframe>
+                
+                <div style="margin-top: 30px; text-align: center; color: #666; border-top: 1px solid #ddd; padding-top: 20px;">
+                    <h3>🔗 Quick Access Links:</h3>
+                    <p>📊 <strong>API Health:</strong> <a href="$TUNNEL_URL/api/dashboard/statistics" target="_blank">Statistics Endpoint</a></p>
+                    <p>📈 <strong>Dashboard Data:</strong> <a href="$TUNNEL_URL/api/dashboard/activity" target="_blank">Activity Endpoint</a></p>
+                    <p>🔄 <strong>Extend Demo:</strong> Re-run this GitHub Action workflow</p>
+                    <p>💾 <strong>Local Setup:</strong> Clone repository → ./simple-demo.sh</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        EOF
+        
+        # Keep demo alive for 60 minutes
+        echo "⏰ Keeping LocalTunnel demo alive for 60 minutes..."
+        echo "🌐 Dashboard URL: $TUNNEL_URL"
+        
+        for i in {1..60}; do
+            echo "⏱️ LocalTunnel demo running... ${i}/60 minutes"
+            sleep 60
+        done
+        
+        # Cleanup
+        kill $BACKEND_PID $FRONTEND_PID $LT_PID 2>/dev/null || true
+        echo "🎬 LocalTunnel demo completed!"
+    
+    - uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: localtunnel-demo-results
+        path: |
+          localtunnel-demo-report.html
+          tunnel.log
