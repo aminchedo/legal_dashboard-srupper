@@ -1,19 +1,15 @@
 # Multi-stage build for Legal Dashboard
 FROM node:18-alpine as frontend
 
-WORKDIR /app
+WORKDIR /app/frontend
 
-# Copy package files for dependency installation
-COPY package*.json ./
+# Install frontend dependencies
+COPY frontend/package*.json ./
+RUN npm ci --omit=dev --silent || npm ci --only=production --silent
 
-# Install dependencies (production only)
-RUN npm ci --only=production --silent
-
-# Copy source code
-COPY . .
-
-# Build frontend assets (with proper error handling)
-RUN npm run build 2>/dev/null || echo "No build script found, skipping frontend build"
+# Copy frontend source and build
+COPY frontend/ .
+RUN npm run build 2>/dev/null || echo "No frontend build, skipping"
 
 # Python backend stage (final stage)
 FROM python:3.11-alpine as backend
@@ -37,9 +33,9 @@ RUN pip install --no-cache-dir --upgrade pip && \
 COPY . .
 
 # Copy built frontend assets (only if they exist)
-COPY --from=frontend /app/dist ./static/ 2>/dev/null || \
-COPY --from=frontend /app/build ./static/ 2>/dev/null || \
-COPY --from=frontend /app/public ./static/ 2>/dev/null || \
+COPY --from=frontend /app/frontend/dist ./static/ 2>/dev/null || \
+COPY --from=frontend /app/frontend/build ./static/ 2>/dev/null || \
+COPY --from=frontend /app/frontend/public ./static/ 2>/dev/null || \
 echo "No frontend build artifacts found"
 
 # Environment variables

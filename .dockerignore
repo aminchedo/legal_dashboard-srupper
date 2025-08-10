@@ -1,16 +1,16 @@
 # Git and version control
 .git
-.gitignore
-.gitmodules
-.gitattributes
-
-# GitHub Actions and CI/CD
 .github
+.gitignore
+.gitattributes
+.gitmodules
+
+# CI configs
 .gitlab-ci.yml
 .travis.yml
 .circleci
 
-# Documentation
+# Docs
 README.md
 CHANGELOG.md
 CONTRIBUTING.md
@@ -18,38 +18,47 @@ LICENSE
 *.md
 docs/
 
-# Development files
+# Editors/IDE
 .vscode
 .idea
-*.swp
-*.swo
-*~
+*.sublime-*
 
-# Environment files
+# Env files
 .env
+.env.*
 .env.local
 .env.*.local
 .envrc
 
-# Dependencies that will be installed in container
+# Node
 node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-lock.yaml
+
+# Python
 __pycache__
-*.pyc
+*.py[cod]
 *.pyo
 *.pyd
 .Python
 pip-log.txt
 pip-delete-this-directory.txt
-
-# Build artifacts
-dist/
-build/
-*.egg-info/
 .pytest_cache/
+.venv
+venv
+
+# Build outputs
+/dist
+/build
+/.next
+/out
+*.egg-info/
 .coverage
 htmlcov/
 
-# OS generated files
+# OS
 .DS_Store
 .DS_Store?
 ._*
@@ -58,35 +67,20 @@ htmlcov/
 ehthumbs.db
 Thumbs.db
 
-# Docker files
+# Docker
 Dockerfile
 Dockerfile.*
 .dockerignore
 docker-compose*.yml
 
-# Temporary files
-tmp/
-temp/
+# Temp
+/tmp
+/temp
 *.tmp
 *.log
-
-# IDE and editor files
-*.sublime-*
-.vscode/
-.idea/
-
-# Testing
 coverage/
 .nyc_output
 .jest/
 
-# Servers submodule (if it exists and causes issues)
+# Submodules/problematic dirs
 servers/
-
-# Large media files (add specific extensions as needed)
-*.mp4
-*.avi
-*.mov
-*.wmv
-*.zip
-*.tar.gz
