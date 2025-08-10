@@ -1,154 +1,290 @@
-version: '3.8'
+#!/bin/bash
+# Legal Dashboard Production Deployment Script
+# Usage: ./docker-deploy.sh [local|production] [--pull-latest]
+set -e
 
-services:
-  app:
-    image: 24498743/legal-dashboard:latest
-    container_name: legal-dashboard-app
-    restart: unless-stopped
-    ports:
-      - "8000:8000"
-    environment:
-      - DATABASE_URL=postgresql://legal_user:legal_password@db:5432/legal_dashboard
-      - REDIS_URL=redis://redis:6379
-      - ENVIRONMENT=production
-      - SECRET_KEY=${SECRET_KEY:-your-super-secret-key-change-this-in-production}
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - legal-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    volumes:
-      - app_logs:/app/logs
+# Configuration
+DOCKER_USERNAME="24498743"
+DOCKER_TOKEN="dckr_pat_11XAFYII0Y7K9QGZD0X5A11Z18"
+IMAGE_NAME="legal-dashboard"
+BASE_CONTAINER_NAME="legal-dashboard"
+DEPLOYMENT_MODE=${1:-production}
+PULL_LATEST=${2:-"--pull-latest"}
 
-  db:
-    image: postgres:15-alpine
-    container_name: legal-dashboard-db
-    restart: unless-stopped
-    environment:
-      - POSTGRES_DB=legal_dashboard
-      - POSTGRES_USER=legal_user
-      - POSTGRES_PASSWORD=legal_password
-      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
-    networks:
-      - legal-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U legal_user -d legal_dashboard"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
 
-  redis:
-    image: redis:7-alpine
-    container_name: legal-dashboard-redis
-    restart: unless-stopped
-    command: redis-server --appendonly yes --requirepass redis_password
-    volumes:
-      - redis_data:/data
-    networks:
-      - legal-network
-    healthcheck:
-      test: ["CMD", "redis-cli", "-a", "redis_password", "ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
+echo -e "${BLUE}🚀 Starting Legal Dashboard deployment in $DEPLOYMENT_MODE mode...${NC}"
 
-  nginx:
-    image: nginx:alpine
-    container_name: legal-dashboard-nginx
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./ssl:/etc/nginx/ssl:ro
-      - nginx_logs:/var/log/nginx
-    depends_on:
-      - app
-    networks:
-      - legal-network
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+# Function to print colored output
+print_status() {
+    echo -e "${GREEN}✅ $1${NC}"
+}
 
-  certbot:
-    image: certbot/certbot
-    container_name: legal-dashboard-certbot
-    volumes:
-      - ./ssl:/etc/letsencrypt
-      - ./certbot/www:/var/www/certbot
-    command: certonly --webroot --webroot-path=/var/www/certbot --email your-email@example.com --agree-tos --no-eff-email -d your-domain.com
-    depends_on:
-      - nginx
+print_warning() {
+    echo -e "${YELLOW}⚠️  $1${NC}"
+}
 
-  # Optional: Monitoring with Prometheus and Grafana
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: legal-dashboard-prometheus
-    restart: unless-stopped
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - prometheus_data:/prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/etc/prometheus/console_libraries'
-      - '--web.console.templates=/etc/prometheus/consoles'
-      - '--storage.tsdb.retention.time=200h'
-      - '--web.enable-lifecycle'
-    networks:
-      - legal-network
+print_error() {
+    echo -e "${RED}❌ $1${NC}"
+}
 
-  grafana:
-    image: grafana/grafana:latest
-    container_name: legal-dashboard-grafana
-    restart: unless-stopped
-    ports:
-      - "3000:3000"
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin_password_change_this
-    volumes:
-      - grafana_data:/var/lib/grafana
-      - ./grafana/provisioning:/etc/grafana/provisioning:ro
-    networks:
-      - legal-network
-    depends_on:
-      - prometheus
+print_info() {
+    echo -e "${BLUE}ℹ️  $1${NC}"
+}
 
-volumes:
-  postgres_data:
-    driver: local
-  redis_data:
-    driver: local
-  app_logs:
-    driver: local
-  nginx_logs:
-    driver: local
-  prometheus_data:
-    driver: local
-  grafana_data:
-    driver: local
+# Function to check if container exists
+container_exists() {
+    docker ps -a --format "{{.Names}}" | grep -wq "$1"
+}
 
-networks:
-  legal-network:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.20.0.0/16
+# Function to check if container is running
+container_running() {
+    docker ps --format "{{.Names}}" | grep -wq "$1"
+}
+
+# Function to check if port is available
+port_available() {
+    ! lsof -Pi :$1 -sTCP:LISTEN -t >/dev/null 2>&1
+}
+
+# Function to create data directory
+create_data_directory() {
+    local data_dir="./data/$DEPLOYMENT_MODE"
+    if [ ! -d "$data_dir" ]; then
+        print_info "Creating data directory: $data_dir"
+        mkdir -p "$data_dir"
+        chmod 755 "$data_dir"
+    fi
+    echo "$data_dir"
+}
+
+# Set container name and configuration based on mode
+if [ "$DEPLOYMENT_MODE" = "production" ]; then
+    CONTAINER_NAME="${BASE_CONTAINER_NAME}-prod"
+    APP_PORT=80
+    CONTAINER_PORT=8000
+    ENV_ENVIRONMENT="production"
+    ENV_DEBUG="false"
+    MEMORY_LIMIT="1g"
+    CPU_LIMIT="1.5"
+elif [ "$DEPLOYMENT_MODE" = "local" ]; then
+    CONTAINER_NAME="$BASE_CONTAINER_NAME"
+    APP_PORT=8000
+    CONTAINER_PORT=8000
+    ENV_ENVIRONMENT="development"
+    ENV_DEBUG="true"
+    MEMORY_LIMIT="512m"
+    CPU_LIMIT="1.0"
+else
+    print_error "Invalid deployment mode. Use 'local' or 'production'"
+    exit 1
+fi
+
+# Check if port is available
+if ! port_available $APP_PORT; then
+    print_warning "Port $APP_PORT is already in use. Checking if it's our container..."
+    if container_running "$CONTAINER_NAME"; then
+        print_info "Our container is already running on port $APP_PORT"
+    else
+        print_error "Port $APP_PORT is occupied by another service"
+        exit 1
+    fi
+fi
+
+# Create data directory for persistence
+DATA_DIR=$(create_data_directory)
+
+# Stop and remove existing container if it exists
+if container_exists "$CONTAINER_NAME"; then
+    print_info "Stopping existing container: $CONTAINER_NAME"
+    docker stop "$CONTAINER_NAME" || true
+    print_info "Removing existing container: $CONTAINER_NAME"
+    docker rm "$CONTAINER_NAME" || true
+fi
+
+# Pull latest image if requested
+if [ "$PULL_LATEST" = "--pull-latest" ]; then
+    print_info "Pulling latest image from Docker Hub..."
+    
+    # Login to Docker Hub (in case of private repos in future)
+    echo "$DOCKER_TOKEN" | docker login -u "$DOCKER_USERNAME" --password-stdin >/dev/null 2>&1
+    
+    if docker pull "$DOCKER_USERNAME/$IMAGE_NAME:latest"; then
+        print_status "Successfully pulled latest image"
+    else
+        print_error "Failed to pull latest image"
+        exit 1
+    fi
+    
+    # Logout for security
+    docker logout >/dev/null 2>&1
+else
+    print_info "Skipping image pull (using local image)"
+fi
+
+# Create Docker network if it doesn't exist
+NETWORK_NAME="legal-dashboard-network"
+if ! docker network ls | grep -q "$NETWORK_NAME"; then
+    print_info "Creating Docker network: $NETWORK_NAME"
+    docker network create "$NETWORK_NAME" >/dev/null 2>&1
+fi
+
+# Deploy container
+print_info "Deploying in $DEPLOYMENT_MODE mode..."
+
+# Common Docker run parameters
+DOCKER_COMMON_PARAMS="
+    --name $CONTAINER_NAME
+    --network $NETWORK_NAME
+    -p $APP_PORT:$CONTAINER_PORT
+    --restart unless-stopped
+    -e ENVIRONMENT=$ENV_ENVIRONMENT
+    -e DEBUG=$ENV_DEBUG
+    -e TZ=UTC
+    --memory=$MEMORY_LIMIT
+    --cpus=$CPU_LIMIT
+    --health-cmd=\"curl -f http://localhost:$CONTAINER_PORT/health || curl -f http://localhost:$CONTAINER_PORT/ || exit 1\"
+    --health-interval=30s
+    --health-timeout=10s
+    --health-retries=3
+    --health-start-period=15s
+    -v $DATA_DIR:/app/data
+    -v /var/log/legal-dashboard-$DEPLOYMENT_MODE:/app/logs
+"
+
+# Production-specific settings
+if [ "$DEPLOYMENT_MODE" = "production" ]; then
+    DOCKER_PROD_PARAMS="
+        --read-only
+        --tmpfs /tmp
+        --tmpfs /var/tmp
+        --security-opt=no-new-privileges:true
+        --cap-drop=ALL
+        --cap-add=NET_BIND_SERVICE
+    "
+    DOCKER_PARAMS="$DOCKER_COMMON_PARAMS $DOCKER_PROD_PARAMS"
+else
+    DOCKER_PARAMS="$DOCKER_COMMON_PARAMS"
+fi
+
+# Run the container
+if docker run -d $DOCKER_PARAMS "$DOCKER_USERNAME/$IMAGE_NAME:latest"; then
+    print_status "$DEPLOYMENT_MODE deployment initiated!"
+else
+    print_error "Failed to start container"
+    exit 1
+fi
+
+# Wait for container to start
+print_info "Waiting for container to start..."
+sleep 10
+
+# Check container status
+if container_running "$CONTAINER_NAME"; then
+    print_status "Container is running successfully!"
+    
+    # Show container info
+    echo ""
+    print_info "Container Status:"
+    docker ps --filter "name=$CONTAINER_NAME" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}\t{{.Image}}"
+    
+    # Wait for health check
+    print_info "Waiting for health check to pass..."
+    timeout=60
+    while [ $timeout -gt 0 ]; do
+        health_status=$(docker inspect --format='{{.State.Health.Status}}' "$CONTAINER_NAME" 2>/dev/null || echo "unknown")
+        if [ "$health_status" = "healthy" ]; then
+            print_status "Health check passed!"
+            break
+        elif [ "$health_status" = "unhealthy" ]; then
+            print_error "Health check failed!"
+            break
+        fi
+        sleep 2
+        timeout=$((timeout-2))
+    done
+    
+    # Show container logs (last 15 lines)
+    echo ""
+    print_info "Recent Logs:"
+    docker logs --tail 15 "$CONTAINER_NAME"
+    
+    # Test application endpoint
+    echo ""
+    print_info "Testing Application Endpoint:"
+    sleep 3
+    if curl -f -s "http://localhost:$APP_PORT/health" >/dev/null 2>&1; then
+        print_status "Health endpoint responding correctly"
+    elif curl -f -s "http://localhost:$APP_PORT/" >/dev/null 2>&1; then
+        print_status "Application responding (health endpoint may not exist)"
+    else
+        print_warning "Application endpoint not responding yet (may need more time)"
+    fi
+    
+else
+    print_error "Container failed to start!"
+    echo ""
+    print_info "Container logs:"
+    docker logs "$CONTAINER_NAME" 2>/dev/null || echo "No logs available"
+    exit 1
+fi
+
+# Cleanup old images
+print_info "Cleaning up old Docker images..."
+docker image prune -f >/dev/null 2>&1 || true
+
+echo ""
+print_status "🎉 Deployment completed successfully!"
+echo ""
+print_info "📋 Deployment Summary:"
+echo "   Mode:           $DEPLOYMENT_MODE"
+echo "   Container:      $CONTAINER_NAME"
+echo "   Port:           $APP_PORT"
+echo "   Data Directory: $DATA_DIR"
+echo "   Network:        $NETWORK_NAME"
+
+if [ "$DEPLOYMENT_MODE" = "production" ]; then
+    echo "   Application:    http://localhost"
+    echo "   Health Check:   http://localhost/health"
+else
+    echo "   Application:    http://localhost:8000"
+    echo "   Health Check:   http://localhost:8000/health"
+fi
+
+echo ""
+print_info "📋 Useful commands:"
+echo "   View logs:       docker logs -f $CONTAINER_NAME"
+echo "   Stop container:  docker stop $CONTAINER_NAME"
+echo "   Restart:         docker restart $CONTAINER_NAME"
+echo "   Remove:          docker rm -f $CONTAINER_NAME"
+echo "   Shell access:    docker exec -it $CONTAINER_NAME sh"
+echo "   Health status:   docker inspect --format='{{.State.Health.Status}}' $CONTAINER_NAME"
+
+# Create systemd service file for production
+if [ "$DEPLOYMENT_MODE" = "production" ]; then
+    SERVICE_FILE="/tmp/legal-dashboard.service"
+    cat > "$SERVICE_FILE" << EOF
+[Unit]
+Description=Legal Dashboard Container
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/docker start $CONTAINER_NAME
+ExecStop=/usr/bin/docker stop $CONTAINER_NAME
+TimeoutStartSec=0
+
+[Install]
+WantedBy=multi-user.target
+EOF
+    
+    print_info "Systemd service file created at: $SERVICE_FILE"
+    print_info "To enable auto-start: sudo cp $SERVICE_FILE /etc/systemd/system/ && sudo systemctl enable legal-dashboard"
+fi
