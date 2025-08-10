@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Legal Dashboard – Demo Landing</title>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;margin:0;background:#f5f7fb}
+    .wrap{max-width:1100px;margin:32px auto;background:#fff;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.06);overflow:hidden}
+    .head{background:#1f2937;color:#fff;padding:24px;text-align:center}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;padding:20px}
+    .card{background:#f9fafb;border-radius:10px;padding:16px;border-left:4px solid #2563eb}
+    .btn{display:inline-block;padding:10px 18px;background:#2563eb;color:#fff;text-decoration:none;border-radius:8px;font-weight:700}
+    .center{text-align:center;margin:16px 0}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="head">
+      <h1>Legal Dashboard</h1>
+      <p>Static frontend landing page</p>
+    </div>
+    <div class="center">
+      <a class="btn" href="../frontend/dist/index.html">Open Frontend</a>
+      <a class="btn" href="https://github.com/REPO_PLACEHOLDER/actions">Run Live Demo</a>
+    </div>
+    <div class="grid">
+      <div class="card"><h3>Static Frontend</h3><div>UI available without backend.</div><div>Use live demo for API features.</div></div>
+      <div class="card"><h3>Run Live Demo</h3><div>Use Actions → Orchestrator.</div><div>Receives a public URL.</div></div>
+      <div class="card"><h3>Local Dev</h3><div>Run <code>./scripts/enhanced-demo.sh</code></div><div>Open http://localhost:5173</div></div>
+      <div class="card"><h3>Docs</h3><div>See docs/ in repo.</div></div>
+    </div>
+  </div>
+</body>
+</html>
