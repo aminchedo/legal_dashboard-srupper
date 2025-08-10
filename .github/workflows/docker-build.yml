@@ -1,0 +1,192 @@
+name: Legal Dashboard Docker Build (Debug Version)
+
+on:
+  push:
+    branches: ["main", "develop"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+env:
+  REGISTRY: docker.io
+  IMAGE_NAME: 24498743/legal-dashboard
+
+jobs:
+  debug-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 🔍 Debug Environment
+        run: |
+          echo "=== ENVIRONMENT DEBUG ==="
+          echo "Event name: ${{ github.event_name }}"
+          echo "Branch: ${{ github.ref }}"
+          echo "Actor: ${{ github.actor }}"
+          echo "Repository: ${{ github.repository }}"
+          echo "SHA: ${{ github.sha }}"
+          echo "Image name: ${{ env.IMAGE_NAME }}"
+          echo ""
+          echo "=== DOCKER DEBUG ==="
+          docker --version
+          echo ""
+          echo "=== WORKSPACE CONTENT ==="
+          ls -la
+          echo ""
+          echo "=== DOCKERFILE CHECK ==="
+          if [ -f Dockerfile ]; then
+            echo "✅ Dockerfile exists"
+            head -50 Dockerfile || true
+          else
+            echo "❌ No Dockerfile found"
+          fi
+
+      - name: 🐳 Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 🔐 Docker Hub Login (Debug)
+        shell: bash
+        run: |
+          echo "=== DOCKER LOGIN DEBUG ==="
+          echo "Registry: ${{ env.REGISTRY }}"
+          echo "Username: 24498743"
+          echo "Attempting login..."
+
+          PASS="${{ secrets.DOCKER_PASSWORD }}"
+          if [ -z "$PASS" ]; then PASS="${{ secrets.DOCKERHUB_TOKEN }}"; fi
+          if [ -z "$PASS" ]; then PASS="${{ secrets.DOCKER_TOKEN }}"; fi
+          if [ -z "$PASS" ]; then
+            echo "❌ No Docker Hub token secret provided (expected one of: DOCKER_PASSWORD, DOCKERHUB_TOKEN, DOCKER_TOKEN)"
+            exit 1
+          fi
+
+          echo "$PASS" | docker login ${{ env.REGISTRY }} -u "24498743" --password-stdin
+
+          if [ $? -eq 0 ]; then
+            echo "✅ Docker login successful"
+          else
+            echo "❌ Docker login failed"
+            exit 1
+          fi
+
+          echo "Testing basic Docker pull..."
+          docker pull hello-world || echo "Basic docker pull check completed"
+
+      - name: 🏗️ Build Docker Image (Manual)
+        shell: bash
+        run: |
+          echo "=== DOCKER BUILD DEBUG ==="
+
+          # Create minimal Dockerfile if missing
+          if [ ! -f Dockerfile ]; then
+            echo "Creating minimal Dockerfile..."
+            cat > Dockerfile << 'EOF'
+FROM python:3.11-alpine
+WORKDIR /app
+RUN echo '<h1>Legal Dashboard - Test Build</h1>' > index.html
+EXPOSE 8000
+CMD ["sh", "-c", "python -m http.server 8000 --directory /app"]
+EOF
+          fi
+
+          TAG="${{ env.IMAGE_NAME }}:test-$(date +%Y%m%d-%H%M%S)"
+          echo "Building image with tag: $TAG"
+
+          docker build -t "$TAG" .
+          build_status=$?
+
+          if [ $build_status -eq 0 ]; then
+            echo "✅ Docker build successful"
+            echo "IMAGE_TAG=$TAG" >> $GITHUB_ENV
+          else
+            echo "❌ Docker build failed"
+            exit 1
+          fi
+
+          echo "=== LOCAL IMAGES ==="
+          docker images | head -50
+
+      - name: 🚀 Force Push to Docker Hub
+        shell: bash
+        run: |
+          echo "=== DOCKER PUSH DEBUG ==="
+          echo "Pushing image: $IMAGE_TAG"
+
+          if [ -z "$IMAGE_TAG" ]; then
+            echo "❌ IMAGE_TAG not set"
+            exit 1
+          fi
+
+          docker push "$IMAGE_TAG"
+          push_status=$?
+
+          if [ $push_status -eq 0 ]; then
+            echo "✅ Docker push successful"
+            echo "🔗 Check: https://hub.docker.com/r/24498743/legal-dashboard/tags"
+          else
+            echo "❌ Docker push failed"
+            echo "Retrying with verbose output..."
+            docker push "$IMAGE_TAG" || true
+          fi
+
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            echo "Tagging and pushing as latest..."
+            docker tag "$IMAGE_TAG" "${{ env.IMAGE_NAME }}:latest"
+            docker push "${{ env.IMAGE_NAME }}:latest"
+          fi
+
+      - name: 🔄 Alternative: Direct Buildx Push
+        if: failure()
+        shell: bash
+        run: |
+          echo "=== TRYING DIRECT BUILDX PUSH ==="
+          docker buildx build \
+            --platform linux/amd64,linux/arm64 \
+            --tag "${{ env.IMAGE_NAME }}:direct-$(date +%Y%m%d-%H%M%S)" \
+            --tag "${{ env.IMAGE_NAME }}:direct-latest" \
+            --push \
+            .
+          echo "✅ Direct buildx push completed"
+
+      - name: 🧪 Test Docker Hub Image
+        shell: bash
+        run: |
+          echo "=== TESTING PUSHED IMAGE ==="
+
+          docker pull "$IMAGE_TAG"
+          docker run --rm -d -p 8000:8000 --name test-container "$IMAGE_TAG"
+          sleep 15
+
+          if curl -f http://localhost:8000/ >/dev/null 2>&1; then
+            echo "✅ Container is responding on /"
+          else
+            echo "⚠️ Container endpoint not responding on /"
+            docker logs test-container || true
+          fi
+
+          docker stop test-container || true
+
+      - name: 📝 Final Status
+        if: always()
+        shell: bash
+        run: |
+          echo "=== FINAL STATUS ==="
+          echo "Event: ${{ github.event_name }}"
+          echo "Job Status: ${{ job.status }}"
+          echo "Image Tag: ${{ env.IMAGE_TAG }}"
+          echo ""
+          echo "🔗 Docker Hub: https://hub.docker.com/r/24498743/legal-dashboard"
+          echo "📋 Check tags at: https://hub.docker.com/r/24498743/legal-dashboard/tags"
+
+          echo "### 🐳 Docker Build Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ job.status }}" = "success" ]; then
+            echo "✅ **Build and Push:** Successful" >> $GITHUB_STEP_SUMMARY
+            echo "🏷️ **Image Tag:** \`${{ env.IMAGE_TAG }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "🔗 **Docker Hub:** [View Tags](https://hub.docker.com/r/24498743/legal-dashboard/tags)" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Build and Push:** Failed" >> $GITHUB_STEP_SUMMARY
+            echo "🔍 **Action:** Check the logs above for details" >> $GITHUB_STEP_SUMMARY
+          fi

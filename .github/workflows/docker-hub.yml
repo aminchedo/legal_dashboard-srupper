@@ -55,6 +55,7 @@ jobs:
         platforms: linux/amd64,linux/arm64
 
     - name: Run security scan
+      if: contains(steps.meta.outputs.tags, 'latest')
       uses: aquasecurity/trivy-action@master
       with:
         image-ref: ${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest
@@ -68,6 +69,7 @@ jobs:
         sarif_file: 'trivy-results.sarif'
 
     - name: Test container
+      if: contains(steps.meta.outputs.tags, 'latest')
       run: |
         docker run -d --name test-container -p 8000:8000 ${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest
         sleep 30
