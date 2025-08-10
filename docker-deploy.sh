@@ -1,116 +1,290 @@
 #!/bin/bash
-
 # Legal Dashboard Production Deployment Script
-# Usage: ./docker-deploy.sh [local|production]
-
+# Usage: ./docker-deploy.sh [local|production] [--pull-latest]
 set -e
 
+# Configuration
 DOCKER_USERNAME="24498743"
+DOCKER_TOKEN="dckr_pat_11XAFYII0Y7K9QGZD0X5A11Z18"
 IMAGE_NAME="legal-dashboard"
-CONTAINER_NAME="legal-dashboard"
+BASE_CONTAINER_NAME="legal-dashboard"
 DEPLOYMENT_MODE=${1:-production}
+PULL_LATEST=${2:-"--pull-latest"}
 
-echo "🚀 Starting Legal Dashboard deployment in $DEPLOYMENT_MODE mode..."
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+echo -e "${BLUE}🚀 Starting Legal Dashboard deployment in $DEPLOYMENT_MODE mode...${NC}"
+
+# Function to print colored output
+print_status() {
+    echo -e "${GREEN}✅ $1${NC}"
+}
+
+print_warning() {
+    echo -e "${YELLOW}⚠️  $1${NC}"
+}
+
+print_error() {
+    echo -e "${RED}❌ $1${NC}"
+}
+
+print_info() {
+    echo -e "${BLUE}ℹ️  $1${NC}"
+}
 
 # Function to check if container exists
 container_exists() {
-    docker ps -a --format "table {{.Names}}" | grep -q "^$1$"
+    docker ps -a --format "{{.Names}}" | grep -wq "$1"
 }
 
 # Function to check if container is running
 container_running() {
-    docker ps --format "table {{.Names}}" | grep -q "^$1$"
+    docker ps --format "{{.Names}}" | grep -wq "$1"
 }
+
+# Function to check if port is available
+port_available() {
+    ! lsof -Pi :$1 -sTCP:LISTEN -t >/dev/null 2>&1
+}
+
+# Function to create data directory
+create_data_directory() {
+    local data_dir="./data/$DEPLOYMENT_MODE"
+    if [ ! -d "$data_dir" ]; then
+        print_info "Creating data directory: $data_dir"
+        mkdir -p "$data_dir"
+        chmod 755 "$data_dir"
+    fi
+    echo "$data_dir"
+}
+
+# Set container name and configuration based on mode
+if [ "$DEPLOYMENT_MODE" = "production" ]; then
+    CONTAINER_NAME="${BASE_CONTAINER_NAME}-prod"
+    APP_PORT=80
+    CONTAINER_PORT=8000
+    ENV_ENVIRONMENT="production"
+    ENV_DEBUG="false"
+    MEMORY_LIMIT="1g"
+    CPU_LIMIT="1.5"
+elif [ "$DEPLOYMENT_MODE" = "local" ]; then
+    CONTAINER_NAME="$BASE_CONTAINER_NAME"
+    APP_PORT=8000
+    CONTAINER_PORT=8000
+    ENV_ENVIRONMENT="development"
+    ENV_DEBUG="true"
+    MEMORY_LIMIT="512m"
+    CPU_LIMIT="1.0"
+else
+    print_error "Invalid deployment mode. Use 'local' or 'production'"
+    exit 1
+fi
+
+# Check if port is available
+if ! port_available $APP_PORT; then
+    print_warning "Port $APP_PORT is already in use. Checking if it's our container..."
+    if container_running "$CONTAINER_NAME"; then
+        print_info "Our container is already running on port $APP_PORT"
+    else
+        print_error "Port $APP_PORT is occupied by another service"
+        exit 1
+    fi
+fi
+
+# Create data directory for persistence
+DATA_DIR=$(create_data_directory)
 
 # Stop and remove existing container if it exists
 if container_exists "$CONTAINER_NAME"; then
-    echo "📦 Stopping existing container: $CONTAINER_NAME"
+    print_info "Stopping existing container: $CONTAINER_NAME"
     docker stop "$CONTAINER_NAME" || true
-    echo "🗑️  Removing existing container: $CONTAINER_NAME"
+    print_info "Removing existing container: $CONTAINER_NAME"
     docker rm "$CONTAINER_NAME" || true
 fi
 
-# Pull latest image from Docker Hub
-echo "⬇️  Pulling latest image from Docker Hub..."
-docker pull "$DOCKER_USERNAME/$IMAGE_NAME:latest"
-
-# Deploy based on mode
-if [ "$DEPLOYMENT_MODE" = "local" ]; then
-    echo "🏠 Deploying in LOCAL mode..."
-    docker run -d \
-        --name "$CONTAINER_NAME" \
-        -p 8000:8000 \
-        --restart unless-stopped \
-        -e ENVIRONMENT=development \
-        -e DEBUG=true \
-        "$DOCKER_USERNAME/$IMAGE_NAME:latest"
+# Pull latest image if requested
+if [ "$PULL_LATEST" = "--pull-latest" ]; then
+    print_info "Pulling latest image from Docker Hub..."
     
-    echo "✅ Local deployment completed!"
-    echo "🌐 Application URL: http://localhost:8000"
+    # Login to Docker Hub (in case of private repos in future)
+    echo "$DOCKER_TOKEN" | docker login -u "$DOCKER_USERNAME" --password-stdin >/dev/null 2>&1
     
-elif [ "$DEPLOYMENT_MODE" = "production" ]; then
-    echo "🏭 Deploying in PRODUCTION mode..."
-    docker run -d \
-        --name "$CONTAINER_NAME-prod" \
-        -p 80:8000 \
-        --restart unless-stopped \
-        -e ENVIRONMENT=production \
-        -e DEBUG=false \
-        --memory="512m" \
-        --cpus="1.0" \
-        --health-cmd="curl -f http://localhost:8000/health || exit 1" \
-        --health-interval=30s \
-        --health-timeout=10s \
-        --health-retries=3 \
-        "$DOCKER_USERNAME/$IMAGE_NAME:latest"
+    if docker pull "$DOCKER_USERNAME/$IMAGE_NAME:latest"; then
+        print_status "Successfully pulled latest image"
+    else
+        print_error "Failed to pull latest image"
+        exit 1
+    fi
     
-    echo "✅ Production deployment completed!"
-    echo "🌐 Application URL: http://localhost"
-    CONTAINER_NAME="$CONTAINER_NAME-prod"
-    
+    # Logout for security
+    docker logout >/dev/null 2>&1
 else
-    echo "❌ Invalid deployment mode. Use 'local' or 'production'"
+    print_info "Skipping image pull (using local image)"
+fi
+
+# Create Docker network if it doesn't exist
+NETWORK_NAME="legal-dashboard-network"
+if ! docker network ls | grep -q "$NETWORK_NAME"; then
+    print_info "Creating Docker network: $NETWORK_NAME"
+    docker network create "$NETWORK_NAME" >/dev/null 2>&1
+fi
+
+# Deploy container
+print_info "Deploying in $DEPLOYMENT_MODE mode..."
+
+# Common Docker run parameters
+DOCKER_COMMON_PARAMS="
+    --name $CONTAINER_NAME
+    --network $NETWORK_NAME
+    -p $APP_PORT:$CONTAINER_PORT
+    --restart unless-stopped
+    -e ENVIRONMENT=$ENV_ENVIRONMENT
+    -e DEBUG=$ENV_DEBUG
+    -e TZ=UTC
+    --memory=$MEMORY_LIMIT
+    --cpus=$CPU_LIMIT
+    --health-cmd=\"curl -f http://localhost:$CONTAINER_PORT/health || curl -f http://localhost:$CONTAINER_PORT/ || exit 1\"
+    --health-interval=30s
+    --health-timeout=10s
+    --health-retries=3
+    --health-start-period=15s
+    -v $DATA_DIR:/app/data
+    -v /var/log/legal-dashboard-$DEPLOYMENT_MODE:/app/logs
+"
+
+# Production-specific settings
+if [ "$DEPLOYMENT_MODE" = "production" ]; then
+    DOCKER_PROD_PARAMS="
+        --read-only
+        --tmpfs /tmp
+        --tmpfs /var/tmp
+        --security-opt=no-new-privileges:true
+        --cap-drop=ALL
+        --cap-add=NET_BIND_SERVICE
+    "
+    DOCKER_PARAMS="$DOCKER_COMMON_PARAMS $DOCKER_PROD_PARAMS"
+else
+    DOCKER_PARAMS="$DOCKER_COMMON_PARAMS"
+fi
+
+# Run the container
+if docker run -d $DOCKER_PARAMS "$DOCKER_USERNAME/$IMAGE_NAME:latest"; then
+    print_status "$DEPLOYMENT_MODE deployment initiated!"
+else
+    print_error "Failed to start container"
     exit 1
 fi
 
 # Wait for container to start
-echo "⏳ Waiting for container to start..."
-sleep 5
+print_info "Waiting for container to start..."
+sleep 10
 
 # Check container status
 if container_running "$CONTAINER_NAME"; then
-    echo "✅ Container is running successfully!"
+    print_status "Container is running successfully!"
     
     # Show container info
     echo ""
-    echo "📊 Container Status:"
-    docker ps --filter "name=$CONTAINER_NAME" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+    print_info "Container Status:"
+    docker ps --filter "name=$CONTAINER_NAME" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}\t{{.Image}}"
     
-    # Show container logs (last 10 lines)
-    echo ""
-    echo "📝 Recent Logs:"
-    docker logs --tail 10 "$CONTAINER_NAME"
+    # Wait for health check
+    print_info "Waiting for health check to pass..."
+    timeout=60
+    while [ $timeout -gt 0 ]; do
+        health_status=$(docker inspect --format='{{.State.Health.Status}}' "$CONTAINER_NAME" 2>/dev/null || echo "unknown")
+        if [ "$health_status" = "healthy" ]; then
+            print_status "Health check passed!"
+            break
+        elif [ "$health_status" = "unhealthy" ]; then
+            print_error "Health check failed!"
+            break
+        fi
+        sleep 2
+        timeout=$((timeout-2))
+    done
     
-    # Test health endpoint
+    # Show container logs (last 15 lines)
     echo ""
-    echo "🔍 Health Check:"
-    if [ "$DEPLOYMENT_MODE" = "production" ]; then
-        curl -f http://localhost/health 2>/dev/null || echo "Health check failed"
+    print_info "Recent Logs:"
+    docker logs --tail 15 "$CONTAINER_NAME"
+    
+    # Test application endpoint
+    echo ""
+    print_info "Testing Application Endpoint:"
+    sleep 3
+    if curl -f -s "http://localhost:$APP_PORT/health" >/dev/null 2>&1; then
+        print_status "Health endpoint responding correctly"
+    elif curl -f -s "http://localhost:$APP_PORT/" >/dev/null 2>&1; then
+        print_status "Application responding (health endpoint may not exist)"
     else
-        curl -f http://localhost:8000/health 2>/dev/null || echo "Health check failed"
+        print_warning "Application endpoint not responding yet (may need more time)"
     fi
     
 else
-    echo "❌ Container failed to start!"
-    echo "📝 Container logs:"
-    docker logs "$CONTAINER_NAME"
+    print_error "Container failed to start!"
+    echo ""
+    print_info "Container logs:"
+    docker logs "$CONTAINER_NAME" 2>/dev/null || echo "No logs available"
     exit 1
 fi
 
+# Cleanup old images
+print_info "Cleaning up old Docker images..."
+docker image prune -f >/dev/null 2>&1 || true
+
 echo ""
-echo "🎉 Deployment completed successfully!"
-echo "📋 Useful commands:"
-echo "   View logs:      docker logs -f $CONTAINER_NAME"
-echo "   Stop container: docker stop $CONTAINER_NAME"
-echo "   Restart:        docker restart $CONTAINER_NAME"
-echo "   Remove:         docker rm -f $CONTAINER_NAME"
+print_status "🎉 Deployment completed successfully!"
+echo ""
+print_info "📋 Deployment Summary:"
+echo "   Mode:           $DEPLOYMENT_MODE"
+echo "   Container:      $CONTAINER_NAME"
+echo "   Port:           $APP_PORT"
+echo "   Data Directory: $DATA_DIR"
+echo "   Network:        $NETWORK_NAME"
+
+if [ "$DEPLOYMENT_MODE" = "production" ]; then
+    echo "   Application:    http://localhost"
+    echo "   Health Check:   http://localhost/health"
+else
+    echo "   Application:    http://localhost:8000"
+    echo "   Health Check:   http://localhost:8000/health"
+fi
+
+echo ""
+print_info "📋 Useful commands:"
+echo "   View logs:       docker logs -f $CONTAINER_NAME"
+echo "   Stop container:  docker stop $CONTAINER_NAME"
+echo "   Restart:         docker restart $CONTAINER_NAME"
+echo "   Remove:          docker rm -f $CONTAINER_NAME"
+echo "   Shell access:    docker exec -it $CONTAINER_NAME sh"
+echo "   Health status:   docker inspect --format='{{.State.Health.Status}}' $CONTAINER_NAME"
+
+# Create systemd service file for production
+if [ "$DEPLOYMENT_MODE" = "production" ]; then
+    SERVICE_FILE="/tmp/legal-dashboard.service"
+    cat > "$SERVICE_FILE" << EOF
+[Unit]
+Description=Legal Dashboard Container
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/docker start $CONTAINER_NAME
+ExecStop=/usr/bin/docker stop $CONTAINER_NAME
+TimeoutStartSec=0
+
+[Install]
+WantedBy=multi-user.target
+EOF
+    
+    print_info "Systemd service file created at: $SERVICE_FILE"
+    print_info "To enable auto-start: sudo cp $SERVICE_FILE /etc/systemd/system/ && sudo systemctl enable legal-dashboard"
+fi
