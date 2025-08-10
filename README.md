@@ -115,6 +115,32 @@ docker-compose up --build
 ### Azure Configuration
 See deploy.yml workflow for required Azure settings.
 
+## 🔧 Repository Configuration Required
+
+### Enable Code Scanning:
+1. Go to: Settings → Code security and analysis
+2. Enable "Dependency graph"
+3. Enable "Dependabot alerts" 
+4. Enable "Dependabot security updates"
+5. Enable "Code scanning" → Set up → GitHub Actions
+
+### Enable Advanced Security (if available):
+1. Go to: Settings → Code security and analysis
+2. Enable "Secret scanning"
+3. Enable "Push protection"
+
+### Required Repository Secrets:
+- Currently using hardcoded credentials (temporary)
+- For production: Set `DOCKER_TOKEN` in repository secrets
+
+## 🛠️ Troubleshooting
+
+### Common Issues:
+1. **Invalid tag format:** Fixed metadata action configuration
+2. **Docker login failed:** Check credentials and registry
+3. **Code scanning warnings:** Enable in repository settings
+4. **Trivy scan failures:** Requires proper permissions
+
 ## Troubleshooting
 - Port already in use: stop conflicting processes or change `PORT`/Vite port.
 - CORS issues: set `CORS_ORIGIN` to your frontend origin.

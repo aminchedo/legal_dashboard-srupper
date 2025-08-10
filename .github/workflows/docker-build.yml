@@ -1,0 +1,157 @@
+name: Legal Dashboard CI/CD Pipeline
+
+on:
+  push:
+    branches: ["main", "develop"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+env:
+  REGISTRY: docker.io
+  IMAGE_NAME: 24498743/legal-dashboard
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+      packages: write
+      security-events: write
+      actions: read
+    
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+        
+      - name: 🐳 Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        
+      - name: 🔐 Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: "24498743"
+          password: "dckr_pat_O4ZPRcyCYKk2PfwLhsbpP1lF4sc"
+        continue-on-error: false
+        
+      - name: 📊 Extract Metadata (Fixed Tag Generation)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr,prefix=pr-
+            type=sha,prefix=sha-,format=short
+            type=raw,value=latest,enable={{is_default_branch}}
+          labels: |
+            org.opencontainers.image.title=Legal Dashboard
+            org.opencontainers.image.description=Professional legal case management dashboard
+            org.opencontainers.image.vendor=Legal Tech Solutions
+            org.opencontainers.image.source={{.GitURL}}
+            org.opencontainers.image.revision={{.FullCommit}}
+            
+      - name: 🏗️ Build and Push Docker Image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          
+      - name: 🔒 Run Trivy Security Scan
+        uses: aquasecurity/trivy-action@master
+        if: github.event_name != 'pull_request'
+        with:
+          image-ref: ${{ env.IMAGE_NAME }}:latest
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+        continue-on-error: true
+        
+      - name: 📤 Upload Trivy Scan Results
+        uses: github/codeql-action/upload-sarif@v3
+        if: github.event_name != 'pull_request'
+        with:
+          sarif_file: 'trivy-results.sarif'
+        continue-on-error: true
+        
+      - name: 🧪 Test Docker Image
+        if: github.event_name != 'pull_request'
+        run: |
+          echo "Testing Docker image..."
+          
+          # Pull the image that was just built
+          docker pull ${{ env.IMAGE_NAME }}:latest
+          
+          # Run container in background
+          docker run --rm -d -p 7860:7860 --name test-container ${{ env.IMAGE_NAME }}:latest
+          
+          # Wait for container to start
+          echo "Waiting for container to start..."
+          sleep 60
+          
+          # Test health endpoint with retry logic
+          max_attempts=15
+          attempt=1
+          success=false
+          
+          while [ $attempt -le $max_attempts ]; do
+            echo "Health check attempt $attempt/$max_attempts"
+            
+            if curl -f --connect-timeout 10 --max-time 30 http://localhost:7860/ >/dev/null 2>&1; then
+              echo "✅ Container is responding!"
+              success=true
+              break
+            elif curl -f --connect-timeout 10 --max-time 30 http://localhost:7860/health >/dev/null 2>&1; then
+              echo "✅ Health endpoint responding!"
+              success=true
+              break
+            else
+              echo "Attempt $attempt failed, retrying in 10 seconds..."
+              sleep 10
+              attempt=$((attempt + 1))
+            fi
+          done
+          
+          # Show container logs for debugging
+          echo "=== Container Logs ==="
+          docker logs test-container || true
+          
+          # Stop container
+          docker stop test-container || true
+          
+          # Fail if health check never succeeded
+          if [ "$success" = false ]; then
+            echo "❌ Container health check failed after $max_attempts attempts"
+            exit 1
+          fi
+          
+      - name: 📝 Build Summary
+        if: always()
+        run: |
+          echo "### 🚀 Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ job.status }}" = "success" ]; then
+            echo "✅ **Status:** Success" >> $GITHUB_STEP_SUMMARY
+            echo "🐳 **Image:** \`${{ env.IMAGE_NAME }}:latest\`" >> $GITHUB_STEP_SUMMARY
+            echo "📍 **Registry:** Docker Hub" >> $GITHUB_STEP_SUMMARY
+            echo "🏗️ **Platforms:** linux/amd64, linux/arm64" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Quick Deploy:**" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+            echo "docker pull ${{ env.IMAGE_NAME }}:latest" >> $GITHUB_STEP_SUMMARY
+            echo "docker run -p 7860:7860 ${{ env.IMAGE_NAME }}:latest" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Status:** Failed" >> $GITHUB_STEP_SUMMARY
+            echo "📋 **Check logs above for details**" >> $GITHUB_STEP_SUMMARY
+          fi
