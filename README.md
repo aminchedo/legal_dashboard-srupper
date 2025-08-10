@@ -96,21 +96,24 @@ npm run start:full
 - Health: `curl http://localhost:3000/health`
 
 ## Deployment
-- Vercel (Frontend):
-  - Framework: Vite
-  - Build command: `npm run build`
-  - Output dir: `dist`
-  - Env: `VITE_API_URL` pointing to your backend
-- Railway/Fly/Render/Railway (Backend):
-  - Node 18+ runtime
-  - Install: `npm ci`
-  - Build: `npm run build`
-  - Start: `npm start`
-  - Expose port from `PORT` env
-- Hugging Face Spaces (Frontend):
-  - Space type: static
-  - Build: `npm run build`
-  - Output: `dist`
+
+### Local Development
+```bash
+docker-compose up --build
+```
+
+### Production Deployment
+1. Push to main branch
+2. GitHub Actions automatically builds and deploys
+3. Monitor deployment in Azure Portal
+
+### Manual Docker Deployment
+```bash
+./deploy.sh
+```
+
+### Azure Configuration
+See deploy.yml workflow for required Azure settings.
 
 ## Troubleshooting
 - Port already in use: stop conflicting processes or change `PORT`/Vite port.
