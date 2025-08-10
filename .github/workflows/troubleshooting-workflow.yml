@@ -1,0 +1,72 @@
+name: 🛠️ Troubleshooting & Diagnostics
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: System info
+        run: |
+          uname -a || true
+          node -v || true
+          npm -v || true
+          lsb_release -a || true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: |
+          set -euxo pipefail
+          cd frontend && npm ci
+          cd ../backend && npm ci
+
+      - name: Start backend (diagnostic)
+        run: |
+          set -euxo pipefail
+          cd backend
+          node server.js > ../backend.log 2>&1 &
+          echo $! > ../backend.pid
+          cd ..
+          sleep 5
+          curl -v http://localhost:3001/health || true
+
+      - name: Start frontend preview (diagnostic)
+        run: |
+          set -euxo pipefail
+          cd frontend
+          npm run build
+          nohup npm run preview -- --port 5173 > ../frontend.log 2>&1 &
+          echo $! > ../frontend.pid
+          cd ..
+          sleep 5
+          curl -v http://localhost:5173 || true
+
+      - name: List listening ports
+        run: |
+          ss -ltnp | cat || true
+
+      - name: Collect logs
+        if: always()
+        run: |
+          echo '--- backend.log ---'
+          sed -n '1,200p' backend.log || true
+          echo '--- frontend.log ---'
+          sed -n '1,200p' frontend.log || true
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: diagnostics
+          path: |
+            backend.log
+            frontend.log
+            backend.pid
+            frontend.pid
