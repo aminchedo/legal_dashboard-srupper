@@ -1,0 +1,25 @@
+2025-08-11 08:27:09 BACKUP frontend/src/routes/ProtectedRoute.tsx -> temp/ProtectedRoute.tsx.20250811_082709
+2025-08-11 08:27:09 BACKUP frontend/src/pages/Auth/LoginPage.tsx -> temp/LoginPage.tsx.20250811_082709
+[2025-08-11 08:28:57] Installing backend dependencies in /workspace/backend
+[2025-08-11 08:28:58] Installing frontend dependencies in /workspace/frontend
+[2025-08-11 08:29:01] Dependencies installed successfully.
+[2025-08-11 08:29:08] Installing backend dependencies in /workspace/backend
+[2025-08-11 08:29:08] Installing frontend dependencies in /workspace/frontend
+[2025-08-11 08:29:10] Dependencies installed successfully.
+[2025-08-11 08:30:19] Installing backend dependencies in /workspace/backend
+[2025-08-11 08:30:20] Installing frontend dependencies in /workspace/frontend
+[2025-08-11 08:30:22] Dependencies installed successfully.
+[2025-08-11T08:30:22.069Z] backend started (pid=4243) in /workspace/backend with command: npm run start
+[2025-08-11T08:30:22.071Z] frontend started (pid=4245) in /workspace/frontend with command: npm run dev -- --port 5173
+[2025-08-11T08:30:22.604Z] backend health OK at http://localhost:3001/health
+[2025-08-11T08:30:49.874Z] backend started (pid=4830) in /workspace/backend with command: npm run start
+[2025-08-11T08:30:49.884Z] frontend started (pid=4831) in /workspace/frontend with command: npm run dev -- --port 5173
+[2025-08-11T08:30:50.439Z] backend health OK at http://localhost:3001/health
+[2025-08-11T08:31:10.487Z] frontend health check timed out after 20000ms for http://localhost:5173
+[2025-08-11 08:32:49] Installing backend dependencies in /workspace/backend
+[2025-08-11 08:32:49] Installing frontend dependencies in /workspace/frontend
+[2025-08-11 08:32:51] Dependencies installed successfully.
+[2025-08-11T08:32:51.402Z] backend started (pid=6408) in /workspace/backend with command: npm run start
+[2025-08-11T08:32:51.404Z] frontend started (pid=6415) in /workspace/frontend with command: npm run dev -- --port 5173
+[2025-08-11T08:32:51.945Z] backend health OK at http://localhost:3001/health
+[2025-08-11T08:32:52.248Z] frontend health OK at http://localhost:5173
