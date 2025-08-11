@@ -55,3 +55,7 @@ Call log:
 [2m  - navigating to "http://www.tse.ir/", waiting until "load"[22m
 
 [2025-08-11T09:14:55.055Z] Navigating to http://www.tse.ir/ with waitUntil=networkidle
+[2025-08-11T09:15:10.463Z] ERROR: Navigation failed for http://www.tse.ir/ (networkidle): page.goto: net::ERR_ABORTED at http://www.tse.ir/
+Call log:
+[2m  - navigating to "http://www.tse.ir/", waiting until "networkidle"[22m
+
