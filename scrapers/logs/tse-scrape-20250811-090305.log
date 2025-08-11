@@ -1,0 +1,16 @@
+[2025-08-11T09:03:05.911Z] Attempt 1 to scrape https://www.tse.ir
+[2025-08-11T09:03:35.988Z] ERROR: Attempt 1 failed: page.goto: Timeout 30000ms exceeded.
+Call log:
+[2m  - navigating to "https://www.tse.ir/", waiting until "domcontentloaded"[22m
+
+[2025-08-11T09:03:38.008Z] Attempt 2 to scrape https://www.tse.ir
+[2025-08-11T09:04:08.086Z] ERROR: Attempt 2 failed: page.goto: Timeout 30000ms exceeded.
+Call log:
+[2m  - navigating to "https://www.tse.ir/", waiting until "domcontentloaded"[22m
+
+[2025-08-11T09:04:10.109Z] Attempt 3 to scrape https://www.tse.ir
+[2025-08-11T09:04:40.187Z] ERROR: Attempt 3 failed: page.goto: Timeout 30000ms exceeded.
+Call log:
+[2m  - navigating to "https://www.tse.ir/", waiting until "domcontentloaded"[22m
+
+[2025-08-11T09:04:40.203Z] Finished scraping https://www.tse.ir with status RETRYING in 94292ms

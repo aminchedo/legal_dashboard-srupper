@@ -1,0 +1,232 @@
+[2025-08-11T09:09:19.328Z] Attempt 1 to scrape https://www.gov.ir
+[2025-08-11T09:09:19.532Z] Navigating to https://gov.ir/ with waitUntil=domcontentloaded
+[2025-08-11T09:09:19.724Z] ERROR: Navigation failed for https://gov.ir/ (domcontentloaded): page.goto: net::ERR_NAME_NOT_RESOLVED at https://gov.ir/
+Call log:
+[2m  - navigating to "https://gov.ir/", waiting until "domcontentloaded"[22m
+
+[2025-08-11T09:09:20.225Z] Navigating to https://gov.ir/ with waitUntil=load
+[2025-08-11T09:09:20.400Z] ERROR: Navigation failed for https://gov.ir/ (load): page.goto: net::ERR_NAME_NOT_RESOLVED at https://gov.ir/
+Call log:
+[2m  - navigating to "https://gov.ir/", waiting until "load"[22m
+
+[2025-08-11T09:09:20.900Z] Navigating to https://gov.ir/ with waitUntil=networkidle
+[2025-08-11T09:09:21.085Z] ERROR: Navigation failed for https://gov.ir/ (networkidle): page.goto: net::ERR_NAME_NOT_RESOLVED at https://gov.ir/
+Call log:
+[2m  - navigating to "https://gov.ir/", waiting until "networkidle"[22m
+
+[2025-08-11T09:09:21.586Z] Navigating to https://www.gov.ir/ with waitUntil=domcontentloaded
+[2025-08-11T09:09:21.772Z] ERROR: Navigation failed for https://www.gov.ir/ (domcontentloaded): page.goto: net::ERR_NAME_NOT_RESOLVED at https://www.gov.ir/
+Call log:
+[2m  - navigating to "https://www.gov.ir/", waiting until "domcontentloaded"[22m
+
+[2025-08-11T09:09:22.273Z] Navigating to https://www.gov.ir/ with waitUntil=load
+[2025-08-11T09:09:22.449Z] ERROR: Navigation failed for https://www.gov.ir/ (load): page.goto: net::ERR_NAME_NOT_RESOLVED at https://www.gov.ir/
+Call log:
+[2m  - navigating to "https://www.gov.ir/", waiting until "load"[22m
+
+[2025-08-11T09:09:22.948Z] Navigating to https://www.gov.ir/ with waitUntil=networkidle
+[2025-08-11T09:09:23.129Z] ERROR: Navigation failed for https://www.gov.ir/ (networkidle): page.goto: net::ERR_NAME_NOT_RESOLVED at https://www.gov.ir/
+Call log:
+[2m  - navigating to "https://www.gov.ir/", waiting until "networkidle"[22m
+
+[2025-08-11T09:09:23.630Z] Navigating to http://gov.ir/ with waitUntil=domcontentloaded
+[2025-08-11T09:09:23.638Z] ERROR: Navigation failed for http://gov.ir/ (domcontentloaded): page.goto: net::ERR_NAME_NOT_RESOLVED at http://gov.ir/
+Call log:
+[2m  - navigating to "http://gov.ir/", waiting until "domcontentloaded"[22m
+
+[2025-08-11T09:09:24.138Z] Navigating to http://gov.ir/ with waitUntil=load
+[2025-08-11T09:09:24.227Z] ERROR: Navigation failed for http://gov.ir/ (load): page.goto: net::ERR_NAME_NOT_RESOLVED at http://gov.ir/
+Call log:
+[2m  - navigating to "http://gov.ir/", waiting until "load"[22m
+
+[2025-08-11T09:09:24.728Z] Navigating to http://gov.ir/ with waitUntil=networkidle
+[2025-08-11T09:09:24.735Z] ERROR: Navigation failed for http://gov.ir/ (networkidle): page.goto: net::ERR_NAME_NOT_RESOLVED at http://gov.ir/
+Call log:
+[2m  - navigating to "http://gov.ir/", waiting until "networkidle"[22m
+
+[2025-08-11T09:09:25.234Z] Navigating to http://www.gov.ir/ with waitUntil=domcontentloaded
+[2025-08-11T09:09:25.324Z] ERROR: Navigation failed for http://www.gov.ir/ (domcontentloaded): page.goto: net::ERR_NAME_NOT_RESOLVED at http://www.gov.ir/
+Call log:
+[2m  - navigating to "http://www.gov.ir/", waiting until "domcontentloaded"[22m
+
+[2025-08-11T09:09:25.825Z] Navigating to http://www.gov.ir/ with waitUntil=load
+[2025-08-11T09:09:25.912Z] ERROR: Navigation failed for http://www.gov.ir/ (load): page.goto: net::ERR_NAME_NOT_RESOLVED at http://www.gov.ir/
+Call log:
+[2m  - navigating to "http://www.gov.ir/", waiting until "load"[22m
+
+[2025-08-11T09:09:26.413Z] Navigating to http://www.gov.ir/ with waitUntil=networkidle
+[2025-08-11T09:09:26.420Z] ERROR: Navigation failed for http://www.gov.ir/ (networkidle): page.goto: net::ERR_NAME_NOT_RESOLVED at http://www.gov.ir/
+Call log:
+[2m  - navigating to "http://www.gov.ir/", waiting until "networkidle"[22m
+
+[2025-08-11T09:09:26.921Z] Navigating to https://www.gov.ir with waitUntil=domcontentloaded
+[2025-08-11T09:09:27.105Z] ERROR: Navigation failed for https://www.gov.ir (domcontentloaded): page.goto: net::ERR_NAME_NOT_RESOLVED at https://www.gov.ir/
+Call log:
+[2m  - navigating to "https://www.gov.ir/", waiting until "domcontentloaded"[22m
+
+[2025-08-11T09:09:27.606Z] Navigating to https://www.gov.ir with waitUntil=load
+[2025-08-11T09:09:27.704Z] ERROR: Navigation failed for https://www.gov.ir (load): page.goto: net::ERR_NAME_NOT_RESOLVED at https://www.gov.ir/
+Call log:
+[2m  - navigating to "https://www.gov.ir/", waiting until "load"[22m
+
+[2025-08-11T09:09:28.203Z] Navigating to https://www.gov.ir with waitUntil=networkidle
+[2025-08-11T09:09:28.299Z] ERROR: Navigation failed for https://www.gov.ir (networkidle): page.goto: net::ERR_NAME_NOT_RESOLVED at https://www.gov.ir/
+Call log:
+[2m  - navigating to "https://www.gov.ir/", waiting until "networkidle"[22m
+
+[2025-08-11T09:09:28.800Z] ERROR: Attempt 1 failed: All navigation attempts failed for https://www.gov.ir
+[2025-08-11T09:09:30.821Z] Attempt 2 to scrape https://www.gov.ir
+[2025-08-11T09:09:30.895Z] Navigating to https://gov.ir/ with waitUntil=domcontentloaded
+[2025-08-11T09:09:31.074Z] ERROR: Navigation failed for https://gov.ir/ (domcontentloaded): page.goto: net::ERR_NAME_NOT_RESOLVED at https://gov.ir/
+Call log:
+[2m  - navigating to "https://gov.ir/", waiting until "domcontentloaded"[22m
+
+[2025-08-11T09:09:31.574Z] Navigating to https://gov.ir/ with waitUntil=load
+[2025-08-11T09:09:31.673Z] ERROR: Navigation failed for https://gov.ir/ (load): page.goto: net::ERR_NAME_NOT_RESOLVED at https://gov.ir/
+Call log:
+[2m  - navigating to "https://gov.ir/", waiting until "load"[22m
+
+[2025-08-11T09:09:32.173Z] Navigating to https://gov.ir/ with waitUntil=networkidle
+[2025-08-11T09:09:32.272Z] ERROR: Navigation failed for https://gov.ir/ (networkidle): page.goto: net::ERR_NAME_NOT_RESOLVED at https://gov.ir/
+Call log:
+[2m  - navigating to "https://gov.ir/", waiting until "networkidle"[22m
+
+[2025-08-11T09:09:32.773Z] Navigating to https://www.gov.ir/ with waitUntil=domcontentloaded
+[2025-08-11T09:09:32.966Z] ERROR: Navigation failed for https://www.gov.ir/ (domcontentloaded): page.goto: net::ERR_NAME_NOT_RESOLVED at https://www.gov.ir/
+Call log:
+[2m  - navigating to "https://www.gov.ir/", waiting until "domcontentloaded"[22m
+
+[2025-08-11T09:09:33.467Z] Navigating to https://www.gov.ir/ with waitUntil=load
+[2025-08-11T09:09:33.651Z] ERROR: Navigation failed for https://www.gov.ir/ (load): page.goto: net::ERR_NAME_NOT_RESOLVED at https://www.gov.ir/
+Call log:
+[2m  - navigating to "https://www.gov.ir/", waiting until "load"[22m
+
+[2025-08-11T09:09:34.152Z] Navigating to https://www.gov.ir/ with waitUntil=networkidle
+[2025-08-11T09:09:34.329Z] ERROR: Navigation failed for https://www.gov.ir/ (networkidle): page.goto: net::ERR_NAME_NOT_RESOLVED at https://www.gov.ir/
+Call log:
+[2m  - navigating to "https://www.gov.ir/", waiting until "networkidle"[22m
+
+[2025-08-11T09:09:34.829Z] Navigating to http://gov.ir/ with waitUntil=domcontentloaded
+[2025-08-11T09:09:34.919Z] ERROR: Navigation failed for http://gov.ir/ (domcontentloaded): page.goto: net::ERR_NAME_NOT_RESOLVED at http://gov.ir/
+Call log:
+[2m  - navigating to "http://gov.ir/", waiting until "domcontentloaded"[22m
+
+[2025-08-11T09:09:35.419Z] Navigating to http://gov.ir/ with waitUntil=load
+[2025-08-11T09:09:35.517Z] ERROR: Navigation failed for http://gov.ir/ (load): page.goto: net::ERR_NAME_NOT_RESOLVED at http://gov.ir/
+Call log:
+[2m  - navigating to "http://gov.ir/", waiting until "load"[22m
+
+[2025-08-11T09:09:36.016Z] Navigating to http://gov.ir/ with waitUntil=networkidle
+[2025-08-11T09:09:36.114Z] ERROR: Navigation failed for http://gov.ir/ (networkidle): page.goto: net::ERR_NAME_NOT_RESOLVED at http://gov.ir/
+Call log:
+[2m  - navigating to "http://gov.ir/", waiting until "networkidle"[22m
+
+[2025-08-11T09:09:36.613Z] Navigating to http://www.gov.ir/ with waitUntil=domcontentloaded
+[2025-08-11T09:09:36.708Z] ERROR: Navigation failed for http://www.gov.ir/ (domcontentloaded): page.goto: net::ERR_NAME_NOT_RESOLVED at http://www.gov.ir/
+Call log:
+[2m  - navigating to "http://www.gov.ir/", waiting until "domcontentloaded"[22m
+
+[2025-08-11T09:09:37.209Z] Navigating to http://www.gov.ir/ with waitUntil=load
+[2025-08-11T09:09:37.217Z] ERROR: Navigation failed for http://www.gov.ir/ (load): page.goto: net::ERR_NAME_NOT_RESOLVED at http://www.gov.ir/
+Call log:
+[2m  - navigating to "http://www.gov.ir/", waiting until "load"[22m
+
+[2025-08-11T09:09:37.717Z] Navigating to http://www.gov.ir/ with waitUntil=networkidle
+[2025-08-11T09:09:37.723Z] ERROR: Navigation failed for http://www.gov.ir/ (networkidle): page.goto: net::ERR_NAME_NOT_RESOLVED at http://www.gov.ir/
+Call log:
+[2m  - navigating to "http://www.gov.ir/", waiting until "networkidle"[22m
+
+[2025-08-11T09:09:38.224Z] Navigating to https://www.gov.ir with waitUntil=domcontentloaded
+[2025-08-11T09:09:38.398Z] ERROR: Navigation failed for https://www.gov.ir (domcontentloaded): page.goto: net::ERR_NAME_NOT_RESOLVED at https://www.gov.ir/
+Call log:
+[2m  - navigating to "https://www.gov.ir/", waiting until "domcontentloaded"[22m
+
+[2025-08-11T09:09:38.899Z] Navigating to https://www.gov.ir with waitUntil=load
+[2025-08-11T09:09:39.089Z] ERROR: Navigation failed for https://www.gov.ir (load): page.goto: net::ERR_NAME_NOT_RESOLVED at https://www.gov.ir/
+Call log:
+[2m  - navigating to "https://www.gov.ir/", waiting until "load"[22m
+
+[2025-08-11T09:09:39.589Z] Navigating to https://www.gov.ir with waitUntil=networkidle
+[2025-08-11T09:09:39.603Z] ERROR: Navigation failed for https://www.gov.ir (networkidle): page.goto: net::ERR_NAME_NOT_RESOLVED at https://www.gov.ir/
+Call log:
+[2m  - navigating to "https://www.gov.ir/", waiting until "networkidle"[22m
+
+[2025-08-11T09:09:40.103Z] ERROR: Attempt 2 failed: All navigation attempts failed for https://www.gov.ir
+[2025-08-11T09:09:42.118Z] Attempt 3 to scrape https://www.gov.ir
+[2025-08-11T09:09:42.183Z] Navigating to https://gov.ir/ with waitUntil=domcontentloaded
+[2025-08-11T09:09:42.362Z] ERROR: Navigation failed for https://gov.ir/ (domcontentloaded): page.goto: net::ERR_NAME_NOT_RESOLVED at https://gov.ir/
+Call log:
+[2m  - navigating to "https://gov.ir/", waiting until "domcontentloaded"[22m
+
+[2025-08-11T09:09:42.862Z] Navigating to https://gov.ir/ with waitUntil=load
+[2025-08-11T09:09:42.958Z] ERROR: Navigation failed for https://gov.ir/ (load): page.goto: net::ERR_NAME_NOT_RESOLVED at https://gov.ir/
+Call log:
+[2m  - navigating to "https://gov.ir/", waiting until "load"[22m
+
+[2025-08-11T09:09:43.459Z] Navigating to https://gov.ir/ with waitUntil=networkidle
+[2025-08-11T09:09:43.557Z] ERROR: Navigation failed for https://gov.ir/ (networkidle): page.goto: net::ERR_NAME_NOT_RESOLVED at https://gov.ir/
+Call log:
+[2m  - navigating to "https://gov.ir/", waiting until "networkidle"[22m
+
+[2025-08-11T09:09:44.058Z] Navigating to https://www.gov.ir/ with waitUntil=domcontentloaded
+[2025-08-11T09:09:44.070Z] ERROR: Navigation failed for https://www.gov.ir/ (domcontentloaded): page.goto: net::ERR_NAME_NOT_RESOLVED at https://www.gov.ir/
+Call log:
+[2m  - navigating to "https://www.gov.ir/", waiting until "domcontentloaded"[22m
+
+[2025-08-11T09:09:44.570Z] Navigating to https://www.gov.ir/ with waitUntil=load
+[2025-08-11T09:09:44.671Z] ERROR: Navigation failed for https://www.gov.ir/ (load): page.goto: net::ERR_NAME_NOT_RESOLVED at https://www.gov.ir/
+Call log:
+[2m  - navigating to "https://www.gov.ir/", waiting until "load"[22m
+
+[2025-08-11T09:09:45.172Z] Navigating to https://www.gov.ir/ with waitUntil=networkidle
+[2025-08-11T09:09:45.185Z] ERROR: Navigation failed for https://www.gov.ir/ (networkidle): page.goto: net::ERR_NAME_NOT_RESOLVED at https://www.gov.ir/
+Call log:
+[2m  - navigating to "https://www.gov.ir/", waiting until "networkidle"[22m
+
+[2025-08-11T09:09:45.685Z] Navigating to http://gov.ir/ with waitUntil=domcontentloaded
+[2025-08-11T09:09:45.692Z] ERROR: Navigation failed for http://gov.ir/ (domcontentloaded): page.goto: net::ERR_NAME_NOT_RESOLVED at http://gov.ir/
+Call log:
+[2m  - navigating to "http://gov.ir/", waiting until "domcontentloaded"[22m
+
+[2025-08-11T09:09:46.193Z] Navigating to http://gov.ir/ with waitUntil=load
+[2025-08-11T09:09:46.201Z] ERROR: Navigation failed for http://gov.ir/ (load): page.goto: net::ERR_NAME_NOT_RESOLVED at http://gov.ir/
+Call log:
+[2m  - navigating to "http://gov.ir/", waiting until "load"[22m
+
+[2025-08-11T09:09:46.702Z] Navigating to http://gov.ir/ with waitUntil=networkidle
+[2025-08-11T09:09:46.709Z] ERROR: Navigation failed for http://gov.ir/ (networkidle): page.goto: net::ERR_NAME_NOT_RESOLVED at http://gov.ir/
+Call log:
+[2m  - navigating to "http://gov.ir/", waiting until "networkidle"[22m
+
+[2025-08-11T09:09:47.209Z] Navigating to http://www.gov.ir/ with waitUntil=domcontentloaded
+[2025-08-11T09:09:47.381Z] ERROR: Navigation failed for http://www.gov.ir/ (domcontentloaded): page.goto: net::ERR_NAME_NOT_RESOLVED at http://www.gov.ir/
+Call log:
+[2m  - navigating to "http://www.gov.ir/", waiting until "domcontentloaded"[22m
+
+[2025-08-11T09:09:47.881Z] Navigating to http://www.gov.ir/ with waitUntil=load
+[2025-08-11T09:09:47.978Z] ERROR: Navigation failed for http://www.gov.ir/ (load): page.goto: net::ERR_NAME_NOT_RESOLVED at http://www.gov.ir/
+Call log:
+[2m  - navigating to "http://www.gov.ir/", waiting until "load"[22m
+
+[2025-08-11T09:09:48.477Z] Navigating to http://www.gov.ir/ with waitUntil=networkidle
+[2025-08-11T09:09:48.567Z] ERROR: Navigation failed for http://www.gov.ir/ (networkidle): page.goto: net::ERR_NAME_NOT_RESOLVED at http://www.gov.ir/
+Call log:
+[2m  - navigating to "http://www.gov.ir/", waiting until "networkidle"[22m
+
+[2025-08-11T09:09:49.067Z] Navigating to https://www.gov.ir with waitUntil=domcontentloaded
+[2025-08-11T09:09:49.078Z] ERROR: Navigation failed for https://www.gov.ir (domcontentloaded): page.goto: net::ERR_NAME_NOT_RESOLVED at https://www.gov.ir/
+Call log:
+[2m  - navigating to "https://www.gov.ir/", waiting until "domcontentloaded"[22m
+
+[2025-08-11T09:09:49.578Z] Navigating to https://www.gov.ir with waitUntil=load
+[2025-08-11T09:09:49.589Z] ERROR: Navigation failed for https://www.gov.ir (load): page.goto: net::ERR_NAME_NOT_RESOLVED at https://www.gov.ir/
+Call log:
+[2m  - navigating to "https://www.gov.ir/", waiting until "load"[22m
+
+[2025-08-11T09:09:50.090Z] Navigating to https://www.gov.ir with waitUntil=networkidle
+[2025-08-11T09:09:50.184Z] ERROR: Navigation failed for https://www.gov.ir (networkidle): page.goto: net::ERR_NAME_NOT_RESOLVED at https://www.gov.ir/
+Call log:
+[2m  - navigating to "https://www.gov.ir/", waiting until "networkidle"[22m
+
+[2025-08-11T09:09:50.684Z] ERROR: Attempt 3 failed: All navigation attempts failed for https://www.gov.ir
+[2025-08-11T09:09:50.698Z] Finished scraping https://www.gov.ir with status RETRYING in 31370ms
