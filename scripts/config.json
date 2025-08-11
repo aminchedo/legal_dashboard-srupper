@@ -1,0 +1,13 @@
+{
+  "backend": {
+    "cwd": "backend",
+    "port": 3001,
+    "healthPath": "/health",
+    "start": "npm run start"
+  },
+  "frontend": {
+    "cwd": "frontend",
+    "port": 5173,
+    "start": "npm run dev"
+  }
+}

@@ -6,30 +6,31 @@ const PrivateRoute: React.FC = () => {
     const location = useLocation();
 
     useEffect(() => {
-        // Check if we have an access token or legacy auth token
-        const hasToken = !!(localStorage.getItem('accessToken') || localStorage.getItem('authToken'));
+        // Dev bypass via env flag
+        const bypass = import.meta.env.VITE_BYPASS_AUTH === '1' || process.env.VITE_BYPASS_AUTH === '1';
+        if (bypass) {
+            try {
+                localStorage.setItem('accessToken', localStorage.getItem('accessToken') || 'dev-bypass-token');
+            } catch {}
+            setIsAuthenticated(true);
+            return;
+        }
 
-        // Migrate legacy token if needed
+        const hasToken = !!(localStorage.getItem('accessToken') || localStorage.getItem('authToken'));
         if (!localStorage.getItem('accessToken') && localStorage.getItem('authToken')) {
             localStorage.setItem('accessToken', localStorage.getItem('authToken') as string);
         }
-
-        // Update authentication state
         setIsAuthenticated(hasToken);
     }, []);
 
-    // Show nothing while we're checking authentication status
     if (isAuthenticated === null) {
         return null;
     }
 
-    // Redirect to login if not authenticated
     if (!isAuthenticated) {
-        // Redirect to login but remember where the user was trying to go
         return <Navigate to="/login" state={{ from: location }} replace />;
     }
 
-    // Allow access to protected routes if authenticated
     return <Outlet />;
 };
 
