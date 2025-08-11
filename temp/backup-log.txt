@@ -34,3 +34,13 @@
 [2025-08-11T08:37:37.171Z] frontend started (pid=8599) in /workspace/frontend with command: npm run dev -- --port 5173
 [2025-08-11T08:37:37.710Z] backend health OK at http://localhost:3001/health
 [2025-08-11T08:37:37.980Z] frontend health OK at http://localhost:5173
+[2025-08-11 08:55:04] Installing backend dependencies in /workspace/backend
+[2025-08-11 08:55:05] Installing frontend dependencies in /workspace/frontend
+[2025-08-11 08:55:08] Dependencies installed successfully.
+[2025-08-11 08:55:15] Installing backend dependencies in /workspace/backend
+[2025-08-11 08:55:15] Installing frontend dependencies in /workspace/frontend
+[2025-08-11 08:55:17] Dependencies installed successfully.
+[2025-08-11T08:55:17.030Z] backend started (pid=3101) in /workspace/backend with command: npm run start
+[2025-08-11T08:55:17.032Z] frontend started (pid=3103) in /workspace/frontend with command: npm run dev -- --port 5173
+[2025-08-11T08:55:17.566Z] backend health OK at http://localhost:3001/health
+[2025-08-11T08:55:17.876Z] frontend health OK at http://localhost:5173
