@@ -19,10 +19,16 @@ async function ping(url) {
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173/';
 
   const [b, f] = await Promise.all([ping(backendUrl), ping(frontendUrl)]);
+  const mem = process.memoryUsage();
   const report = {
     timestamp: new Date().toISOString(),
     backend: { url: backendUrl, ...b },
     frontend: { url: frontendUrl, ...f },
+    monitor: {
+      rssMB: Math.round((mem.rss / (1024 * 1024)) * 10) / 10,
+      heapUsedMB: Math.round((mem.heapUsed / (1024 * 1024)) * 10) / 10,
+      nodePid: process.pid,
+    },
   };
   console.log(JSON.stringify(report, null, 2));
 

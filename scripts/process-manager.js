@@ -90,6 +90,46 @@ function startProcess(name, options) {
   return { child, pidFile, outFile, errFile };
 }
 
+// Automatic restart state
+const restartCounts = Object.create(null);
+const maxRestarts = 5;
+let shuttingDown = false;
+
+function startMonitoredProcess(name, options) {
+  const doStart = () => startProcess(name, options);
+  let proc = doStart();
+
+  proc.child.on('exit', (code, signal) => {
+    if (shuttingDown) return;
+    const count = (restartCounts[name] || 0) + 1;
+    restartCounts[name] = count;
+    log(`${name} exited (code=${code}, signal=${signal}). Restart attempt ${count}/${maxRestarts} in 1000ms`);
+    if (count > maxRestarts) {
+      log(`${name} exceeded maximum restart attempts. Not restarting.`);
+      return;
+    }
+    setTimeout(() => {
+      proc = doStart();
+      // Re-attach listener to the new child
+      proc.child.on('exit', (c, s) => {
+        if (shuttingDown) return;
+        const c2 = (restartCounts[name] || 0) + 1;
+        restartCounts[name] = c2;
+        log(`${name} exited (code=${c}, signal=${s}). Restart attempt ${c2}/${maxRestarts} in 1000ms`);
+        if (c2 > maxRestarts) {
+          log(`${name} exceeded maximum restart attempts. Not restarting.`);
+          return;
+        }
+        setTimeout(() => {
+          proc = doStart();
+        }, 1000);
+      });
+    }, 1000);
+  });
+
+  return proc;
+}
+
 async function main() {
   const desiredBackendPort = Number(process.env.BACKEND_PORT || config.backend.port || 3001);
   const desiredFrontendPort = Number(process.env.FRONTEND_PORT || config.frontend.port || 5173);
@@ -104,7 +144,7 @@ async function main() {
 
   // Start backend
   procs.push(
-    startProcess('backend', {
+    startMonitoredProcess('backend', {
       cwd: backendCwd,
       env: { PORT: String(backendPort) },
       command: 'npm',
@@ -114,7 +154,7 @@ async function main() {
 
   // Start frontend
   procs.push(
-    startProcess('frontend', {
+    startMonitoredProcess('frontend', {
       cwd: frontendCwd,
       env: { VITE_API_URL: `http://localhost:${backendPort}`, VITE_BYPASS_AUTH: '1' },
       command: 'npm',
@@ -128,6 +168,7 @@ async function main() {
 
   // Graceful shutdown
   const shutdown = async () => {
+    shuttingDown = true;
     log('Shutting down services...');
     for (const { child } of procs) {
       try {

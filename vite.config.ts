@@ -30,7 +30,7 @@ export default defineConfig(({ mode }) => {
             host: true,
             port: 5177,
             strictPort: true,
-            open: true, // Auto-open browser
+            open: false, // Auto-open disabled
             cors: true,
             proxy: {
                 '/api': {
