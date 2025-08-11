@@ -6,6 +6,16 @@ const PrivateRoute: React.FC = () => {
     const location = useLocation();
 
     useEffect(() => {
+        // Dev bypass via env flag
+        const bypass = import.meta.env.VITE_BYPASS_AUTH === '1' || (typeof process !== 'undefined' && process.env && process.env.VITE_BYPASS_AUTH === '1');
+        if (bypass) {
+            try {
+                localStorage.setItem('accessToken', localStorage.getItem('accessToken') || 'dev-bypass-token');
+            } catch {}
+            setIsAuthenticated(true);
+            return;
+        }
+
         // Check if we have an access token or legacy auth token
         const hasToken = !!(localStorage.getItem('accessToken') || localStorage.getItem('authToken'));
 

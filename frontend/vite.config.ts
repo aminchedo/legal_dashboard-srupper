@@ -34,7 +34,7 @@ export default defineConfig(({ mode }) => {
             host: true,
             port: 5173,
             strictPort: true,
-            open: false, // Disabled in headless CI environment
+            open: false, // ensure disabled for headless environments
             cors: true,
             proxy: {
                 '/api': {
