@@ -50,3 +50,7 @@ Call log:
 [2m  - navigating to "http://www.tse.ir/", waiting until "domcontentloaded"[22m
 
 [2025-08-11T09:20:41.201Z] Navigating to http://www.tse.ir/ with waitUntil=load
+[2025-08-11T09:21:04.269Z] ERROR: Navigation failed for http://www.tse.ir/ (load): page.goto: net::ERR_ABORTED at http://www.tse.ir/
+Call log:
+[2m  - navigating to "http://www.tse.ir/", waiting until "load"[22m
+
