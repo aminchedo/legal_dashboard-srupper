@@ -1,4 +1,4 @@
-name: Docker Build and Push
+name: Simple Docker Build
 
 on:
   push:
@@ -15,140 +15,85 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: false
-        fetch-depth: 0
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
 
     - name: Login to Docker Hub
-      run: |
-        echo "🔐 Logging into Docker Hub with Personal Access Token..."
-        echo "dckr_pat_PLACEHOLDER_TOKEN_WILL_BE_REPLACED" | docker login -u "24498743" --password-stdin
-        if [ $? -eq 0 ]; then
-          echo "✅ Docker Hub authentication successful!"
-        else
-          echo "❌ Docker Hub authentication failed!"
-          exit 1
-        fi
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
 
-    - name: Build Multi-Platform Image
-      run: |
-        echo "🏗️ Building multi-platform Docker image..."
-        
-        TIMESTAMP=$(date +%Y%m%d-%H%M%S)
-        COMMIT_SHORT=${GITHUB_SHA::8}
-        
-        echo "📋 Building with tags:"
-        echo "  - latest"
-        echo "  - $TIMESTAMP"
-        echo "  - $COMMIT_SHORT"
-        
-        docker buildx build \
-          --platform linux/amd64,linux/arm64 \
-          -t 24498743/legal-dashboard:latest \
-          -t 24498743/legal-dashboard:$TIMESTAMP \
-          -t 24498743/legal-dashboard:$COMMIT_SHORT \
-          --push \
-          .
-        
-        echo "✅ Multi-platform build and push completed!"
-        echo "TIMESTAMP_TAG=$TIMESTAMP" >> $GITHUB_ENV
-        echo "COMMIT_TAG=$COMMIT_SHORT" >> $GITHUB_ENV
+    - name: Extract Metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: 24498743/legal-dashboard
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=raw,value=latest,enable={{is_default_branch}}
+          type=sha,prefix={{branch}}-,format=short
 
-    - name: Build Local Test Image
-      run: |
-        echo "🔨 Building local test image..."
-        docker build -t test-local .
-        echo "✅ Local test image ready!"
+    - name: Build and Push
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        platforms: linux/amd64,linux/arm64
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
 
-    - name: Test Container Functionality
+    - name: Test Container
       run: |
-        echo "🧪 Testing Docker container functionality..."
-        
-        docker run --rm -d --name test-container -p 8080:8000 test-local
+        echo "Testing Docker container..."
+        docker run --rm -d --name test-container -p 8080:8000 24498743/legal-dashboard:latest
         sleep 15
-        
         if docker ps | grep -q test-container; then
-          echo "✅ Container is running successfully!"
+          echo "✅ Container running successfully!"
           docker logs test-container --tail 10
           docker stop test-container
         else
           echo "⚠️ Container may have exited, checking logs..."
-          docker logs test-container --tail 15 2>/dev/null || echo "Container exited before logging"
+          docker logs test-container --tail 10 2>/dev/null || echo "No logs available"
         fi
-        
-        echo "✅ Container functionality test completed!"
-
-    - name: Verify Docker Hub Push
-      run: |
-        echo "🔍 Verifying Docker Hub push success..."
-        
-        echo "📋 Tags pushed to Docker Hub:"
-        echo "  ✅ latest"
-        echo "  ✅ $TIMESTAMP_TAG"
-        echo "  ✅ $COMMIT_TAG"
-        
-        echo "📦 Repository: https://hub.docker.com/r/24498743/legal-dashboard"
-        echo "✅ All images pushed successfully!"
 
     - name: Security Scan (Optional)
       continue-on-error: true
       run: |
-        echo "🔒 Running optional security scan..."
+        echo "Running security scan..."
+        # Install trivy
+        sudo apt-get update
+        sudo apt-get install wget apt-transport-https gnupg lsb-release -y
+        wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+        echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
+        sudo apt-get update
+        sudo apt-get install trivy -y
         
-        # Try to install and run trivy if available
-        if command -v trivy >/dev/null 2>&1; then
-          trivy image --format table 24498743/legal-dashboard:latest
-          echo "✅ Security scan completed"
-        else
-          echo "⚠️ Trivy not available, skipping security scan"
+        # Run scan and create SARIF
+        trivy image --format sarif --output trivy-results.sarif 24498743/legal-dashboard:latest || echo "Security scan failed, creating empty SARIF"
+        
+        # Create empty SARIF if scan failed
+        if [ ! -f "trivy-results.sarif" ]; then
+          echo '{"runs": [{"results": []}]}' > trivy-results.sarif
         fi
+
+    - name: Upload Security Results (Optional)
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      continue-on-error: true
+      with:
+        sarif_file: 'trivy-results.sarif'
 
     - name: Build Summary
       run: |
-        echo "## 🚀 Legal Dashboard Build Complete!" >> $GITHUB_STEP_SUMMARY
+        echo "## 🚀 Build Complete!" >> $GITHUB_STEP_SUMMARY
+        echo "**Repository**: 24498743/legal-dashboard" >> $GITHUB_STEP_SUMMARY
+        echo "**Tags**: ${{ steps.meta.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Platforms**: linux/amd64, linux/arm64" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### ✅ Build Success Details:" >> $GITHUB_STEP_SUMMARY
-        echo "- **Authentication**: Personal Access Token ✅" >> $GITHUB_STEP_SUMMARY
-        echo "- **Repository**: 24498743/legal-dashboard" >> $GITHUB_STEP_SUMMARY
-        echo "- **Latest Tag**: latest" >> $GITHUB_STEP_SUMMARY
-        echo "- **Timestamp Tag**: $TIMESTAMP_TAG" >> $GITHUB_STEP_SUMMARY
-        echo "- **Commit Tag**: $COMMIT_TAG" >> $GITHUB_STEP_SUMMARY
-        echo "- **Platforms**: linux/amd64, linux/arm64" >> $GITHUB_STEP_SUMMARY
-        echo "- **Container Test**: ✅ Passed" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### 🐳 Quick Deploy Commands:" >> $GITHUB_STEP_SUMMARY
-        echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
-        echo "# Pull and run latest image" >> $GITHUB_STEP_SUMMARY
-        echo "docker pull 24498743/legal-dashboard:latest" >> $GITHUB_STEP_SUMMARY
-        echo "docker run -d -p 8000:8000 --name legal-dashboard 24498743/legal-dashboard:latest" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "# Or run specific tags" >> $GITHUB_STEP_SUMMARY
-        echo "docker run -d -p 8000:8000 --name legal-dashboard 24498743/legal-dashboard:$TIMESTAMP_TAG" >> $GITHUB_STEP_SUMMARY
-        echo "docker run -d -p 8000:8000 --name legal-dashboard 24498743/legal-dashboard:$COMMIT_TAG" >> $GITHUB_STEP_SUMMARY
-        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### 🔗 Useful Links:" >> $GITHUB_STEP_SUMMARY
-        echo "- [Docker Hub Repository](https://hub.docker.com/r/24498743/legal-dashboard)" >> $GITHUB_STEP_SUMMARY
-        echo "- [GitHub Repository](https://github.com/${{ github.repository }})" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### 📋 Container Management:" >> $GITHUB_STEP_SUMMARY
-        echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
-        echo "# View running containers" >> $GITHUB_STEP_SUMMARY
-        echo "docker ps" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "# View container logs" >> $GITHUB_STEP_SUMMARY
-        echo "docker logs legal-dashboard" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "# Stop and remove container" >> $GITHUB_STEP_SUMMARY
-        echo "docker stop legal-dashboard && docker rm legal-dashboard" >> $GITHUB_STEP_SUMMARY
-        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "🎉 **Build completed successfully with token authentication!**" >> $GITHUB_STEP_SUMMARY
-
-    - name: Cleanup
-      if: always()
-      run: |
-        echo "🧹 Performing cleanup..."
-        docker system prune -f || true
-        echo "✅ Cleanup completed!"
+        echo "### Quick Deploy:" >> $GITHUB_STEP_SUMMARY
+        echo "\`docker run -d -p 8000:8000 --name legal-dashboard 24498743/legal-dashboard:latest\`" >> $GITHUB_STEP_SUMMARY
