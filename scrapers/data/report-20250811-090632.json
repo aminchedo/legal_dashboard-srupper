@@ -1,0 +1,29 @@
+{
+  "startTime": "2025-08-11T09:04:58.042Z",
+  "targets": [
+    {
+      "target": "cbi.ir",
+      "url": "https://www.cbi.ir",
+      "status": "RETRYING"
+    },
+    {
+      "target": "gov.ir",
+      "url": "https://www.gov.ir",
+      "status": "RETRYING"
+    },
+    {
+      "target": "tse.ir",
+      "url": "https://www.tse.ir",
+      "status": "RETRYING"
+    }
+  ],
+  "screenshots": [],
+  "dataFiles": [],
+  "logs": [
+    "/workspace/scrapers/logs/full-operation-20250811-090458.log"
+  ],
+  "errors": [],
+  "timings": {
+    "totalMs": 94383
+  }
+}

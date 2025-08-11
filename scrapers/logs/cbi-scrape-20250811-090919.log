@@ -1,0 +1,61 @@
+[2025-08-11T09:09:19.326Z] Attempt 1 to scrape https://www.cbi.ir
+[2025-08-11T09:09:19.547Z] Navigating to https://cbi.ir/ with waitUntil=domcontentloaded
+[2025-08-11T09:09:49.550Z] ERROR: Navigation failed for https://cbi.ir/ (domcontentloaded): page.goto: Timeout 30000ms exceeded.
+Call log:
+[2m  - navigating to "https://cbi.ir/", waiting until "domcontentloaded"[22m
+
+[2025-08-11T09:09:50.049Z] Navigating to https://cbi.ir/ with waitUntil=load
+[2025-08-11T09:10:20.049Z] ERROR: Navigation failed for https://cbi.ir/ (load): page.goto: Timeout 30000ms exceeded.
+Call log:
+[2m  - navigating to "https://cbi.ir/", waiting until "load"[22m
+
+[2025-08-11T09:10:20.549Z] Navigating to https://cbi.ir/ with waitUntil=networkidle
+[2025-08-11T09:10:50.549Z] ERROR: Navigation failed for https://cbi.ir/ (networkidle): page.goto: Timeout 30000ms exceeded.
+Call log:
+[2m  - navigating to "https://cbi.ir/", waiting until "networkidle"[22m
+
+[2025-08-11T09:10:51.049Z] Navigating to https://www.cbi.ir/ with waitUntil=domcontentloaded
+[2025-08-11T09:11:21.049Z] ERROR: Navigation failed for https://www.cbi.ir/ (domcontentloaded): page.goto: Timeout 30000ms exceeded.
+Call log:
+[2m  - navigating to "https://www.cbi.ir/", waiting until "domcontentloaded"[22m
+
+[2025-08-11T09:11:21.549Z] Navigating to https://www.cbi.ir/ with waitUntil=load
+[2025-08-11T09:11:51.549Z] ERROR: Navigation failed for https://www.cbi.ir/ (load): page.goto: Timeout 30000ms exceeded.
+Call log:
+[2m  - navigating to "https://www.cbi.ir/", waiting until "load"[22m
+
+[2025-08-11T09:11:52.049Z] Navigating to https://www.cbi.ir/ with waitUntil=networkidle
+[2025-08-11T09:12:22.049Z] ERROR: Navigation failed for https://www.cbi.ir/ (networkidle): page.goto: Timeout 30000ms exceeded.
+Call log:
+[2m  - navigating to "https://www.cbi.ir/", waiting until "networkidle"[22m
+
+[2025-08-11T09:12:22.549Z] Navigating to http://cbi.ir/ with waitUntil=domcontentloaded
+[2025-08-11T09:12:52.549Z] ERROR: Navigation failed for http://cbi.ir/ (domcontentloaded): page.goto: Timeout 30000ms exceeded.
+Call log:
+[2m  - navigating to "http://cbi.ir/", waiting until "domcontentloaded"[22m
+
+[2025-08-11T09:12:53.049Z] Navigating to http://cbi.ir/ with waitUntil=load
+[2025-08-11T09:13:23.048Z] ERROR: Navigation failed for http://cbi.ir/ (load): page.goto: Timeout 30000ms exceeded.
+Call log:
+[2m  - navigating to "http://cbi.ir/", waiting until "load"[22m
+
+[2025-08-11T09:13:23.548Z] Navigating to http://cbi.ir/ with waitUntil=networkidle
+[2025-08-11T09:13:53.549Z] ERROR: Navigation failed for http://cbi.ir/ (networkidle): page.goto: Timeout 30000ms exceeded.
+Call log:
+[2m  - navigating to "http://cbi.ir/", waiting until "networkidle"[22m
+
+[2025-08-11T09:13:54.049Z] Navigating to http://www.cbi.ir/ with waitUntil=domcontentloaded
+[2025-08-11T09:14:24.049Z] ERROR: Navigation failed for http://www.cbi.ir/ (domcontentloaded): page.goto: Timeout 30000ms exceeded.
+Call log:
+[2m  - navigating to "http://www.cbi.ir/", waiting until "domcontentloaded"[22m
+
+[2025-08-11T09:14:24.549Z] Navigating to http://www.cbi.ir/ with waitUntil=load
+[2025-08-11T09:14:54.550Z] ERROR: Navigation failed for http://www.cbi.ir/ (load): page.goto: Timeout 30000ms exceeded.
+Call log:
+[2m  - navigating to "http://www.cbi.ir/", waiting until "load"[22m
+
+[2025-08-11T09:14:55.050Z] Navigating to http://www.cbi.ir/ with waitUntil=networkidle
+[2025-08-11T09:15:10.463Z] ERROR: Navigation failed for http://www.cbi.ir/ (networkidle): page.goto: net::ERR_ABORTED at http://www.cbi.ir/
+Call log:
+[2m  - navigating to "http://www.cbi.ir/", waiting until "networkidle"[22m
+

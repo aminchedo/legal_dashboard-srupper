@@ -1,0 +1,5 @@
+[2025-08-11T09:04:58.041Z] 🕷️ Starting comprehensive web scraping test...
+[2025-08-11T09:06:32.424Z] Result for cbi.ir: RETRYING
+[2025-08-11T09:06:32.424Z] Result for gov.ir: RETRYING
+[2025-08-11T09:06:32.424Z] Result for tse.ir: RETRYING
+[2025-08-11T09:06:32.424Z] 📊 Scraping operation completed in 94383 ms! Report: /workspace/scrapers/data/report-20250811-090632.json
