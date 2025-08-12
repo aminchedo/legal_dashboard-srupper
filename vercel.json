@@ -1,13 +1,19 @@
 {
-  "buildCommand": "npm install && npm run build --prefix frontend && pip install -r requirements.txt",
-  "outputDirectory": "frontend/dist",
-  "framework": null,
-  "functions": {
-    "main.py": {
-      "runtime": "python3.11"
+  "version": 2,
+  "builds": [
+    {
+      "src": "main.py",
+      "use": "@vercel/python"
     }
-  },
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "main.py"
+    }
+  ],
   "env": {
+    "PYTHONPATH": "./",
     "PYTHON_SETUP_REQUIRES": "setuptools>=68.0.0 wheel>=0.41.0"
   }
 }
