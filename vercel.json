@@ -39,7 +39,7 @@
   ],
   "functions": {
     "main.py": {
-      "runtime": "@vercel/python@3.9.7"
+      "runtime": "@vercel/python@3.12"
     }
   },
   "env": {
