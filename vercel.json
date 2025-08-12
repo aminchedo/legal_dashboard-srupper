@@ -4,7 +4,11 @@
   "outputDirectory": "frontend/dist",
   "framework": null,
   "functions": {
-    "main.py": {
+     "api/**/*.py": {
+      "runtime": "python3.11"
+    }
+  },
+     "main.py": {
       "runtime": "@vercel/python@3.0.0"
     }
   },
@@ -18,7 +22,7 @@
       "dest": "/index.html"
     }
   ],
-  "env": {
+   "env": {
     "PYTHON_SETUP_REQUIRES": "setuptools>=68.0.0 wheel>=0.41.0",
     "PYTHONPATH": "./"
   }
