@@ -1,13 +1,22 @@
 {
   "version": 2,
-  "buildCommand": "npm run vercel-build",
+  "buildCommand": "cd frontend && npm install && npm run build",
   "outputDirectory": "frontend/dist",
+  "installCommand": "cd frontend && npm install",
   "framework": null,
-  "functions": {
-    "main.py": {
-      "runtime": "@vercel/python@3.0.0"
+  "builds": [
+    {
+      "src": "main.py",
+      "use": "@vercel/python"
+    },
+    {
+      "src": "frontend/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "frontend/dist"
+      }
     }
-  },
+  ],
   "routes": [
     {
       "src": "/api/(.*)",
@@ -18,8 +27,36 @@
       "dest": "/index.html"
     }
   ],
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "main.py"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ],
+  "functions": {
+    "main.py": {
+      "runtime": "@vercel/python@3.9.7"
+    }
+  },
   "env": {
-    "PYTHON_SETUP_REQUIRES": "setuptools>=68.0.0 wheel>=0.41.0",
-    "PYTHONPATH": "./"
-  }
+    "PYTHONPATH": "./",
+    "PYTHON_SETUP_REQUIRES": "setuptools>=68.0.0 wheel>=0.41.0"
+  },
+  "excludeFiles": [
+    "**/*.pyc",
+    "**/__pycache__/**",
+    ".env",
+    ".git/**",
+    ".venv/**",
+    "tests/**",
+    "*.md",
+    ".gitignore",
+    "frontend/node_modules/**",
+    "frontend/.vite/**",
+    "frontend/src/**/*.test.*"
+  ]
 }
