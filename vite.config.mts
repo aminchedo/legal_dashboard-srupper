@@ -22,6 +22,9 @@ export default defineConfig(({ mode }) => {
                 '@assets': fileURLToPath(new URL('./src/assets', import.meta.url)),
                 'react-router-dom': 'react-router-dom/dist/index.js',
                 '@ant-design/icons': fileURLToPath(new URL('./src/icons/antd-stub.tsx', import.meta.url)),
+                // Workaround for incomplete ESM sub-entries in installed antd package
+                'antd/es': 'antd/dist/antd.js',
+                antd: 'antd/dist/antd.js',
             },
         },
 
