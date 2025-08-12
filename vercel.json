@@ -4,10 +4,10 @@
   "framework": null,
   "functions": {
     "main.py": {
-      "runtime": "python3.12"
+      "runtime": "python3.11"
     }
   },
   "env": {
-    "PYTHON_SETUP_REQUIRES": "setuptools==65.5.0 wheel==0.38.4"
+    "PYTHON_SETUP_REQUIRES": "setuptools>=68.0.0 wheel>=0.41.0"
   }
 }
