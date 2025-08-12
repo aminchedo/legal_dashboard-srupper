@@ -1,6 +1,6 @@
 {
-  "buildCommand": "pip install -r requirements.txt",
-  "outputDirectory": ".",
+  "buildCommand": "npm install && npm run build --prefix frontend && pip install -r requirements.txt",
+  "outputDirectory": "frontend/dist",
   "framework": null,
   "functions": {
     "main.py": {
