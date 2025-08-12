@@ -5,50 +5,14 @@
   "installCommand": "cd frontend && npm install --legacy-peer-deps",
   "framework": null,
   "functions": {
-  "main.py": {
-  "runtime": "@vercel/python@3.11.9"
-  "buildCommand": "cd frontend && npm install && npm run build",
-  "outputDirectory": "frontend/dist",
-  "installCommand": "cd frontend && npm install",
-  "framework": null,
-  "builds": [
-    {
-      "src": "main.py",
-      "use": "@vercel/python"
-    },
-    {
-      "src": "frontend/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "frontend/dist"
-      }
-     }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "main.py"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
-    }
-    ],
-  "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "main.py"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
-  ],
-  "functions": {
-    "main.py": {
+    "api/**/*.py": {
       "runtime": "@vercel/python@3.12"
     }
   },
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/index.py" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ],
   "env": {
     "PYTHONPATH": "./",
     "PYTHON_SETUP_REQUIRES": "setuptools>=68.0.0 wheel>=0.41.0"
@@ -65,5 +29,5 @@
     "frontend/node_modules/**",
     "frontend/.vite/**",
     "frontend/src/**/*.test.*"
-   ]
+  ]
 }
