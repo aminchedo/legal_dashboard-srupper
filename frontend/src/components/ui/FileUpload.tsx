@@ -1,7 +1,7 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { Upload, X, File, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { cn, formatBytes } from '../../lib/utils';
-import { Button } from './Button';
+import Button from './Button';
 
 export interface FileUploadProps {
   accept?: string;

@@ -1,11 +1,15 @@
 import React from 'react';
+import { motion, HTMLMotionProps } from 'framer-motion';
 import { cn } from '../../lib/utils';
 
-export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface CardProps extends Omit<HTMLMotionProps<'div'>, 'ref'> {
   variant?: 'default' | 'bordered' | 'elevated' | 'glass';
-  padding?: 'none' | 'sm' | 'md' | 'lg' | 'xl';
+  padding?: 'none' | 'sm' | 'md' | 'lg';
   interactive?: boolean;
   children: React.ReactNode;
+  hover?: boolean;
+  animated?: boolean;
+  delay?: number; // Animation delay for staggered effects
 }
 
 const Card = React.forwardRef<HTMLDivElement, CardProps>(
@@ -15,187 +19,335 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(
     padding = 'md',
     interactive = false,
     children,
+    hover = true,
+    animated = true,
+    delay = 0,
     ...props
   }, ref) => {
-    const baseClasses = [
-      'rounded-xl transition-all duration-300',
-      'overflow-hidden',
-    ];
+    const baseClasses = cn(
+      'relative rounded-lg transition-all duration-200',
+      'focus-within:outline-none focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-offset-2'
+    );
 
     const variants = {
-      default: [
-        'bg-white border border-neutral-200',
-        'shadow-elegant',
-        'dark:bg-neutral-800 dark:border-neutral-700',
-      ],
-      bordered: [
-        'bg-white border-2 border-neutral-300',
-        'dark:bg-neutral-800 dark:border-neutral-600',
-      ],
-      elevated: [
-        'bg-white border border-neutral-200',
-        'shadow-lg hover:shadow-xl',
-        'dark:bg-neutral-800 dark:border-neutral-700',
-      ],
-      glass: [
-        'bg-white/80 backdrop-blur-md border border-white/20',
-        'shadow-glass',
-        'dark:bg-neutral-800/80 dark:border-neutral-700/20',
-      ],
+      default: cn(
+        'bg-white dark:bg-neutral-800',
+        'border border-neutral-200 dark:border-neutral-700',
+        'shadow-sm'
+      ),
+      bordered: cn(
+        'bg-white dark:bg-neutral-800',
+        'border-2 border-neutral-200 dark:border-neutral-700'
+      ),
+      elevated: cn(
+        'bg-white dark:bg-neutral-800',
+        'border border-neutral-200 dark:border-neutral-700',
+        'shadow-lg'
+      ),
+      glass: cn(
+        'bg-white/80 dark:bg-neutral-800/80',
+        'border border-white/20 dark:border-neutral-700/50',
+        'backdrop-blur-lg backdrop-saturate-150',
+        'shadow-lg'
+      )
     };
 
-    const paddings = {
+    const paddingClasses = {
       none: '',
       sm: 'p-3',
       md: 'p-4',
-      lg: 'p-6',
-      xl: 'p-8',
+      lg: 'p-6'
     };
 
-    const interactiveClasses = interactive ? [
-      'cursor-pointer',
-      'hover:shadow-glass',
-      'hover:border-primary-300',
-      'hover:-translate-y-1',
-      'active:translate-y-0',
-      'focus:outline-none',
-      'focus:ring-2',
-      'focus:ring-primary-500',
-      'focus:ring-offset-2',
-    ] : [];
+    const interactiveClasses = interactive 
+      ? cn(
+          'cursor-pointer',
+          hover && 'hover:shadow-md hover:-translate-y-0.5',
+          'active:translate-y-0 active:shadow-sm',
+          'transition-all duration-200 ease-out'
+        ) 
+      : '';
+
+    const cardVariants = {
+      hidden: { 
+        opacity: 0, 
+        y: 20,
+        scale: 0.95
+      },
+      visible: { 
+        opacity: 1, 
+        y: 0,
+        scale: 1,
+        transition: {
+          duration: 0.4,
+          delay,
+          ease: "easeOut"
+        }
+      },
+      hover: hover ? {
+        y: -2,
+        scale: 1.01,
+        boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
+        transition: {
+          duration: 0.2,
+          ease: "easeOut"
+        }
+      } : {},
+      tap: interactive ? {
+        scale: 0.98,
+        y: 0,
+        transition: {
+          duration: 0.1,
+          ease: "easeOut"
+        }
+      } : {}
+    };
 
     return (
-      <div
+      <motion.div
+        ref={ref}
         className={cn(
           baseClasses,
           variants[variant],
-          paddings[padding],
+          paddingClasses[padding],
           interactiveClasses,
           className
         )}
-        ref={ref}
-        tabIndex={interactive ? 0 : undefined}
-        role={interactive ? 'button' : undefined}
+        variants={animated ? cardVariants : undefined}
+        initial={animated ? "hidden" : undefined}
+        animate={animated ? "visible" : undefined}
+        whileHover={interactive && hover ? "hover" : undefined}
+        whileTap={interactive ? "tap" : undefined}
+        layout
         {...props}
       >
         {children}
-      </div>
+      </motion.div>
     );
   }
 );
 
 Card.displayName = 'Card';
 
-// Sub-components
+// Card Header Component
 export interface CardHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
+  animated?: boolean;
 }
 
 const CardHeader = React.forwardRef<HTMLDivElement, CardHeaderProps>(
-  ({ className, children, ...props }, ref) => {
+  ({ className, children, animated = true, ...props }, ref) => {
+    const headerVariants = {
+      hidden: { opacity: 0, y: -10 },
+      visible: { 
+        opacity: 1, 
+        y: 0,
+        transition: {
+          duration: 0.3,
+          delay: 0.1,
+          ease: "easeOut"
+        }
+      }
+    };
+
     return (
-      <div
+      <motion.div
         ref={ref}
-        className={cn(
-          'flex flex-col space-y-1.5 pb-4',
-          className
-        )}
+        className={cn('flex flex-col space-y-1.5 p-6 pb-0', className)}
+        variants={animated ? headerVariants : undefined}
+        initial={animated ? "hidden" : undefined}
+        animate={animated ? "visible" : undefined}
         {...props}
       >
         {children}
-      </div>
+      </motion.div>
     );
   }
 );
 
 CardHeader.displayName = 'CardHeader';
 
+// Card Title Component
 export interface CardTitleProps extends React.HTMLAttributes<HTMLHeadingElement> {
   children: React.ReactNode;
+  as?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
+  animated?: boolean;
 }
 
-const CardTitle = React.forwardRef<HTMLParagraphElement, CardTitleProps>(
-  ({ className, children, ...props }, ref) => {
+const CardTitle = React.forwardRef<HTMLHeadingElement, CardTitleProps>(
+  ({ className, children, as: Comp = 'h3', animated = true, ...props }, ref) => {
+    const titleVariants = {
+      hidden: { opacity: 0, x: -10 },
+      visible: { 
+        opacity: 1, 
+        x: 0,
+        transition: {
+          duration: 0.3,
+          delay: 0.15,
+          ease: "easeOut"
+        }
+      }
+    };
+
     return (
-      <h3
-        ref={ref}
-        className={cn(
-          'text-lg font-semibold leading-none tracking-tight',
-          'text-neutral-900 dark:text-white',
-          className
-        )}
-        {...props}
+      <motion.div
+        variants={animated ? titleVariants : undefined}
+        initial={animated ? "hidden" : undefined}
+        animate={animated ? "visible" : undefined}
       >
-        {children}
-      </h3>
+        <Comp
+          ref={ref}
+          className={cn(
+            'text-lg font-semibold leading-none tracking-tight text-neutral-900 dark:text-neutral-100',
+            'rtl:text-right',
+            className
+          )}
+          {...props}
+        >
+          {children}
+        </Comp>
+      </motion.div>
     );
   }
 );
 
 CardTitle.displayName = 'CardTitle';
 
+// Card Description Component
 export interface CardDescriptionProps extends React.HTMLAttributes<HTMLParagraphElement> {
   children: React.ReactNode;
+  animated?: boolean;
 }
 
 const CardDescription = React.forwardRef<HTMLParagraphElement, CardDescriptionProps>(
-  ({ className, children, ...props }, ref) => {
+  ({ className, children, animated = true, ...props }, ref) => {
+    const descriptionVariants = {
+      hidden: { opacity: 0, x: -10 },
+      visible: { 
+        opacity: 1, 
+        x: 0,
+        transition: {
+          duration: 0.3,
+          delay: 0.2,
+          ease: "easeOut"
+        }
+      }
+    };
+
     return (
-      <p
+      <motion.p
         ref={ref}
         className={cn(
           'text-sm text-neutral-600 dark:text-neutral-400',
-          'leading-relaxed',
+          'rtl:text-right',
           className
         )}
+        variants={animated ? descriptionVariants : undefined}
+        initial={animated ? "hidden" : undefined}
+        animate={animated ? "visible" : undefined}
         {...props}
       >
         {children}
-      </p>
+      </motion.p>
     );
   }
 );
 
 CardDescription.displayName = 'CardDescription';
 
+// Card Content Component
 export interface CardContentProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
+  animated?: boolean;
+  stagger?: boolean; // Enable stagger animation for children
 }
 
 const CardContent = React.forwardRef<HTMLDivElement, CardContentProps>(
-  ({ className, children, ...props }, ref) => {
+  ({ className, children, animated = true, stagger = false, ...props }, ref) => {
+    const contentVariants = {
+      hidden: { opacity: 0, y: 10 },
+      visible: { 
+        opacity: 1, 
+        y: 0,
+        transition: {
+          duration: 0.3,
+          delay: 0.25,
+          ease: "easeOut",
+          ...(stagger && {
+            staggerChildren: 0.1,
+            delayChildren: 0.3
+          })
+        }
+      }
+    };
+
+    const childVariants = {
+      hidden: { opacity: 0, y: 10 },
+      visible: { 
+        opacity: 1, 
+        y: 0,
+        transition: {
+          duration: 0.2,
+          ease: "easeOut"
+        }
+      }
+    };
+
     return (
-      <div
+      <motion.div
         ref={ref}
-        className={cn('pt-0', className)}
+        className={cn('p-6 pt-0', className)}
+        variants={animated ? contentVariants : undefined}
+        initial={animated ? "hidden" : undefined}
+        animate={animated ? "visible" : undefined}
         {...props}
       >
-        {children}
-      </div>
+        {stagger && animated ? (
+          React.Children.map(children, (child, index) => (
+            <motion.div key={index} variants={childVariants}>
+              {child}
+            </motion.div>
+          ))
+        ) : children}
+      </motion.div>
     );
   }
 );
 
 CardContent.displayName = 'CardContent';
 
+// Card Footer Component
 export interface CardFooterProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
+  animated?: boolean;
 }
 
 const CardFooter = React.forwardRef<HTMLDivElement, CardFooterProps>(
-  ({ className, children, ...props }, ref) => {
+  ({ className, children, animated = true, ...props }, ref) => {
+    const footerVariants = {
+      hidden: { opacity: 0, y: 10 },
+      visible: { 
+        opacity: 1, 
+        y: 0,
+        transition: {
+          duration: 0.3,
+          delay: 0.3,
+          ease: "easeOut"
+        }
+      }
+    };
+
     return (
-      <div
+      <motion.div
         ref={ref}
-        className={cn(
-          'flex items-center pt-4',
-          'border-t border-neutral-200 dark:border-neutral-700',
-          className
-        )}
+        className={cn('flex items-center p-6 pt-0', className)}
+        variants={animated ? footerVariants : undefined}
+        initial={animated ? "hidden" : undefined}
+        animate={animated ? "visible" : undefined}
         {...props}
       >
         {children}
-      </div>
+      </motion.div>
     );
   }
 );
@@ -203,11 +355,4 @@ const CardFooter = React.forwardRef<HTMLDivElement, CardFooterProps>(
 CardFooter.displayName = 'CardFooter';
 
 export default Card;
-export {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-  CardFooter,
-};
+export { CardHeader, CardTitle, CardDescription, CardContent, CardFooter };

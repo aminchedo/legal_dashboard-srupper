@@ -1,5 +1,6 @@
-import React from 'react';
-import { LucideIcon } from 'lucide-react';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { LucideIcon, Loader2 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -11,6 +12,8 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   fullWidth?: boolean;
   asChild?: boolean;
   children: React.ReactNode;
+  ripple?: boolean; // Enable ripple effect
+  bounce?: boolean; // Enable bounce animation
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
@@ -25,154 +28,166 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     asChild = false,
     disabled,
     children,
+    ripple = true,
+    bounce = false,
+    onClick,
     ...props
   }, ref) => {
-    const baseClasses = [
-      // Base styles
-      'inline-flex items-center justify-center gap-2',
-      'font-medium rounded-lg transition-all duration-200',
-      'focus:outline-none focus:ring-2 focus:ring-offset-2',
-      'disabled:opacity-50 disabled:cursor-not-allowed',
-      'relative overflow-hidden',
-      
-      // Touch targets for mobile
-      'min-h-[44px]',
-      
-      // RTL support
-      'rtl:flex-row-reverse',
-    ];
+    const [isPressed, setIsPressed] = useState(false);
+    const [ripples, setRipples] = useState<Array<{ id: number; x: number; y: number }>>([]);
+
+    const baseClasses = cn(
+      'relative inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-all duration-200',
+      'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500',
+      'disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none',
+      'overflow-hidden', // For ripple effect
+      'rtl:flex-row-reverse select-none'
+    );
 
     const variants = {
-      primary: [
-        'bg-primary-600 text-white',
-        'hover:bg-primary-700 focus:ring-primary-500',
-        'disabled:bg-primary-300',
-        'shadow-sm hover:shadow-md',
-      ],
-      secondary: [
-        'bg-neutral-200 text-neutral-800',
-        'hover:bg-neutral-300 focus:ring-neutral-400',
-        'disabled:bg-neutral-100 disabled:text-neutral-400',
-        'shadow-sm hover:shadow-md',
-      ],
-      success: [
-        'bg-success-600 text-white',
-        'hover:bg-success-700 focus:ring-success-500',
-        'disabled:bg-success-300',
-        'shadow-sm hover:shadow-md',
-      ],
-      warning: [
-        'bg-warning-600 text-white',
-        'hover:bg-warning-700 focus:ring-warning-500',
-        'disabled:bg-warning-300',
-        'shadow-sm hover:shadow-md',
-      ],
-      error: [
-        'bg-error-600 text-white',
-        'hover:bg-error-700 focus:ring-error-500',
-        'disabled:bg-error-300',
-        'shadow-sm hover:shadow-md',
-      ],
-      ghost: [
-        'bg-transparent text-neutral-700',
-        'hover:bg-neutral-100 focus:ring-neutral-400',
-        'disabled:bg-transparent disabled:text-neutral-400',
-      ],
-      outline: [
-        'bg-transparent border border-neutral-300 text-neutral-700',
-        'hover:bg-neutral-50 hover:border-neutral-400 focus:ring-neutral-400',
-        'disabled:bg-transparent disabled:border-neutral-200 disabled:text-neutral-400',
-      ],
+      primary: cn(
+        'bg-primary-600 text-white shadow-sm border border-primary-600',
+        'hover:bg-primary-700 hover:border-primary-700 hover:shadow-md',
+        'active:bg-primary-800 active:shadow-sm',
+        'focus:ring-primary-200 dark:focus:ring-primary-800'
+      ),
+      secondary: cn(
+        'bg-neutral-100 text-neutral-900 shadow-sm border border-neutral-200',
+        'hover:bg-neutral-200 hover:border-neutral-300 hover:shadow-md',
+        'active:bg-neutral-300 active:shadow-sm',
+        'focus:ring-neutral-200 dark:bg-neutral-800 dark:text-neutral-100 dark:border-neutral-700',
+        'dark:hover:bg-neutral-700 dark:hover:border-neutral-600'
+      ),
+      success: cn(
+        'bg-success-600 text-white shadow-sm border border-success-600',
+        'hover:bg-success-700 hover:border-success-700 hover:shadow-md',
+        'active:bg-success-800 active:shadow-sm',
+        'focus:ring-success-200 dark:focus:ring-success-800'
+      ),
+      warning: cn(
+        'bg-warning-600 text-white shadow-sm border border-warning-600',
+        'hover:bg-warning-700 hover:border-warning-700 hover:shadow-md',
+        'active:bg-warning-800 active:shadow-sm',
+        'focus:ring-warning-200 dark:focus:ring-warning-800'
+      ),
+      error: cn(
+        'bg-error-600 text-white shadow-sm border border-error-600',
+        'hover:bg-error-700 hover:border-error-700 hover:shadow-md',
+        'active:bg-error-800 active:shadow-sm',
+        'focus:ring-error-200 dark:focus:ring-error-800'
+      ),
+      ghost: cn(
+        'text-neutral-700 dark:text-neutral-300',
+        'hover:bg-neutral-100 dark:hover:bg-neutral-800',
+        'active:bg-neutral-200 dark:active:bg-neutral-700'
+      ),
+      outline: cn(
+        'bg-transparent text-neutral-700 border border-neutral-300 shadow-sm',
+        'hover:bg-neutral-50 hover:border-neutral-400 hover:shadow-md',
+        'active:bg-neutral-100 active:shadow-sm',
+        'focus:ring-neutral-200 dark:text-neutral-300 dark:border-neutral-600',
+        'dark:hover:bg-neutral-800 dark:hover:border-neutral-500'
+      )
     };
 
     const sizes = {
-      sm: ['px-3 py-1.5 text-sm', 'min-h-[36px]'],
-      md: ['px-4 py-2 text-sm', 'min-h-[44px]'],
-      lg: ['px-6 py-3 text-base', 'min-h-[48px]'],
-      xl: ['px-8 py-4 text-lg', 'min-h-[52px]'],
+      sm: 'h-8 px-3 text-sm',
+      md: 'h-10 px-4 text-sm',
+      lg: 'h-12 px-6 text-base',
+      xl: 'h-14 px-8 text-lg'
     };
 
-    const widthClasses = fullWidth ? 'w-full' : 'w-auto';
+    const widthClasses = fullWidth ? 'w-full' : '';
 
-    const iconSize = {
-      sm: 'w-4 h-4',
-      md: 'w-4 h-4',
-      lg: 'w-5 h-5',
-      xl: 'w-6 h-6',
-    };
+    const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+      if (disabled || loading) return;
 
-    const LoadingSpinner = () => (
-      <svg
-        className={cn('animate-spin', iconSize[size])}
-        xmlns="http://www.w3.org/2000/svg"
-        fill="none"
-        viewBox="0 0 24 24"
-      >
-        <circle
-          className="opacity-25"
-          cx="12"
-          cy="12"
-          r="10"
-          stroke="currentColor"
-          strokeWidth="4"
-        />
-        <path
-          className="opacity-75"
-          fill="currentColor"
-          d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-        />
-      </svg>
-    );
-
-    const renderIcon = () => {
-      if (loading) {
-        return <LoadingSpinner />;
+      // Create ripple effect
+      if (ripple) {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const newRipple = { id: Date.now(), x, y };
+        
+        setRipples(prev => [...prev, newRipple]);
+        
+        // Remove ripple after animation
+        setTimeout(() => {
+          setRipples(prev => prev.filter(r => r.id !== newRipple.id));
+        }, 600);
       }
-      
-      if (Icon) {
-        return <Icon className={iconSize[size]} />;
+
+      // Handle bounce effect
+      if (bounce) {
+        setIsPressed(true);
+        setTimeout(() => setIsPressed(false), 150);
       }
-      
-      return null;
+
+      onClick?.(e);
     };
 
     const renderContent = () => {
-      if (iconPosition === 'right') {
+      if (loading) {
         return (
-          <>
-            <span className={loading ? 'opacity-0' : ''}>{children}</span>
-            {renderIcon()}
-          </>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key="loading"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              transition={{ duration: 0.2 }}
+              className="flex items-center gap-2 rtl:flex-row-reverse"
+            >
+              <Loader2 className="w-4 h-4 animate-spin" />
+              {typeof children === 'string' ? 'در حال پردازش...' : children}
+            </motion.div>
+          </AnimatePresence>
         );
       }
 
-      return (
+      const content = (
         <>
-          {renderIcon()}
-          <span className={loading ? 'opacity-0' : ''}>{children}</span>
+          {Icon && iconPosition === 'left' && (
+            <motion.div
+              initial={false}
+              animate={{ rotate: isPressed && bounce ? 360 : 0 }}
+              transition={{ duration: 0.3, type: "spring" }}
+            >
+              <Icon className="w-4 h-4 flex-shrink-0" />
+            </motion.div>
+          )}
+          <span className="min-w-0">{children}</span>
+          {Icon && iconPosition === 'right' && (
+            <motion.div
+              initial={false}
+              animate={{ rotate: isPressed && bounce ? 360 : 0 }}
+              transition={{ duration: 0.3, type: "spring" }}
+            >
+              <Icon className="w-4 h-4 flex-shrink-0" />
+            </motion.div>
+          )}
         </>
+      );
+
+      return (
+        <motion.div
+          className="flex items-center gap-2 rtl:flex-row-reverse relative z-10"
+          initial={false}
+          animate={{ 
+            scale: isPressed && bounce ? 0.95 : 1,
+          }}
+          transition={{ duration: 0.1, type: "spring", stiffness: 400 }}
+        >
+          {content}
+        </motion.div>
       );
     };
 
-    const Comp = asChild ? React.Fragment : 'button';
-    const buttonProps = asChild ? {} : {
-      disabled: disabled || loading,
-      ...props
+    const buttonVariants = {
+      idle: { scale: 1 },
+      hover: { scale: 1.02 },
+      tap: { scale: 0.98 }
     };
-
-    const content = (
-      <>
-        {/* Ripple effect container */}
-        <span className="absolute inset-0 overflow-hidden rounded-lg">
-          {/* You can add ripple effect here if needed */}
-        </span>
-        
-        {/* Content */}
-        <span className="relative flex items-center justify-center gap-2 rtl:flex-row-reverse">
-          {renderContent()}
-        </span>
-      </>
-    );
 
     if (asChild) {
       return React.cloneElement(
@@ -187,13 +202,16 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
             (children as React.ReactElement).props.className
           ),
           ref,
-        },
-        content
+          onClick: handleClick,
+        }
       );
     }
 
     return (
-      <button
+      <motion.button
+        ref={ref}
+        disabled={disabled || loading}
+        onClick={handleClick}
         className={cn(
           baseClasses,
           variants[variant],
@@ -201,11 +219,45 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           widthClasses,
           className
         )}
-        ref={ref}
-        {...buttonProps}
+        variants={buttonVariants}
+        initial="idle"
+        whileHover={!disabled && !loading ? "hover" : "idle"}
+        whileTap={!disabled && !loading ? "tap" : "idle"}
+        transition={{ duration: 0.15, ease: "easeOut" }}
+        {...props}
       >
-        {content}
-      </button>
+        {/* Ripple Effects */}
+        <AnimatePresence>
+          {ripples.map((ripple) => (
+            <motion.span
+              key={ripple.id}
+              className="absolute bg-white/30 rounded-full pointer-events-none"
+              style={{
+                left: ripple.x - 20,
+                top: ripple.y - 20,
+                width: 40,
+                height: 40,
+              }}
+              initial={{ scale: 0, opacity: 0.8 }}
+              animate={{ scale: 4, opacity: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.6, ease: "easeOut" }}
+            />
+          ))}
+        </AnimatePresence>
+
+        {/* Button Content */}
+        {renderContent()}
+
+        {/* Shine Effect on Hover */}
+        <motion.div
+          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent"
+          initial={{ x: "-100%" }}
+          whileHover={{ x: "100%" }}
+          transition={{ duration: 0.6, ease: "easeInOut" }}
+          style={{ pointerEvents: "none" }}
+        />
+      </motion.button>
     );
   }
 );
@@ -213,4 +265,3 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 Button.displayName = 'Button';
 
 export default Button;
-export { Button };
