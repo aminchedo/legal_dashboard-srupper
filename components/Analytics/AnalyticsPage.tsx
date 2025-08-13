@@ -20,7 +20,9 @@ export default function AnalyticsPage() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div className="mx-auto mb-4 w-12 h-12">
+            <div className="w-full h-full border-2 border-gray-200 border-t-blue-600 rounded-full" style={{animation: 'spin 1s linear infinite'}}></div>
+          </div>
           <p className="text-gray-600">در حال بارگذاری تحلیل‌ها...</p>
         </div>
       </div>

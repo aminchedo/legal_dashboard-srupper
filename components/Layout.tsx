@@ -164,7 +164,7 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="md:hidden p-2 rounded-md hover:bg-white/10 transition-colors"
+                className="lg:hidden p-2 rounded-md hover:bg-white/10 transition-colors"
               >
                 <MenuOutlined />
               </button>
@@ -238,8 +238,8 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
         {/* Sidebar */}
         <aside className={`
           fixed inset-y-0 right-0 z-50 w-64 bg-white dark:bg-slate-900 shadow-xl transform transition-transform duration-300 ease-in-out mt-16
-          md:relative md:translate-x-0 md:mt-0 md:z-0
-          ${sidebarOpen ? 'translate-x-0' : 'translate-x-full'}
+          lg:relative lg:translate-x-0 lg:mt-0 lg:z-0
+          ${sidebarOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'}
         `}>
           <nav className="h-full overflow-y-auto py-6">
             <div className="px-4 space-y-2">
@@ -274,13 +274,13 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
         {/* Overlay for mobile */}
         {sidebarOpen && (
           <div
-            className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+            className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
             onClick={() => setSidebarOpen(false)}
           />
         )}
 
         {/* Main content */}
-        <main className="flex-1 md:pr-64">
+        <main className="flex-1 lg:pr-64">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             {children}
           </div>
