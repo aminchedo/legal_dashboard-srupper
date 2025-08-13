@@ -4,6 +4,8 @@ import AppLayout from '../components/layout/AppLayout';
 import { PageType } from '../types';
 
 function pathToPageType(pathname: string): PageType {
+    if (pathname.startsWith('/analytics')) return 'analytics';
+    if (pathname.startsWith('/recording')) return 'recording';
     if (pathname.startsWith('/jobs')) return 'jobs';
     if (pathname.startsWith('/documents')) return 'documents';
     if (pathname.startsWith('/system')) return 'system';
@@ -15,6 +17,10 @@ function pathToPageType(pathname: string): PageType {
 
 function pageTypeToPath(page: PageType): string {
     switch (page) {
+        case 'analytics':
+            return '/analytics';
+        case 'recording':
+            return '/recording';
         case 'jobs':
             return '/jobs';
         case 'documents':

@@ -9,7 +9,9 @@ import {
   AlertOutlined,
   BellOutlined,
   SearchOutlined,
-  SwapOutlined
+  SwapOutlined,
+  LineChartOutlined,
+  VideoCameraOutlined
 } from '@ant-design/icons';
 import { PageType } from '../../types';
 import CommandPalette, { CommandItem } from '../common/CommandPalette';
@@ -23,6 +25,8 @@ interface LayoutProps {
 
 const navigationItems = (t: (key: string) => string) => ([
   { id: 'dashboard' as PageType, label: t('nav.dashboard'), icon: HomeOutlined },
+  { id: 'analytics' as PageType, label: 'تحلیل‌ها', icon: LineChartOutlined },
+  { id: 'recording' as PageType, label: 'ضبط صفحه', icon: VideoCameraOutlined },
   { id: 'jobs' as PageType, label: t('nav.jobs'), icon: GlobalOutlined },
   { id: 'documents' as PageType, label: t('nav.documents'), icon: DatabaseOutlined },
   { id: 'system' as PageType, label: t('nav.system'), icon: BarChartOutlined },

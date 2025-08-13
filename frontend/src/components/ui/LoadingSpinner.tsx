@@ -1,23 +1,14 @@
 import React, { useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { AlertTriangle, Database, Activity, Zap, Shield } from 'lucide-react';
 
 type SpinnerSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
-type SpinnerVariant = 'primary' | 'white' | 'current';
+type SpinnerVariant = 'primary' | 'white' | 'current' | 'dark' | 'gradient';
 
 interface LoadingSpinnerProps {
   size?: SpinnerSize;
   variant?: SpinnerVariant;
   className?: string;
-}
-
-interface LoadingScreenProps {
-  onLoadComplete?: () => void;
-  minDisplayTime?: number;
-  percentage?: number;
-  text?: string;
-}
-
-interface EnhancedLoadingSpinnerProps extends LoadingSpinnerProps {
-  // Full screen loading options
   fullScreen?: boolean;
   overlay?: boolean;
   text?: string;
@@ -25,52 +16,60 @@ interface EnhancedLoadingSpinnerProps extends LoadingSpinnerProps {
   onLoadComplete?: () => void;
   minDisplayTime?: number;
   animated?: boolean;
-  responsive?: boolean; // NEW: Auto-scale based on screen size
+  responsive?: boolean;
+  showProgress?: boolean;
+  showBrandMessage?: boolean;
 }
 
-// Responsive size classes that scale with screen size
+// Size classes that scale responsively
 const sizeClasses = {
-  xs: 'w-[clamp(0.75rem,2vw,1rem)] h-[clamp(0.75rem,2vw,1rem)]',
-  sm: 'w-[clamp(1rem,2.5vw,1.25rem)] h-[clamp(1rem,2.5vw,1.25rem)]',
-  md: 'w-[clamp(1.5rem,3vw,2rem)] h-[clamp(1.5rem,3vw,2rem)]',
-  lg: 'w-[clamp(2rem,4vw,3rem)] h-[clamp(2rem,4vw,3rem)]',
-  xl: 'w-[clamp(3rem,6vw,4rem)] h-[clamp(3rem,6vw,4rem)]',
+  xs: 'w-4 h-4',
+  sm: 'w-5 h-5', 
+  md: 'w-6 h-6',
+  lg: 'w-8 h-8',
+  xl: 'w-12 h-12',
 };
 
 const variantClasses = {
   primary: 'text-blue-600',
   white: 'text-white',
   current: 'text-current',
+  dark: 'text-blue-400',
+  gradient: 'text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500',
 };
 
-/**
- * Enhanced responsive loading spinner component that supports multiple modes
- * 
- * @param size - Size variant that scales responsively (xs, sm, md, lg, xl)
- * @param variant - Color variant (primary, white, current)
- * @param fullScreen - Show as full screen loading experience
- * @param overlay - Show with overlay background
- * @param text - Loading text to display
- * @param percentage - Loading percentage (0-100)
- * @param onLoadComplete - Callback when loading completes
- * @param minDisplayTime - Minimum time to show loading (ms)
- * @param animated - Enable advanced animations for full screen mode
- * @param responsive - Auto-scale size based on screen size
- * @param className - Additional CSS classes
- * 
- * @example
- * // Simple responsive spinner
- * <LoadingSpinner size="md" variant="primary" responsive />
- * 
- * // Full screen loading with responsive scaling
- * <LoadingSpinner fullScreen responsive onLoadComplete={() => console.log('Done')} />
- * 
- * // Mobile-optimized overlay
- * <LoadingSpinner overlay text="Processing..." percentage={75} responsive />
- */
+// Floating particles component
+const FloatingParticles: React.FC<{ count?: number }> = ({ count = 8 }) => {
+  return (
+    <div className="absolute inset-0 overflow-hidden">
+      {Array.from({ length: count }).map((_, i) => (
+        <motion.div
+          key={i}
+          className="absolute w-1 h-1 bg-blue-400 rounded-full opacity-60"
+          style={{
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+          }}
+          animate={{
+            y: [0, -30, 0],
+            x: [0, Math.random() * 20 - 10, 0],
+            opacity: [0.6, 1, 0.6],
+          }}
+          transition={{
+            duration: 3 + Math.random() * 2,
+            repeat: Infinity,
+            delay: Math.random() * 2,
+            ease: "easeInOut"
+          }}
+        />
+      ))}
+    </div>
+  );
+};
+
 export default function LoadingSpinner({ 
   size = 'md', 
-  variant = 'primary',
+  variant = 'dark',
   fullScreen = false,
   overlay = false,
   text,
@@ -79,14 +78,35 @@ export default function LoadingSpinner({
   minDisplayTime = 2000,
   animated = true,
   responsive = true,
+  showProgress = true,
+  showBrandMessage = true,
   className = '' 
-}: EnhancedLoadingSpinnerProps): JSX.Element | null {
+}: LoadingSpinnerProps): JSX.Element | null {
 
-  // State for full screen mode
   const [currentPercentage, setCurrentPercentage] = useState(percentage || 0);
   const [isVisible, setIsVisible] = useState(true);
+  const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
 
-  // Handle full screen loading animation and timing
+  // Loading messages that rotate
+  const loadingMessages = [
+    'در حال بارگذاری داشبورد...',
+    'در حال تهیه داده‌ها...',
+    'تقریباً آماده است...',
+    'در حال اتصال به سرویس‌ها...',
+  ];
+
+  // Rotate messages every 2 seconds
+  useEffect(() => {
+    if (!fullScreen) return;
+    
+    const messageInterval = setInterval(() => {
+      setCurrentMessageIndex(prev => (prev + 1) % loadingMessages.length);
+    }, 2000);
+
+    return () => clearInterval(messageInterval);
+  }, [fullScreen]);
+
+  // Handle loading progress animation
   useEffect(() => {
     if (!fullScreen || percentage !== undefined) return;
 
@@ -96,363 +116,239 @@ export default function LoadingSpinner({
 
     const updatePercentage = () => {
       setCurrentPercentage(prev => {
-        const newValue = prev + (Math.random() * 3 + 1);
-        if (newValue < 100) {
+        const newValue = prev + (Math.random() * 2 + 0.5);
+        if (newValue < 95) {
           animationFrameId = requestAnimationFrame(() => {
             setTimeout(updatePercentage, 100);
           });
           return newValue;
         } else {
-          const elapsedTime = Date.now() - startTime;
-          const remainingTime = Math.max(0, minDisplayTime - elapsedTime);
-
-          timeoutId = setTimeout(() => {
-            setIsVisible(false);
-            setTimeout(() => {
-              if (onLoadComplete) onLoadComplete();
-            }, 600);
-          }, remainingTime);
-
+          // Complete loading
+          setTimeout(() => {
+            const elapsed = Date.now() - startTime;
+            const remainingTime = Math.max(0, minDisplayTime - elapsed);
+            
+            timeoutId = setTimeout(() => {
+              setIsVisible(false);
+              onLoadComplete?.();
+            }, remainingTime);
+          }, 500);
           return 100;
         }
       });
     };
 
-    if (animated) {
-      setTimeout(updatePercentage, 500);
-    }
+    updatePercentage();
 
     return () => {
-      cancelAnimationFrame(animationFrameId);
-      clearTimeout(timeoutId);
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+      if (timeoutId) clearTimeout(timeoutId);
     };
-  }, [fullScreen, percentage, minDisplayTime, onLoadComplete, animated]);
+  }, [fullScreen, percentage, minDisplayTime, onLoadComplete]);
 
-  // Update percentage when prop changes
-  useEffect(() => {
-    if (percentage !== undefined) {
-      setCurrentPercentage(percentage);
-    }
-  }, [percentage]);
+  // Don't render if not visible
+  if (!isVisible && fullScreen) {
+    return null;
+  }
 
-  // Full screen loading experience with responsive design
-  if (fullScreen) {
-    if (!isVisible) return null;
-
+  // Simple spinner mode
+  if (!fullScreen && !overlay) {
+    const finalSize = responsive ? 'md' : size;
     return (
-      <div 
-        id="loading-screen" 
-        className={`fixed inset-0 z-[9999] ${isVisible ? '' : 'fade-out'} safe-area-inset`}
-        style={{
-          background: 'linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #667eea 100%)',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: 'white',
-          fontFamily: 'var(--font-family)',
-          padding: 'var(--space-4)',
-        }}
+      <div className={`inline-block animate-spin rounded-full border-2 border-solid border-current border-r-transparent ${sizeClasses[finalSize]} ${variantClasses[variant]} ${className}`} role="status">
+        <span className="sr-only">Loading...</span>
+      </div>
+    );
+  }
+
+  // Enhanced full screen loading experience
+  if (fullScreen) {
+    return (
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900"
       >
-        <style>{`
-          #loading-screen.fade-out {
-            opacity: 0;
-            transition: opacity 0.6s ease-out;
-          }
-          
-          .loading-particle {
-            position: absolute;
-            width: clamp(3px, 0.5vw, 6px);
-            height: clamp(3px, 0.5vw, 6px);
-            background: rgba(255, 255, 255, 0.6);
-            border-radius: 50%;
-            animation: float-responsive 6s ease-in-out infinite;
-          }
-          
-          .loading-particle:nth-child(1) { top: 20%; left: 20%; animation-delay: 0s; }
-          .loading-particle:nth-child(2) { top: 60%; left: 80%; animation-delay: 1s; }
-          .loading-particle:nth-child(3) { top: 40%; left: 40%; animation-delay: 2s; }
-          .loading-particle:nth-child(4) { top: 80%; left: 10%; animation-delay: 3s; }
-          .loading-particle:nth-child(5) { top: 10%; left: 90%; animation-delay: 4s; }
-          
-          .loading-geo-shape {
-            position: absolute;
-            width: clamp(40px, 5vw, 80px);
-            height: clamp(40px, 5vw, 80px);
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-            animation: rotate-slow 20s linear infinite;
-          }
-          
-          .loading-geo-shape:nth-child(6) { top: 15%; left: 15%; }
-          .loading-geo-shape:nth-child(7) { top: 70%; left: 75%; animation-delay: -10s; }
-          .loading-geo-shape:nth-child(8) { top: 45%; right: 10%; animation-delay: -5s; }
-          
-          .loading-main-container {
-            text-align: center;
-            z-index: 10;
-            max-width: min(400px, 90vw);
-            width: 100%;
-          }
-          
-          .loading-main-logo {
-            font-size: clamp(1.5rem, 5vw, 3rem);
-            font-weight: 800;
-            margin-bottom: clamp(1rem, 3vw, 2rem);
-            text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-            background: linear-gradient(135deg, #fff, #a8edea 50%, #fed6e3);
-            background-clip: text;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-          }
-          
-          .loading-scale-icon {
-            margin: clamp(1rem, 3vw, 2rem) 0;
-          }
-          
-          .loading-scale-container {
-            position: relative;
-            width: clamp(60px, 8vw, 100px);
-            height: clamp(60px, 8vw, 100px);
-            margin: 0 auto;
-          }
-          
-          .loading-scale-pillar {
-            position: absolute;
-            left: 50%;
-            bottom: 0;
-            transform: translateX(-50%);
-            width: 4px;
-            height: 60%;
-            background: linear-gradient(to top, #4a89e8, #74b9ff);
-            border-radius: 2px;
-          }
-          
-          .loading-scale-arm {
-            position: absolute;
-            left: 50%;
-            top: 30%;
-            transform: translateX(-50%);
-            width: 80%;
-            height: 3px;
-            background: linear-gradient(to right, #4a89e8, #74b9ff);
-            border-radius: 2px;
-            animation: balance-responsive 3s ease-in-out infinite;
-          }
-          
-          .loading-scale-pan {
-            position: absolute;
-            top: 25%;
-            width: 20%;
-            height: 3px;
-            background: linear-gradient(to right, #4a89e8, #74b9ff);
-            border-radius: 2px;
-          }
-          
-          .loading-scale-pan:nth-child(3) { left: 5%; }
-          .loading-scale-pan:nth-child(4) { right: 5%; }
-          
-          .loading-main-text {
-            font-size: clamp(0.9rem, 2.5vw, 1.2rem);
-            margin: clamp(1rem, 3vw, 1.5rem) 0;
-            color: rgba(255, 255, 255, 0.9);
-            line-height: var(--leading-relaxed);
-          }
-          
-          .loading-dots-responsive::after {
-            content: '...';
-            animation: dots-responsive 1.5s infinite;
-          }
-          
-          .loading-progress-container {
-            margin-top: clamp(1rem, 3vw, 2rem);
-            width: 100%;
-            max-width: 300px;
-            margin-left: auto;
-            margin-right: auto;
-          }
-          
-          .loading-main-percentage {
-            font-size: clamp(1.2rem, 3vw, 2rem);
-            font-weight: 700;
-            margin-bottom: clamp(0.5rem, 2vw, 1rem);
-            color: #74b9ff;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-          }
-          
-          .loading-progress-bar {
-            width: 100%;
-            height: clamp(6px, 1vw, 10px);
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: clamp(3px, 0.5vw, 5px);
-            overflow: hidden;
-            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
-          }
-          
-          .loading-progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #4a89e8, #74b9ff, #a29bfe);
-            border-radius: clamp(3px, 0.5vw, 5px);
-            transition: width 0.3s ease-out;
-            box-shadow: 0 0 10px rgba(116, 185, 255, 0.5);
-          }
-          
-          @keyframes float-responsive {
-            0%, 100% { transform: translateY(0px) rotate(0deg); }
-            33% { transform: translateY(clamp(-8px, -2vw, -15px)) rotate(120deg); }
-            66% { transform: translateY(clamp(4px, 1vw, 8px)) rotate(240deg); }
-          }
-          
-          @keyframes rotate-slow {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-          }
-          
-          @keyframes balance-responsive {
-            0%, 100% { transform: translateX(-50%) rotate(0deg); }
-            50% { transform: translateX(-50%) rotate(clamp(1deg, 0.3vw, 3deg)); }
-          }
-          
-          @keyframes dots-responsive {
-            0%, 20% { opacity: 0; }
-            50% { opacity: 1; }
-            100% { opacity: 0; }
-          }
-          
-          /* Reduce motion for accessibility */
-          @media (prefers-reduced-motion: reduce) {
-            .loading-particle,
-            .loading-geo-shape,
-            .loading-scale-arm,
-            .loading-dots-responsive::after {
-              animation: none;
-            }
-          }
-        `}</style>
+        {/* Background pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute inset-0" style={{
+            backgroundImage: `radial-gradient(circle at 25% 25%, rgba(59, 130, 246, 0.15) 0%, transparent 50%), radial-gradient(circle at 75% 75%, rgba(139, 92, 246, 0.15) 0%, transparent 50%)`,
+          }} />
+        </div>
 
-        {/* Floating particles */}
-        {animated && (
-          <>
-            <div className="loading-particle"></div>
-            <div className="loading-particle"></div>
-            <div className="loading-particle"></div>
-            <div className="loading-particle"></div>
-            <div className="loading-particle"></div>
+        {/* Floating particles animation */}
+        <FloatingParticles count={8} />
 
-            {/* Geometric shapes */}
-            <div className="loading-geo-shape"></div>
-            <div className="loading-geo-shape"></div>
-            <div className="loading-geo-shape"></div>
-          </>
-        )}
-
-        <div className="loading-main-container">
-          <div className="loading-main-logo">⚖️ LEGAL DASHBOARD</div>
-
-          {animated && (
-            <div className="loading-scale-icon">
-              <div className="loading-scale-container">
-                <div className="loading-scale-pillar"></div>
-                <div className="loading-scale-arm"></div>
-                <div className="loading-scale-pan"></div>
-                <div className="loading-scale-pan"></div>
+        <div className="relative z-10 flex flex-col items-center max-w-md mx-auto px-6 text-center">
+          {/* Main logo/icon with animation */}
+          <motion.div 
+            initial={{ scale: 0.5, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="mb-8 relative"
+          >
+            <div className="relative inline-flex p-6 rounded-full bg-blue-500/10 backdrop-blur-sm border border-blue-400/20">
+              <motion.div 
+                animate={{ rotate: 360 }}
+                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                className="w-16 h-16 rounded-full border-4 border-blue-400/30 border-t-blue-400"
+              />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <motion.div
+                  animate={{ 
+                    scale: [1, 1.2, 1],
+                    opacity: [0.8, 1, 0.8]
+                  }}
+                  transition={{ 
+                    duration: 2, 
+                    repeat: Infinity, 
+                    ease: "easeInOut" 
+                  }}
+                >
+                  <Shield className="w-8 h-8 text-blue-400" />
+                </motion.div>
               </div>
             </div>
+            
+            {/* Pulsing rings */}
+            <motion.div 
+              animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0, 0.5] }}
+              transition={{ duration: 2, repeat: Infinity }}
+              className="absolute inset-0 rounded-full border border-blue-400/20"
+            />
+            <motion.div 
+              animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0, 0.3] }}
+              transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
+              className="absolute inset-2 rounded-full border border-blue-400/10"
+            />
+          </motion.div>
+
+          {/* App title and subtitle */}
+          {showBrandMessage && (
+            <motion.div 
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.3, duration: 0.6 }}
+              className="mb-8"
+            >
+              <h1 className="text-2xl md:text-3xl font-bold text-white mb-2 tracking-tight">
+                سیستم مدیریت حقوقی
+              </h1>
+              <p className="text-blue-200 md:text-lg opacity-90">
+                سیستم جامع مدیریت اطلاعات حقوقی جمهوری اسلامی ایران
+              </p>
+            </motion.div>
           )}
 
-          <div className="loading-main-text">
-            {text || 'Initializing your workspace'}
-            <span className="loading-dots-responsive"></span>
+          {/* Loading message with rotation */}
+          <div className="mb-8 h-6">
+            <AnimatePresence mode="wait">
+              <motion.p 
+                key={currentMessageIndex}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.3 }}
+                className="text-blue-100 md:text-lg"
+              >
+                {text || loadingMessages[currentMessageIndex]}
+              </motion.p>
+            </AnimatePresence>
           </div>
 
-          <div className="loading-progress-container">
-            <div className="loading-main-percentage">{Math.floor(currentPercentage)}%</div>
-            <div className="loading-progress-bar">
-              <div
-                className="loading-progress-fill"
-                style={{ width: `${currentPercentage}%` }}
-              ></div>
-            </div>
-          </div>
+          {/* Progress bar */}
+          {showProgress && (
+            <motion.div 
+              initial={{ width: 0, opacity: 0 }}
+              animate={{ width: "100%", opacity: 1 }}
+              transition={{ delay: 0.5, duration: 0.4 }}
+              className="w-full max-w-xs mb-4"
+            >
+              <div className="relative h-2 bg-slate-700/50 rounded-full overflow-hidden backdrop-blur-sm">
+                <motion.div 
+                  initial={{ width: 0 }}
+                  animate={{ width: `${currentPercentage}%` }}
+                  transition={{ duration: 0.3, ease: "easeOut" }}
+                  className="absolute left-0 top-0 h-full bg-gradient-to-r from-blue-400 to-blue-500 rounded-full"
+                />
+                <motion.div 
+                  animate={{ x: [-100, 300] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                  className="absolute inset-0 w-20 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                />
+              </div>
+              <div className="text-center mt-2">
+                <motion.span 
+                  key={Math.round(currentPercentage)}
+                  initial={{ scale: 0.8 }}
+                  animate={{ scale: 1 }}
+                  className="text-blue-300 text-sm font-medium"
+                >
+                  {Math.round(currentPercentage)}%
+                </motion.span>
+              </div>
+            </motion.div>
+          )}
+
+          {/* System status icons */}
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1, duration: 0.5 }}
+            className="flex items-center space-x-4 space-x-reverse mt-4"
+          >
+            {[Database, Activity, Zap].map((Icon, index) => (
+              <motion.div
+                key={index}
+                animate={{ 
+                  scale: [1, 1.1, 1],
+                  opacity: [0.5, 1, 0.5]
+                }}
+                transition={{ 
+                  duration: 2, 
+                  repeat: Infinity, 
+                  delay: index * 0.3 
+                }}
+                className="p-2 rounded-full bg-blue-500/10 border border-blue-400/20"
+              >
+                <Icon className="w-4 h-4 text-blue-400" />
+              </motion.div>
+            ))}
+          </motion.div>
         </div>
-      </div>
+      </motion.div>
     );
   }
 
-  // Overlay mode with mobile-first responsive design
+  // Overlay mode
   if (overlay) {
     return (
-      <div className="fixed inset-0 z-[1050] flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm safe-area-inset">
-        <div className="flex flex-col items-center gap-4 bg-white rounded-xl p-6 md:p-8 shadow-elegant mx-4 max-w-sm w-full">
-          <svg 
-            className={`animate-spin ${responsive ? sizeClasses[size] : sizeClasses[size]} ${variantClasses[variant]}`}
-            xmlns="http://www.w3.org/2000/svg" 
-            fill="none" 
-            viewBox="0 0 24 24"
-            role="status"
-            aria-label="Loading"
-          >
-            <circle 
-              className="opacity-25" 
-              cx="12" 
-              cy="12" 
-              r="10" 
-              stroke="currentColor" 
-              strokeWidth="4"
-            />
-            <path 
-              className="opacity-75" 
-              fill="currentColor" 
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-            />
-          </svg>
-          {text && (
-            <p className="text-gray-700 font-medium text-center" style={{ fontSize: 'var(--text-sm)' }}>
-              {text}
-            </p>
-          )}
-          {percentage !== undefined && (
-            <p className="text-gray-500 font-medium" style={{ fontSize: 'var(--text-sm)' }}>
-              {Math.floor(currentPercentage)}%
-            </p>
-          )}
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+      >
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-2xl border">
+          <div className="flex flex-col items-center space-y-4">
+            <div className={`animate-spin rounded-full border-2 border-blue-600 border-t-transparent ${sizeClasses.lg}`} />
+            {text && <p className="text-gray-600 dark:text-gray-300">{text}</p>}
+            {showProgress && percentage !== undefined && (
+              <div className="w-48 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                <div 
+                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${percentage}%` }}
+                />
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      </motion.div>
     );
   }
 
-  // Simple spinner mode with responsive sizing
-  const spinnerClasses = [
-    'animate-spin',
-    responsive ? sizeClasses[size] : sizeClasses[size],
-    variantClasses[variant],
-    className,
-  ].join(' ');
-
-  return (
-    <svg 
-      className={spinnerClasses}
-      xmlns="http://www.w3.org/2000/svg" 
-      fill="none" 
-      viewBox="0 0 24 24"
-      role="status"
-      aria-label="Loading"
-    >
-      <circle 
-        className="opacity-25" 
-        cx="12" 
-        cy="12" 
-        r="10" 
-        stroke="currentColor" 
-        strokeWidth="4"
-      />
-      <path 
-        className="opacity-75" 
-        fill="currentColor" 
-        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-      />
-    </svg>
-  );
+  return null;
 }
 
 // ===== RESPONSIVE SKELETON LOADER COMPONENT =====

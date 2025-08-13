@@ -9,6 +9,9 @@ import SystemHealthPage from './pages/System/SystemHealthPage';
 import ProxiesPage from './pages/Proxies/ProxiesPage';
 import SettingsPage from './pages/Settings/SettingsPage';
 import HelpPage from './pages/Help/HelpPage';
+import AnalyticsPage from './pages/Analytics/AnalyticsPage';
+import RecordingPage from './pages/Recording/RecordingPage';
+import { ToastContainer, useToast } from './components/ui/Toast';
 
 // Create QueryClient properly - NO try-catch needed
 const queryClient = new QueryClient({
@@ -22,6 +25,8 @@ const queryClient = new QueryClient({
 });
 
 function App() {
+  const { toasts, removeToast, showSuccess } = useToast();
+
   useEffect(() => {
     // Hide loading screen when React app loads
     const hideLoadingScreen = () => {
@@ -36,9 +41,16 @@ function App() {
       }
     };
 
-    const timer = setTimeout(hideLoadingScreen, 500);
+    const timer = setTimeout(() => {
+      hideLoadingScreen();
+      // Show welcome toast
+      setTimeout(() => {
+        showSuccess('خوش آمدید!', 'سیستم مدیریت حقوقی با موفقیت بارگذاری شد');
+      }, 1000);
+    }, 500);
+    
     return () => clearTimeout(timer);
-  }, []);
+  }, [showSuccess]);
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -48,6 +60,8 @@ function App() {
             {/* Main application routes */}
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/analytics" element={<AnalyticsPage />} />
+            <Route path="/recording" element={<RecordingPage />} />
             <Route path="/jobs" element={<JobsListPage />} />
             <Route path="/documents" element={<DocumentsListPage />} />
             <Route path="/system" element={<SystemHealthPage />} />
@@ -57,12 +71,14 @@ function App() {
             
             {/* Legacy routes - redirect to new structure */}
             <Route path="/data" element={<Navigate to="/documents" replace />} />
-            <Route path="/analytics" element={<Navigate to="/dashboard" replace />} />
             
             {/* Fallback */}
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </AppRoutes>
+        
+        {/* Toast notifications */}
+        <ToastContainer toasts={toasts} onRemove={removeToast} />
       </Router>
     </QueryClientProvider>
   );
