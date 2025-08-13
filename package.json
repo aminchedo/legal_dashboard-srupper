@@ -10,6 +10,9 @@
     "@vitejs/plugin-react": "^4.7.0",
     "concurrently": "^8.2.2"
   },
+  "engines": {
+    "node": "20.x"
+  },
   "description": "A modern legal analytics dashboard with a React + Vite frontend and an Express + TypeScript backend. It provides document management, analytics, scraping utilities, OCR hooks, and real‑time updates via WebSockets.",
   "main": "index.js",
   "directories": {
@@ -20,6 +23,7 @@
   "dependencies": {
     "@emotion/unitless": "^0.10.0",
     "@tanstack/react-query": "^5.84.2",
+    "@vercel/sandbox": "^0.0.16",
     "acorn": "^8.15.0",
     "acorn-jsx": "^5.3.2",
     "agent-base": "^7.1.4",
@@ -409,14 +413,12 @@
     "stop-iteration-iterator": "^1.1.0",
     "string-convert": "^0.2.1",
     "string-width": "^5.1.2",
-    "string-width-cjs": "^4.2.3",
     "string.prototype.matchall": "^4.0.12",
     "string.prototype.repeat": "^1.0.0",
     "string.prototype.trim": "^1.2.10",
     "string.prototype.trimend": "^1.0.9",
     "string.prototype.trimstart": "^1.0.8",
     "strip-ansi": "^7.1.0",
-    "strip-ansi-cjs": "^6.0.1",
     "strip-bom": "^3.0.0",
     "strip-indent": "^3.0.0",
     "strip-json-comments": "^3.1.1",
@@ -479,7 +481,6 @@
     "why-is-node-running": "^2.3.0",
     "word-wrap": "^1.2.5",
     "wrap-ansi": "^8.1.0",
-    "wrap-ansi-cjs": "^7.0.0",
     "ws": "^8.18.3",
     "xml-name-validator": "^5.0.0",
     "xmlchars": "^2.2.0",
