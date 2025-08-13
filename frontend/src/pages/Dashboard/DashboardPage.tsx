@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FileText, 
   Activity, 
@@ -13,659 +14,495 @@ import {
   Gavel,
   BookOpen,
   Shield,
-  Home,
   Settings,
-  LogOut,
-  Menu,
-  PieChart,
-  Bell,
-  User,
-  Calendar,
   RefreshCw,
   Plus,
-  X,
   Globe,
   HeartPulse,
   FolderKanban,
-  ChevronRight,
   Zap,
-  Eye
+  Eye,
+  Users,
+  Database,
+  CheckCircle2,
+  XCircle,
+  Wifi,
+  Server,
+  Calendar,
+  Bell
 } from 'lucide-react';
 
-// Helper functions
-const formatPersianNumber = (num) => {
-  return num.toLocaleString('fa-IR');
-};
+import Card, { CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
+import Button from '../../components/ui/Button';
+import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import { useDatabase, useStatistics, useScrapingStats } from '../../hooks/useDatabase';
+import { cn, formatPersianNumber, formatNumber, formatRelativeTime } from '../../lib/utils';
+import LEGAL_TERMINOLOGY from '../../lib/terminology';
 
-const formatNumber = (num) => {
-  if (num >= 1000000) {
-    return `${formatPersianNumber((num / 1000000).toFixed(1))}M`;
-  }
-  if (num >= 1000) {
-    return `${formatPersianNumber((num / 1000).toFixed(1))}K`;
-  }
-  return formatPersianNumber(num);
-};
+// Enhanced Statistics Card Component
+interface StatCardProps {
+  title: string;
+  value: string | number;
+  change?: number;
+  icon: React.ComponentType<{ className?: string }>;
+  color?: 'blue' | 'green' | 'purple' | 'orange' | 'red';
+  description?: string;
+  onClick?: () => void;
+}
 
-// Enhanced Loading Skeleton Components
-const SkeletonCard = () => (
-  <div className="bg-slate-800/20 border border-slate-600/30 rounded-2xl p-7 animate-pulse backdrop-blur-sm">
-    <div className="space-y-4">
-      <div className="h-5 bg-slate-600/50 rounded-lg w-3/4"></div>
-      <div className="h-10 bg-slate-600/50 rounded-lg w-1/2"></div>
-      <div className="h-3 bg-slate-600/50 rounded w-2/3"></div>
-    </div>
-  </div>
-);
+const StatCard: React.FC<StatCardProps> = ({ 
+  title, 
+  value, 
+  change, 
+  icon: Icon, 
+  color = 'blue',
+  description,
+  onClick 
+}) => {
+  const colorVariants = {
+    blue: 'from-blue-500/10 to-blue-600/20 border-blue-200 dark:border-blue-800',
+    green: 'from-emerald-500/10 to-emerald-600/20 border-emerald-200 dark:border-emerald-800',
+    purple: 'from-purple-500/10 to-purple-600/20 border-purple-200 dark:border-purple-800',
+    orange: 'from-orange-500/10 to-orange-600/20 border-orange-200 dark:border-orange-800',
+    red: 'from-red-500/10 to-red-600/20 border-red-200 dark:border-red-800'
+  };
 
-const SkeletonChart = () => (
-  <div className="bg-slate-800/20 border border-slate-600/30 rounded-2xl p-7 animate-pulse backdrop-blur-sm">
-    <div className="h-7 bg-slate-600/50 rounded-lg w-1/3 mb-8"></div>
-    <div className="space-y-6">
-      <div className="h-40 bg-slate-600/50 rounded-xl"></div>
-      <div className="grid grid-cols-3 gap-4">
-        <div className="h-4 bg-slate-600/50 rounded"></div>
-        <div className="h-4 bg-slate-600/50 rounded"></div>
-        <div className="h-4 bg-slate-600/50 rounded"></div>
-      </div>
-    </div>
-  </div>
-);
-
-// Enhanced Standard Card Component
-const StandardCard = ({ title, children, icon: Icon, headerColor = "border-slate-500/30", className = "", variant = "default" }) => {
-  const variants = {
-    default: "from-slate-900/70 via-slate-800/60 to-slate-900/70",
-    legal: "from-slate-900/70 via-purple-900/40 to-slate-900/70",
-    technical: "from-slate-900/70 via-blue-900/40 to-slate-900/70",
-    security: "from-slate-900/70 via-green-900/40 to-slate-900/70"
+  const iconColors = {
+    blue: 'text-blue-600 dark:text-blue-400',
+    green: 'text-emerald-600 dark:text-emerald-400',
+    purple: 'text-purple-600 dark:text-purple-400',
+    orange: 'text-orange-600 dark:text-orange-400',
+    red: 'text-red-600 dark:text-red-400'
   };
 
   return (
-    <div className={`bg-gradient-to-br ${variants[variant]} border border-slate-600/20 rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 ${className}`}>
-      <div className={`border-b ${headerColor} bg-slate-900/50 p-6 backdrop-blur-sm`}>
-        <div className="flex items-center gap-4">
-          {Icon && (
-            <div className="w-11 h-11 bg-gradient-to-br from-purple-500/80 to-purple-700/80 rounded-xl flex items-center justify-center shadow-md">
-              <Icon className="w-5 h-5 text-white" />
-            </div>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      className={cn(
+        'relative overflow-hidden rounded-xl border bg-gradient-to-br p-6 shadow-sm transition-all duration-200',
+        colorVariants[color],
+        onClick && 'cursor-pointer hover:shadow-md hover:-translate-y-0.5'
+      )}
+      onClick={onClick}
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex-1">
+          <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
+            {title}
+          </p>
+          <div className="mt-2 flex items-baseline gap-2">
+            <p className="text-2xl font-bold text-neutral-900 dark:text-white">
+              {typeof value === 'number' ? formatPersianNumber(value) : value}
+            </p>
+            {change !== undefined && (
+              <span className={cn(
+                'flex items-center text-sm font-medium',
+                change >= 0 ? 'text-emerald-600' : 'text-red-600'
+              )}>
+                <TrendingUp className={cn('mr-1 h-3 w-3', change < 0 && 'rotate-180')} />
+                {change >= 0 ? '+' : ''}{formatPersianNumber(change)}%
+              </span>
+            )}
+          </div>
+          {description && (
+            <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+              {description}
+            </p>
           )}
-          <h3 className="font-bold text-white text-lg">{title}</h3>
+        </div>
+        <div className={cn(
+          'rounded-lg bg-white/50 p-3 dark:bg-neutral-800/50',
+          iconColors[color]
+        )}>
+          <Icon className="h-6 w-6" />
         </div>
       </div>
-      <div className="p-7">
-        {children}
+    </motion.div>
+  );
+};
+
+// Quick Action Button Component
+interface QuickActionProps {
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  color?: 'blue' | 'green' | 'purple' | 'orange';
+  onClick?: () => void;
+}
+
+const QuickAction: React.FC<QuickActionProps> = ({ label, icon: Icon, color = 'blue', onClick }) => {
+  const colorVariants = {
+    blue: 'bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800',
+    green: 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:hover:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800',
+    purple: 'bg-purple-50 hover:bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 dark:text-purple-400 dark:border-purple-800',
+    orange: 'bg-orange-50 hover:bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/20 dark:hover:bg-orange-900/30 dark:text-orange-400 dark:border-orange-800'
+  };
+
+  return (
+    <motion.button
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      className={cn(
+        'flex flex-col items-center gap-3 rounded-xl border p-4 transition-all duration-200',
+        colorVariants[color]
+      )}
+      onClick={onClick}
+    >
+      <Icon className="h-8 w-8" />
+      <span className="text-sm font-medium">{label}</span>
+    </motion.button>
+  );
+};
+
+// Recent Activity Item Component
+interface ActivityItemProps {
+  title: string;
+  description: string;
+  time: string;
+  type: 'info' | 'success' | 'warning' | 'error';
+  icon: React.ComponentType<{ className?: string }>;
+}
+
+const ActivityItem: React.FC<ActivityItemProps> = ({ title, description, time, type, icon: Icon }) => {
+  const typeStyles = {
+    info: 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400',
+    success: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400',
+    warning: 'bg-orange-50 text-orange-600 dark:bg-orange-900/20 dark:text-orange-400',
+    error: 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400'
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      className="flex items-start gap-3 p-3 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors"
+    >
+      <div className={cn('rounded-lg p-2', typeStyles[type])}>
+        <Icon className="h-4 w-4" />
       </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-neutral-900 dark:text-white truncate">{title}</p>
+        <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-1">{description}</p>
+        <p className="text-xs text-neutral-500 dark:text-neutral-500 mt-1">{time}</p>
+      </div>
+    </motion.div>
+  );
+};
+
+// System Health Indicator Component
+interface HealthIndicatorProps {
+  label: string;
+  status: 'healthy' | 'warning' | 'error';
+  value?: string;
+}
+
+const HealthIndicator: React.FC<HealthIndicatorProps> = ({ label, status, value }) => {
+  const statusStyles = {
+    healthy: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-400',
+    warning: 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400',
+    error: 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+  };
+
+  const statusIcons = {
+    healthy: CheckCircle2,
+    warning: AlertTriangle,
+    error: XCircle
+  };
+
+  const StatusIcon = statusIcons[status];
+
+  return (
+    <div className="flex items-center justify-between p-3 rounded-lg border bg-white dark:bg-neutral-800 dark:border-neutral-700">
+      <div className="flex items-center gap-2">
+        <StatusIcon className={cn('h-4 w-4', statusStyles[status].split(' ')[1])} />
+        <span className="text-sm font-medium text-neutral-900 dark:text-white">{label}</span>
+      </div>
+      {value && (
+        <span className="text-sm text-neutral-600 dark:text-neutral-400">{value}</span>
+      )}
     </div>
   );
 };
 
-// Enhanced Metric Card Component with better contrast and effects
-const MetricCard = ({ icon: Icon, title, value, description, trend, onClick, color = "purple" }) => {
-  const colorVariants = {
-    purple: "from-purple-500/80 to-purple-700/80",
-    blue: "from-blue-500/80 to-blue-700/80", 
-    emerald: "from-emerald-500/80 to-emerald-700/80",
-    orange: "from-orange-500/80 to-orange-700/80"
-  };
-
-  return (
-    <div 
-      className="group bg-gradient-to-br from-slate-900/60 via-slate-800/50 to-slate-900/60 border border-slate-500/20 rounded-2xl p-6 shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02] cursor-pointer backdrop-blur-sm"
-      onClick={onClick}
-    >
-      <div className="flex items-center justify-between mb-5">
-        <div className={`p-3 bg-gradient-to-br ${colorVariants[color]} rounded-xl shadow-md group-hover:scale-105 transition-transform duration-300 backdrop-blur-sm`}>
-          <Icon className="w-6 h-6 text-white" />
-        </div>
-        {trend !== undefined && (
-          <div className={`flex items-center gap-1 text-sm font-bold px-3 py-1 rounded-full backdrop-blur-sm ${
-            trend >= 0 ? 'text-emerald-100 bg-emerald-500/20 border border-emerald-400/20' : 'text-red-100 bg-red-500/20 border border-red-400/20'
-          }`}>
-            <TrendingUp className={`w-4 h-4 ${trend < 0 && 'rotate-180'}`} />
-            {trend >= 0 ? '+' : ''}{formatPersianNumber(trend)}%
-          </div>
-        )}
-      </div>
-      <div className="space-y-2">
-        <div className="text-3xl font-bold text-white">{value}</div>
-        <p className="text-sm font-semibold text-slate-100">{title}</p>
-        <p className="text-xs text-slate-200 leading-relaxed">{description}</p>
-      </div>
-    </div>
-  );
-};
-
-// Enhanced Header Component
-const Header = ({ isSidebarOpen, setSidebarOpen }) => {
-  return (
-    <header className="fixed top-0 left-0 right-0 z-50 h-20 bg-gradient-to-r from-slate-900/90 via-slate-800/90 to-slate-900/90 border-b border-slate-600/30 shadow-lg backdrop-blur-lg">
-      <div className="flex items-center justify-between h-full px-6">
-        {/* Logo Section */}
-        <div className="flex items-center gap-6">
-          <button 
-            onClick={() => setSidebarOpen(!isSidebarOpen)} 
-            className="lg:hidden p-3 text-slate-200 hover:text-white hover:bg-slate-700/30 rounded-xl transition-all duration-300"
-          >
-            <Menu className="h-5 w-5" />
-          </button>
-          
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-600/90 to-blue-800/90 rounded-2xl flex items-center justify-center shadow-md border border-blue-400/20">
-              <Scale className="w-6 h-6 text-white" />
-            </div>
-            <div className="text-xl font-bold text-white">سامانه حقوقی</div>
-          </div>
-        </div>
-
-        {/* Header Actions */}
-        <div className="flex items-center gap-4">
-          {/* Search Box */}
-          <div className="relative hidden sm:block">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-300" />
-            <input 
-              type="text" 
-              placeholder="جستجو..."
-              className="w-64 h-11 bg-slate-800/50 border border-slate-500/30 rounded-xl px-12 pr-4 text-white placeholder-slate-300 focus:outline-none focus:border-blue-400/60 focus:bg-slate-800/70 transition-all duration-300 backdrop-blur-sm"
-              dir="rtl"
-              onFocus={() => window.open('/search', '_blank')}
-              readOnly
-            />
-          </div>
-
-          {/* Notifications */}
-          <div 
-            className="relative w-11 h-11 bg-slate-800/50 border border-slate-500/30 rounded-xl flex items-center justify-center cursor-pointer hover:bg-slate-700/50 transition-all duration-300 backdrop-blur-sm"
-            onClick={() => window.open('/notifications', '_blank')}
-          >
-            <Bell className="w-4 h-4 text-white" />
-            <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-xs font-bold text-white">
-              {formatPersianNumber(3)}
-            </div>
-          </div>
-
-          {/* User Profile */}
-          <div 
-            className="w-11 h-11 bg-gradient-to-br from-purple-600/90 to-purple-800/90 border border-purple-400/30 rounded-xl flex items-center justify-center cursor-pointer hover:scale-105 transition-transform duration-300 shadow-md"
-            onClick={() => window.open('/profile', '_blank')}
-          >
-            <User className="w-5 h-5 text-white" />
-          </div>
-        </div>
-      </div>
-    </header>
-  );
-};
-
-// Enhanced Floating Menu positioned on left
-const FloatingMenu = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [activeMenu, setActiveMenu] = useState('داشبورد');
-
-  const menuItems = [
-    { 
-      icon: Home, 
-      text: 'داشبورد',
-      link: '/',
-      color: 'from-blue-500/90 to-blue-700/90'
-    },
-    { 
-      icon: FileText, 
-      text: 'اسناد حقوقی',
-      link: '/documents',
-      color: 'from-emerald-500/90 to-emerald-700/90'
-    },
-    { 
-      icon: BarChart3, 
-      text: 'تحلیل و گزارش',
-      link: '/analytics',
-      color: 'from-purple-500/90 to-purple-700/90'
-    },
-    { 
-      icon: FolderKanban, 
-      text: 'پروژه‌ها',
-      link: '/projects',
-      color: 'from-orange-500/90 to-orange-700/90'
-    },
-    { 
-      icon: HeartPulse, 
-      text: 'سلامت سیستم',
-      link: '/system-health',
-      color: 'from-green-500/90 to-green-700/90'
-    },
-    { 
-      icon: Globe, 
-      text: 'پروکسی',
-      link: '/proxies',
-      color: 'from-indigo-500/90 to-indigo-700/90'
-    },
-    { 
-      icon: Settings, 
-      text: 'تنظیمات',
-      link: '/settings',
-      color: 'from-gray-500/90 to-gray-700/90'
-    },
-  ];
-
-  return (
-    <>
-      {/* Main Floating Button - Left positioned */}
-      <div className="fixed bottom-8 left-8 z-50">
-        <button
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
-          className="w-14 h-14 bg-gradient-to-br from-purple-600/90 to-purple-800/90 rounded-full shadow-lg flex items-center justify-center text-white hover:scale-105 transition-all duration-300 border border-purple-400/30 backdrop-blur-sm"
-        >
-          {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-        </button>
-      </div>
-
-      {/* Menu Overlay */}
-      {isMenuOpen && (
-        <div 
-          className="fixed inset-0 bg-black/20 z-40 backdrop-blur-sm"
-          onClick={() => setIsMenuOpen(false)}
-        />
-      )}
-
-      {/* Vertical Menu Items - Left positioned */}
-      {isMenuOpen && (
-        <div className="fixed bottom-24 left-8 z-50 flex flex-col-reverse gap-3">
-          {menuItems.map((item, index) => (
-            <div
-              key={index}
-              className="group flex items-center gap-3 transition-all duration-300 hover:scale-[1.02]"
-              style={{
-                transitionDelay: `${index * 60}ms`
-              }}
-            >
-              {/* Menu Item Button */}
-              <button
-                onClick={() => {
-                  setActiveMenu(item.text);
-                  window.open(item.link, '_blank');
-                  setIsMenuOpen(false);
-                }}
-                className={`w-10 h-10 rounded-full bg-gradient-to-br ${item.color} shadow-md flex items-center justify-center hover:scale-110 transition-all duration-300 border border-white/20 backdrop-blur-sm ${
-                  item.text === activeMenu ? 'ring-2 ring-blue-400/60' : ''
-                }`}
-              >
-                <item.icon className="w-5 h-5 text-white" />
-              </button>
-              
-              {/* Menu Item Text - positioned for left side */}
-              <div className="bg-slate-800/80 backdrop-blur-lg border border-slate-600/30 rounded-xl px-4 py-2 shadow-md opacity-0 group-hover:opacity-100 transition-all duration-300 transform -translate-x-2 group-hover:translate-x-0">
-                <span className="text-white text-sm font-semibold whitespace-nowrap">{item.text}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </>
-  );
-};
-
-// Enhanced Quick Access Button with reduced effects
-const QuickAccessButton = ({ icon: Icon, label, color, onClick }) => {
-  const colorVariants = {
-    purple: "from-purple-500/80 to-purple-700/80 border-purple-400/30",
-    emerald: "from-emerald-500/80 to-emerald-700/80 border-emerald-400/30",
-    blue: "from-blue-500/80 to-blue-700/80 border-blue-400/30",
-    yellow: "from-yellow-500/80 to-yellow-700/80 border-yellow-400/30"
-  };
-
-  return (
-    <button 
-      className={`flex flex-col items-center gap-4 p-6 bg-gradient-to-br from-slate-900/50 via-slate-800/40 to-slate-900/50 hover:from-slate-800/60 hover:to-slate-700/60 border border-slate-500/20 hover:border-${color}-400/40 rounded-2xl transition-all duration-300 hover:scale-[1.02] group backdrop-blur-sm`}
-      onClick={onClick}
-    >
-      <div className={`w-14 h-14 bg-gradient-to-br ${colorVariants[color]} rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform duration-300 shadow-md`}>
-        <Icon className="w-7 h-7 text-white" />
-      </div>
-      <span className="text-sm font-semibold text-slate-100 group-hover:text-white transition-colors duration-300">{label}</span>
-    </button>
-  );
-};
-
-// Main Enhanced Dashboard Component
-export default function EnhancedLegalDashboard() {
-  const [isSidebarOpen, setSidebarOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
+export default function DashboardPage() {
   const [currentTime, setCurrentTime] = useState(new Date());
-  
-  const documentStats = {
+  const { data: statistics, isLoading: statsLoading, error: statsError } = useStatistics();
+  const { data: scrapingStats, isLoading: scrapingLoading } = useScrapingStats();
+
+  // Update time every minute
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  // Mock data (replace with real API data)
+  const mockStats = {
     totalDocuments: 45230,
-    categories: [
-      { name: 'حقوق مدنی', count: 15230, color: '#3B82F6', percentage: 33.6 },
-      { name: 'حقوق کیفری', count: 12450, color: '#10B981', percentage: 27.5 },
-      { name: 'حقوق تجاری', count: 8900, color: '#F59E0B', percentage: 19.7 },
-      { name: 'حقوق اداری', count: 6780, color: '#EF4444', percentage: 15.0 },
-      { name: 'حقوق بین‌الملل', count: 2340, color: '#8B5CF6', percentage: 5.2 },
+    totalLaws: 8450,
+    courtDecisions: 12100,
+    legalArticles: 3890,
+    recentActivities: [
+      {
+        title: 'سند حقوقی جدید افزوده شد',
+        description: 'اصلاحیه قانون تجارت - ماده ۱۲۵',
+        time: '۱۰ دقیقه پیش',
+        type: 'info' as const,
+        icon: FileText
+      },
+      {
+        title: 'تکمیل فرآیند استخراج',
+        description: 'استخراج ۲۳۴ سند از منابع حقوقی',
+        time: '۳۰ دقیقه پیش',
+        type: 'success' as const,
+        icon: CheckCircle2
+      },
+      {
+        title: 'بروزرسانی سیستم',
+        description: 'بروزرسانی نسخه ۲.۱.۴ اعمال شد',
+        time: '۲ ساعت پیش',
+        type: 'info' as const,
+        icon: RefreshCw
+      },
+      {
+        title: 'نیاز به بررسی',
+        description: 'پردازش ۵ سند نیازمند تأیید است',
+        time: '۵ ساعت پیش',
+        type: 'warning' as const,
+        icon: AlertTriangle
+      }
     ]
   };
 
-  const recentActivities = [
-    { 
-      action: "سند حقوقی جدید: اصلاحیه قانون تجارت", 
-      time: "۱۰ دقیقه پیش", 
-      icon: FileText, 
-      type: "info"
-    },
-    { 
-      action: "بروزرسانی سیستم تکمیل شد", 
-      time: "۱ ساعت پیش", 
-      icon: RefreshCw, 
-      type: "success"
-    },
-    { 
-      action: "گزارش ماهانه تولید شد", 
-      time: "۲ ساعت پیش", 
-      icon: BarChart3, 
-      type: "info"
-    },
-    { 
-      action: "هشدار: بررسی سرور مورد نیاز", 
-      time: "۳ ساعت پیش", 
-      icon: AlertTriangle, 
-      type: "warning"
-    },
-  ];
-
-  useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 1800);
-    const timeTimer = setInterval(() => setCurrentTime(new Date()), 1000);
-
-    return () => {
-      clearTimeout(timer);
-      clearInterval(timeTimer);
-    };
-  }, []);
-
-  if (loading) {
+  if (statsLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900" dir="rtl" style={{ fontFamily: "'Yekan', -apple-system, BlinkMacSystemFont, sans-serif" }}>
-        <Header isSidebarOpen={false} setSidebarOpen={() => {}} />
-        <div className="pt-20 p-6 space-y-8">
-          {/* Hero Skeleton */}
-          <div className="bg-slate-800/20 rounded-3xl p-8 animate-pulse backdrop-blur-sm">
-            <div className="h-10 bg-slate-600/50 rounded-xl w-1/3 mb-6"></div>
-            <div className="h-5 bg-slate-600/50 rounded-lg w-2/3 mb-3"></div>
-            <div className="h-5 bg-slate-600/50 rounded-lg w-1/2"></div>
-          </div>
-          
-          {/* Metrics Skeleton */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[1, 2, 3, 4].map(i => <SkeletonCard key={i} />)}
-          </div>
-          
-          {/* Charts Skeleton */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <SkeletonChart />
-            <SkeletonChart />
-          </div>
-        </div>
+      <div className="flex items-center justify-center min-h-96">
+        <LoadingSpinner size="lg" text="در حال بارگذاری داشبورد..." />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900" dir="rtl" style={{ fontFamily: "'Yekan', -apple-system, BlinkMacSystemFont, sans-serif" }}>
-      <Header isSidebarOpen={isSidebarOpen} setSidebarOpen={setSidebarOpen} />
-      <FloatingMenu />
-      
-      <main className="pt-20 p-6 space-y-8">
-        {/* Enhanced Hero Section with better visual hierarchy */}
-        <div className="bg-gradient-to-r from-slate-900/80 via-purple-900/30 to-slate-900/80 rounded-3xl text-white p-10 shadow-lg relative overflow-hidden border border-slate-600/20 backdrop-blur-sm">
-          <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/3 to-transparent"></div>
-          <div className="relative flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
-            <div className="flex-1">
-              <div className="flex items-center gap-6 mb-6">
-                <div className="p-4 bg-gradient-to-br from-white/15 to-white/5 rounded-2xl backdrop-blur-sm border border-white/10">
-                  <Gavel className="w-10 h-10 text-white" />
-                </div>
-                <h1 className="text-4xl font-bold text-white leading-tight">داشبورد مدیریت حقوقی</h1>
-              </div>
-              <p className="text-slate-100 mb-6 text-lg font-medium leading-relaxed">
-                سامانه جامع مدیریت اطلاعات حقوقی جمهوری اسلامی ایران
-              </p>
-              <div className="flex flex-wrap items-center gap-6 text-sm">
-                <div className="flex items-center gap-3 bg-slate-800/30 px-4 py-3 rounded-xl backdrop-blur-sm border border-slate-600/20">
-                  <Calendar className="w-5 h-5 text-white" />
-                  <span className="text-slate-100 font-medium">
-                    {new Intl.DateTimeFormat('fa-IR', { 
-                      weekday: 'long', 
-                      year: 'numeric', 
-                      month: 'long', 
-                      day: 'numeric'
-                    }).format(currentTime)}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 px-5 py-3 bg-emerald-500/80 rounded-xl text-white text-sm font-bold shadow-md backdrop-blur-sm border border-emerald-400/30">
-                  <Zap className="w-4 h-4" />
-                  سیستم فعال
-                </div>
-              </div>
-            </div>
-            <div className="hidden lg:block">
-              <div className="w-28 h-28 bg-white/8 rounded-3xl flex items-center justify-center backdrop-blur-sm overflow-hidden border border-white/15 shadow-md">
-                <Scale className="w-14 h-14 text-white/70" />
-              </div>
-            </div>
+    <div className="space-y-6">
+      {/* Header Section */}
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-neutral-900 dark:text-white">
+            {LEGAL_TERMINOLOGY.dashboard}
+          </h1>
+          <p className="text-neutral-600 dark:text-neutral-400 mt-2">
+            سامانه جامع مدیریت اطلاعات حقوقی جمهوری اسلامی ایران
+          </p>
+          <div className="flex items-center gap-2 mt-2 text-sm text-neutral-500 dark:text-neutral-400">
+            <Calendar className="h-4 w-4" />
+            <span>
+              {new Intl.DateTimeFormat('fa-IR', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+              }).format(currentTime)}
+            </span>
           </div>
         </div>
-
-        {/* Enhanced Key Metrics with better spacing and colors */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <MetricCard
-            icon={FileText}
-            title="اسناد حقوقی"
-            value={formatNumber(documentStats.totalDocuments)}
-            description="مجموع اسناد در سیستم"
-            trend={12}
-            color="purple"
-            onClick={() => window.open('/documents', '_blank')}
-          />
-          <MetricCard
-            icon={Scale}
-            title="قوانین فعال"
-            value={formatNumber(8450)}
-            description="قوانین در حال اجرا"
-            trend={3}
-            color="blue"
-            onClick={() => window.open('/laws', '_blank')}
-          />
-          <MetricCard
-            icon={Gavel}
-            title="آرای قضایی"
-            value={formatNumber(12100)}
-            description="آرای دادگاه‌ها"
-            trend={18}
-            color="emerald"
-            onClick={() => window.open('/court-decisions', '_blank')}
-          />
-          <MetricCard
-            icon={BookOpen}
-            title="مقالات حقوقی"
-            value={formatNumber(3890)}
-            description="مقالات تخصصی"
-            trend={7}
-            color="orange"
-            onClick={() => window.open('/articles', '_blank')}
-          />
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm">
+            <Download className="h-4 w-4 mr-2" />
+            گزارش خلاصه
+          </Button>
+          <Button variant="primary" size="sm">
+            <Plus className="h-4 w-4 mr-2" />
+            عملیات جدید
+          </Button>
         </div>
+      </div>
 
-        {/* Enhanced Quick Access with better contrast */}
-        <StandardCard title="دسترسی‌های سریع" icon={Zap} variant="technical">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            <QuickAccessButton 
-              icon={Upload}
-              label="بارگذاری سند"
-              color="purple"
-              onClick={() => window.open('/upload', '_blank')}
-            />
-            <QuickAccessButton 
-              icon={FileText}
-              label="پروژه جدید"
-              color="emerald"
-              onClick={() => window.open('/projects/new', '_blank')}
-            />
-            <QuickAccessButton 
-              icon={Search}
-              label="جستجوی پیشرفته"
-              color="blue"
-              onClick={() => window.open('/search', '_blank')}
-            />
-            <QuickAccessButton 
-              icon={BarChart3}
-              label="تولید گزارش"
-              color="yellow"
-              onClick={() => window.open('/reports', '_blank')}
-            />
-          </div>
-        </StandardCard>
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard
+          title="اسناد حقوقی"
+          value={statistics?.totalDocuments || mockStats.totalDocuments}
+          change={12}
+          icon={FileText}
+          color="blue"
+          description="مجموع اسناد در سیستم"
+        />
+        <StatCard
+          title="قوانین فعال"
+          value={statistics?.totalLaws || mockStats.totalLaws}
+          change={3}
+          icon={Scale}
+          color="green"
+          description="قوانین در حال اجرا"
+        />
+        <StatCard
+          title="آرای قضایی"
+          value={statistics?.courtDecisions || mockStats.courtDecisions}
+          change={18}
+          icon={Gavel}
+          color="purple"
+          description="آرای دادگاه‌ها"
+        />
+        <StatCard
+          title="مقالات حقوقی"
+          value={statistics?.legalArticles || mockStats.legalArticles}
+          change={7}
+          icon={BookOpen}
+          color="orange"
+          description="مقالات تخصصی"
+        />
+      </div>
 
-        {/* Enhanced Document Categories & Statistics with improved readability */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Enhanced Legal Categories Chart */}
-          <StandardCard title="دسته‌بندی اسناد حقوقی" icon={PieChart} variant="legal">
-            <div className="space-y-5">
-              {documentStats.categories.map((category, index) => (
-                <div key={index} className="group p-5 bg-gradient-to-r from-slate-900/40 via-slate-800/30 to-slate-900/40 rounded-2xl hover:from-slate-800/50 hover:to-slate-700/50 transition-all duration-300 cursor-pointer border border-slate-500/15 hover:border-slate-400/25" onClick={() => window.open(`/categories/${category.name}`, '_blank')}>
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-base font-bold text-white group-hover:text-slate-50 transition-colors">{category.name}</span>
+      {/* Quick Actions & System Health */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Quick Actions */}
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Zap className="h-5 w-5" />
+              دسترسی‌های سریع
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <QuickAction
+                label="بارگذاری سند"
+                icon={Upload}
+                color="blue"
+              />
+              <QuickAction
+                label="جستجوی پیشرفته"
+                icon={Search}
+                color="green"
+              />
+              <QuickAction
+                label="تولید گزارش"
+                icon={BarChart3}
+                color="purple"
+              />
+              <QuickAction
+                label="تنظیمات سیستم"
+                icon={Settings}
+                color="orange"
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* System Health */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <HeartPulse className="h-5 w-5" />
+              وضعیت سیستم
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <HealthIndicator
+              label="پایگاه داده"
+              status="healthy"
+              value="فعال"
+            />
+            <HealthIndicator
+              label="سرویس استخراج"
+              status="healthy"
+              value="عملیاتی"
+            />
+            <HealthIndicator
+              label="اتصال شبکه"
+              status="warning"
+              value="۹۸٪"
+            />
+            <HealthIndicator
+              label="فضای ذخیره"
+              status="healthy"
+              value="۷۵٪ استفاده"
+            />
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Charts and Recent Activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Document Categories Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5" />
+              دسته‌بندی اسناد حقوقی
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {[
+                { name: 'حقوق مدنی', count: 15230, percentage: 33.6, color: '#3B82F6' },
+                { name: 'حقوق کیفری', count: 12450, percentage: 27.5, color: '#10B981' },
+                { name: 'حقوق تجاری', count: 8900, percentage: 19.7, color: '#F59E0B' },
+                { name: 'حقوق اداری', count: 6780, percentage: 15.0, color: '#EF4444' },
+                { name: 'حقوق بین‌الملل', count: 2340, percentage: 5.2, color: '#8B5CF6' }
+              ].map((category, index) => (
+                <div key={index} className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                      {category.name}
+                    </span>
                     <div className="text-left">
-                      <span className="text-sm text-slate-100 font-semibold block">{formatNumber(category.count)} سند</span>
-                      <span className="text-xs text-slate-200 font-medium">{formatPersianNumber(category.percentage)}%</span>
+                      <span className="text-sm font-semibold text-neutral-900 dark:text-white">
+                        {formatPersianNumber(category.count)} سند
+                      </span>
+                      <span className="text-xs text-neutral-500 dark:text-neutral-400 block">
+                        {formatPersianNumber(category.percentage)}%
+                      </span>
                     </div>
                   </div>
-                  <div className="w-full bg-slate-800/40 rounded-full h-3 overflow-hidden">
-                    <div 
-                      className="h-3 rounded-full transition-all duration-1000 shadow-sm"
-                      style={{ 
-                        backgroundColor: category.color,
-                        width: `${category.percentage}%`
-                      }}
+                  <div className="w-full bg-neutral-200 dark:bg-neutral-700 rounded-full h-2">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${category.percentage}%` }}
+                      transition={{ duration: 1, delay: index * 0.1 }}
+                      className="h-2 rounded-full"
+                      style={{ backgroundColor: category.color }}
                     />
                   </div>
                 </div>
               ))}
             </div>
-          </StandardCard>
+          </CardContent>
+        </Card>
 
-          {/* Enhanced Statistics Overview with Bar Chart */}
-          <StandardCard title="آمار کلی سیستم" icon={BarChart3} variant="security">
-            <div className="space-y-6">
-              {/* Bar Chart */}
-              <div className="space-y-4">
-                {/* اسناد امروز */}
-                <div className="group">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-bold text-slate-100">اسناد امروز</span>
-                    <span className="text-lg font-bold text-white">{formatPersianNumber(152)}</span>
-                  </div>
-                  <div className="w-full bg-slate-800/50 rounded-full h-4 overflow-hidden">
-                    <div 
-                      className="h-4 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-1500 shadow-lg"
-                      style={{ width: '76%' }}
-                    />
-                  </div>
-                </div>
-
-                {/* در حال پردازش */}
-                <div className="group">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-bold text-slate-100">در حال پردازش</span>
-                    <span className="text-lg font-bold text-white">{formatPersianNumber(12)}</span>
-                  </div>
-                  <div className="w-full bg-slate-800/50 rounded-full h-4 overflow-hidden">
-                    <div 
-                      className="h-4 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-full transition-all duration-1500 shadow-lg"
-                      style={{ width: '24%' }}
-                    />
-                  </div>
-                </div>
-
-                {/* میانگین پردازش روزانه */}
-                <div className="group">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-bold text-slate-100">میانگین پردازش روزانه</span>
-                    <span className="text-lg font-bold text-white">{formatPersianNumber(245)} سند</span>
-                  </div>
-                  <div className="w-full bg-slate-800/50 rounded-full h-4 overflow-hidden">
-                    <div 
-                      className="h-4 bg-gradient-to-r from-purple-500 to-purple-600 rounded-full transition-all duration-1500 shadow-lg"
-                      style={{ width: '98%' }}
-                    />
-                  </div>
-                </div>
-
-                {/* سرعت استخراج */}
-                <div className="group">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-bold text-slate-100">سرعت استخراج</span>
-                    <span className="text-lg font-bold text-white">{formatPersianNumber(98)}%</span>
-                  </div>
-                  <div className="w-full bg-slate-800/50 rounded-full h-4 overflow-hidden">
-                    <div 
-                      className="h-4 bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-full transition-all duration-1500 shadow-lg"
-                      style={{ width: '98%' }}
-                    />
-                  </div>
-                </div>
-
-                {/* دقت تحلیل */}
-                <div className="group">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-bold text-slate-100">دقت تحلیل</span>
-                    <span className="text-lg font-bold text-white">{formatPersianNumber(96)}%</span>
-                  </div>
-                  <div className="w-full bg-slate-800/50 rounded-full h-4 overflow-hidden">
-                    <div 
-                      className="h-4 bg-gradient-to-r from-orange-500 to-orange-600 rounded-full transition-all duration-1500 shadow-lg"
-                      style={{ width: '96%' }}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Summary Cards */}
-              <div className="grid grid-cols-2 gap-4 mt-6">
-                <div className="text-center p-4 bg-gradient-to-br from-slate-900/50 via-slate-800/40 to-slate-900/50 border border-green-400/15 rounded-xl hover:scale-[1.02] transition-transform duration-300 backdrop-blur-sm">
-                  <div className="text-2xl font-bold text-green-400 mb-1">{formatPersianNumber(98.5)}%</div>
-                  <div className="text-xs text-slate-200 font-semibold">کارایی کلی</div>
-                </div>
-                <div className="text-center p-4 bg-gradient-to-br from-slate-900/50 via-slate-800/40 to-slate-900/50 border border-blue-400/15 rounded-xl hover:scale-[1.02] transition-transform duration-300 backdrop-blur-sm">
-                  <div className="text-2xl font-bold text-blue-400 mb-1">{formatPersianNumber(164)}</div>
-                  <div className="text-xs text-slate-200 font-semibold">پردازش موفق</div>
-                </div>
-              </div>
+        {/* Recent Activity */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Activity className="h-5 w-5" />
+              فعالیت‌های اخیر
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {mockStats.recentActivities.map((activity, index) => (
+                <ActivityItem
+                  key={index}
+                  title={activity.title}
+                  description={activity.description}
+                  time={activity.time}
+                  type={activity.type}
+                  icon={activity.icon}
+                />
+              ))}
             </div>
-          </StandardCard>
-        </div>
-
-        {/* Enhanced Recent Activities with better contrast */}
-        <StandardCard title="فعالیت‌های اخیر" icon={Activity} variant="default">
-          <div className="space-y-4">
-            {recentActivities.map((activity, index) => (
-              <div key={index} className="group flex items-center gap-4 p-5 rounded-2xl bg-gradient-to-r from-slate-900/40 via-slate-800/30 to-slate-900/40 hover:from-slate-800/50 hover:to-slate-700/50 transition-all duration-300 border border-slate-500/15 hover:border-purple-400/20 cursor-pointer" onClick={() => window.open('/activities', '_blank')}>
-                <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shadow-md group-hover:scale-105 transition-transform duration-300 ${
-                  activity.type === 'warning' ? 'bg-gradient-to-br from-yellow-500/80 to-yellow-700/80' :
-                  activity.type === 'success' ? 'bg-gradient-to-br from-emerald-500/80 to-emerald-700/80' : 
-                  'bg-gradient-to-br from-purple-500/80 to-purple-700/80'
-                }`}>
-                  <activity.icon className="w-5 h-5 text-white" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-bold text-white group-hover:text-slate-50 transition-colors leading-relaxed">{activity.action}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-slate-200 font-semibold">{activity.time}</span>
-                  <Eye className="w-4 h-4 text-slate-300 group-hover:text-white transition-colors" />
-                </div>
-              </div>
-            ))}
-          </div>
-        </StandardCard>
-      </main>
+            <div className="mt-4 pt-4 border-t border-neutral-200 dark:border-neutral-700">
+              <Button variant="ghost" className="w-full">
+                <Eye className="h-4 w-4 mr-2" />
+                مشاهده تمام فعالیت‌ها
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
