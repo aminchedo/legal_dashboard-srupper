@@ -1,3 +1,9 @@
+/* ========================================
+   🎨 RESPONSIVE DESIGN FOUNDATION
+   Import responsive design system first
+======================================== */
+@import './styles/responsive.css';
+
 /* Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap');
 
@@ -5,35 +11,14 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Root variables */
+/* Root variables - Enhanced with responsive system */
 :root {
-  /* Typography */
+  /* Typography - Keep existing font family, merge with responsive typography */
   --font-family: 'Vazirmatn', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-  --text-xs: 0.75rem;
-  --text-sm: 0.875rem;
+  
+  /* Legacy typography variables (for backwards compatibility) */
   --text-base: 1rem;
-  --text-lg: 1.125rem;
-  --text-xl: 1.25rem;
-  --text-2xl: 1.5rem;
-  --text-3xl: 1.875rem;
-  --text-4xl: 2.25rem;
-
-  --font-light: 300;
-  --font-normal: 400;
-  --font-medium: 500;
-  --font-semibold: 600;
-  --font-bold: 700;
-
-  /* Spacing */
-  --space-1: 0.25rem;
-  --space-2: 0.5rem;
-  --space-3: 0.75rem;
-  --space-4: 1rem;
-  --space-6: 1.5rem;
-  --space-8: 2rem;
-  --space-12: 3rem;
-  --space-16: 4rem;
-
+  
   /* Primary Colors */
   --primary-50: #EFF6FF;
   --primary-100: #DBEAFE;
@@ -74,11 +59,120 @@
   --dark-bg: #0F172A;
   --dark-surface: #1E293B;
   --dark-border: #334155;
+  
+  /* Responsive enhancements */
+  --border-radius-sm: 0.375rem;
+  --border-radius-md: 0.5rem;
+  --border-radius-lg: 0.75rem;
+  --border-radius-xl: 1rem;
+  
+  /* Z-index scale */
+  --z-dropdown: 1000;
+  --z-sticky: 1020;
+  --z-fixed: 1030;
+  --z-modal-backdrop: 1040;
+  --z-modal: 1050;
+  --z-popover: 1060;
+  --z-tooltip: 1070;
+  --z-toast: 1080;
 }
 
-/* Base styles */
+/* ========================================
+   📱 RESPONSIVE BASE STYLES
+   Mobile-first enhancements to base elements
+======================================== */
+
+/* Base styles - Enhanced for mobile */
 * {
   font-family: var(--font-family);
+  box-sizing: border-box;
+}
+
+html {
+  /* Prevent horizontal scroll on mobile */
+  overflow-x: hidden;
+  /* Better font rendering */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Better touch interaction */
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  /* Responsive base font size */
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  /* Prevent horizontal scroll */
+  overflow-x: hidden;
+  /* Better text rendering on mobile */
+  text-rendering: optimizeLegibility;
+}
+
+/* Responsive typography enhancements */
+h1 {
+  font-size: var(--text-3xl);
+  font-weight: var(--font-bold);
+  line-height: var(--leading-tight);
+  margin-bottom: var(--space-4);
+}
+
+h2 {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-semibold);
+  line-height: var(--leading-tight);
+  margin-bottom: var(--space-3);
+}
+
+h3 {
+  font-size: var(--text-xl);
+  font-weight: var(--font-semibold);
+  line-height: var(--leading-tight);
+  margin-bottom: var(--space-3);
+}
+
+h4 {
+  font-size: var(--text-lg);
+  font-weight: var(--font-medium);
+  line-height: var(--leading-normal);
+  margin-bottom: var(--space-2);
+}
+
+h5 {
+  font-size: var(--text-md);
+  font-weight: var(--font-medium);
+  line-height: var(--leading-normal);
+  margin-bottom: var(--space-2);
+}
+
+h6 {
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  line-height: var(--leading-normal);
+  margin-bottom: var(--space-2);
+}
+
+p {
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  margin-bottom: var(--space-3);
+}
+
+/* Enhanced link styles */
+a {
+  color: var(--primary-600);
+  text-decoration: none;
+  transition: color 0.2s ease-in-out;
+}
+
+a:hover {
+  color: var(--primary-700);
+  text-decoration: underline;
+}
+
+a:focus {
+  outline: 2px solid var(--primary-500);
+  outline-offset: 2px;
+  border-radius: 2px;
 }
 
 /* Direction & language support */
@@ -92,114 +186,142 @@ html[dir="ltr"] body {
   text-align: left;
 }
 
-/* Custom scrollbar */
+/* ========================================
+   📱 RESPONSIVE SCROLLBAR
+   Better scrollbar for all devices
+======================================== */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: clamp(6px, 1vw, 12px);
+  height: clamp(6px, 1vw, 12px);
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: var(--gray-100);
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
+  background: var(--gray-300);
   border-radius: 10px;
+  border: 1px solid var(--gray-200);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
+  background: var(--gray-400);
 }
 
-/* Custom range slider styles */
+/* ========================================
+   🎮 ENHANCED FORM ELEMENTS
+   Touch-friendly, accessible form controls
+======================================== */
+
+/* Enhanced range slider */
 .slider {
   -webkit-appearance: none;
   appearance: none;
-  height: 6px;
+  height: 8px;
   border-radius: 5px;
-  background: #e5e7eb;
+  background: var(--gray-200);
   outline: none;
+  width: 100%;
+  cursor: pointer;
 }
 
 .slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  background: #3b82f6;
+  background: var(--primary-500);
   cursor: pointer;
-  border: 2px solid #ffffff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  border: 3px solid #ffffff;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+  transition: all 0.2s ease;
 }
 
 .slider::-webkit-slider-thumb:hover {
-  background: #2563eb;
+  background: var(--primary-600);
+  transform: scale(1.1);
+}
+
+.slider::-webkit-slider-thumb:active {
+  transform: scale(1.2);
 }
 
 .slider::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  background: #3b82f6;
+  background: var(--primary-500);
   cursor: pointer;
-  border: 2px solid #ffffff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  border: 3px solid #ffffff;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
 }
 
-/* Smooth transitions */
+/* ========================================
+   ✨ RESPONSIVE TRANSITIONS
+   Smooth, performant animations
+======================================== */
 * {
   transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 150ms;
 }
 
-/* Focus styles */
+/* Enhanced focus styles for accessibility */
 input:focus,
 select:focus,
 textarea:focus,
 button:focus {
-  outline: 2px solid #3b82f6;
+  outline: 2px solid var(--primary-500);
   outline-offset: 2px;
+  border-radius: var(--border-radius-sm);
 }
 
-/* Loading animation */
-@keyframes pulse {
+/* Better focus for custom components */
+.focus-ring:focus {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* ========================================
+   🎨 ENHANCED ANIMATIONS
+   Responsive animations with fallbacks
+======================================== */
+
+/* Loading animations */
+@keyframes pulse-responsive {
   0%, 100% {
     opacity: 1;
   }
-
   50% {
-    opacity: .5;
+    opacity: 0.5;
   }
 }
 
 .animate-pulse {
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  animation: pulse-responsive 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-/* Custom animations */
-@keyframes float {
-  0% {
+@keyframes float-responsive {
+  0%, 100% {
     transform: translateY(0);
   }
-
   50% {
-    transform: translateY(-4px);
-  }
-
-  100% {
-    transform: translateY(0);
+    transform: translateY(clamp(-2px, -0.5vw, -6px));
   }
 }
 
+.animate-float {
+  animation: float-responsive 3s ease-in-out infinite;
+}
+
+/* Slide animations */
 @keyframes slideInRight {
   from {
     transform: translateX(100%);
     opacity: 0;
   }
-
   to {
     transform: translateX(0);
     opacity: 1;
@@ -211,7 +333,6 @@ button:focus {
     transform: translateX(-100%);
     opacity: 0;
   }
-
   to {
     transform: translateX(0);
     opacity: 1;
@@ -226,83 +347,137 @@ button:focus {
   animation: slideInLeft 0.3s ease-out;
 }
 
-.animate-float {
-  animation: float 3s ease-in-out infinite;
-}
+/* ========================================
+   🎭 RESPONSIVE VISUAL EFFECTS
+   Shadows, gradients optimized for all screens
+======================================== */
 
-/* Gradients & shadows used in components */
+/* Enhanced gradients */
 .bg-gradient-radial {
   background-image: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.4), transparent 60%);
 }
 
+.bg-gradient-mobile {
+  background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
+}
+
+@media (min-width: 768px) {
+  .bg-gradient-mobile {
+    background: linear-gradient(135deg, var(--primary-500), var(--primary-600), var(--secondary-500));
+  }
+}
+
+/* Responsive shadows */
 .shadow-elegant {
-  box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.08), 0 6px 10px -6px rgba(0, 0, 0, 0.06);
+  box-shadow: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+@media (min-width: 768px) {
+  .shadow-elegant {
+    box-shadow: 
+      0 10px 15px -3px rgba(0, 0, 0, 0.1),
+      0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  }
 }
 
 .shadow-glass {
-  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.25);
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.15);
 }
 
-/* Persian number styling */
+@media (min-width: 768px) {
+  .shadow-glass {
+    box-shadow: 0 8px 25px rgba(59, 130, 246, 0.25);
+  }
+}
+
+/* ========================================
+   🔢 RESPONSIVE NUMBER FORMATTING
+   Better number display on all devices
+======================================== */
 .persian-numbers {
   font-feature-settings: "tnum";
   font-variant-numeric: tabular-nums;
+  letter-spacing: 0.025em;
 }
 
-/* Status badges */
+/* ========================================
+   🏷️ RESPONSIVE STATUS BADGES
+   Touch-friendly status indicators
+======================================== */
 .status-badge {
-  @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium;
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--border-radius-lg);
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  min-height: 28px;
+  gap: var(--space-1);
+}
+
+@media (min-width: 768px) {
+  .status-badge {
+    font-size: var(--text-sm);
+    padding: var(--space-2) var(--space-4);
+    min-height: 32px;
+  }
 }
 
 .status-success {
-  @apply bg-green-100 text-green-800 border border-green-200;
+  background-color: var(--secondary-50);
+  color: var(--secondary-600);
+  border: 1px solid var(--secondary-500);
 }
 
 .status-warning {
-  @apply bg-yellow-100 text-yellow-800 border border-yellow-200;
+  background-color: #fef3c7;
+  color: #d97706;
+  border: 1px solid var(--warning);
 }
 
 .status-error {
-  @apply bg-red-100 text-red-800 border border-red-200;
+  background-color: #fee2e2;
+  color: var(--accent-red);
+  border: 1px solid var(--error);
 }
 
 .status-info {
-  @apply bg-blue-100 text-blue-800 border border-blue-200;
+  background-color: var(--primary-50);
+  color: var(--primary-700);
+  border: 1px solid var(--primary-500);
 }
 
-/* Chart styling */
+/* ========================================
+   📊 RESPONSIVE CHART ENHANCEMENTS
+   Better data visualization on all devices
+======================================== */
 .recharts-cartesian-axis-tick-value {
   font-family: var(--font-family);
+  font-size: var(--text-xs);
+}
+
+@media (min-width: 768px) {
+  .recharts-cartesian-axis-tick-value {
+    font-size: var(--text-sm);
+  }
 }
 
 .recharts-legend-item-text {
   font-family: var(--font-family);
+  font-size: var(--text-sm);
 }
 
 .recharts-tooltip-wrapper {
   font-family: var(--font-family);
+  font-size: var(--text-sm);
 }
 
-/* Mobile optimizations */
-@media (max-width: 768px) {
-  body {
-    font-size: 14px;
-  }
-
-  h1 {
-    font-size: 1.75rem;
-  }
-
-  h2 {
-    font-size: 1.5rem;
-  }
-
-  h3 {
-    font-size: 1.25rem;
-  }
-}
-
-/* Print styles */
+/* ========================================
+   🖨️ ENHANCED PRINT STYLES
+   Better printing support
+======================================== */
 @media print {
   .no-print {
     display: none;
@@ -311,50 +486,177 @@ button:focus {
   body {
     color: black;
     background: white;
+    font-size: 12pt;
+    line-height: 1.4;
   }
 
-  .bg-gray-50 {
-    background: white;
+  .bg-gray-50,
+  .bg-gray-100 {
+    background: white !important;
   }
 
   .shadow-sm,
   .shadow-md,
-  .shadow-lg {
-    box-shadow: none;
-    border: 1px solid #e5e7eb;
+  .shadow-lg,
+  .shadow-elegant,
+  .shadow-glass {
+    box-shadow: none !important;
+    border: 1px solid #e5e7eb !important;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid;
+  }
+
+  img {
+    max-width: 100% !important;
+    height: auto !important;
   }
 }
 
-/* High contrast mode support */
+/* ========================================
+   ♿ ENHANCED ACCESSIBILITY
+   Better support for all users
+======================================== */
+
+/* High contrast mode */
 @media (prefers-contrast: high) {
   .text-gray-600 {
-    color: #374151;
+    color: var(--gray-700);
   }
 
   .text-gray-500 {
-    color: #4b5563;
+    color: var(--gray-600);
   }
 
   .border-gray-200 {
-    border-color: #6b7280;
+    border-color: var(--gray-400);
+  }
+
+  .bg-gray-50 {
+    background-color: var(--gray-100);
   }
 }
 
-/* Reduced motion support */
+/* Enhanced reduced motion support */
 @media (prefers-reduced-motion: reduce) {
-  * {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 
-/* Dark mode surfaces using CSS variables */
+/* ========================================
+   🌙 ENHANCED DARK MODE
+   Better dark mode support with CSS variables
+======================================== */
 .dark body {
   background-color: var(--dark-bg);
+  color: var(--gray-100);
 }
 
 .dark .surface {
   background-color: var(--dark-surface);
   border-color: var(--dark-border);
+}
+
+.dark .text-gray-900 {
+  color: var(--gray-100);
+}
+
+.dark .text-gray-800 {
+  color: var(--gray-200);
+}
+
+.dark .text-gray-700 {
+  color: var(--gray-300);
+}
+
+.dark .text-gray-600 {
+  color: var(--gray-400);
+}
+
+.dark .bg-white {
+  background-color: var(--dark-surface);
+}
+
+.dark .border-gray-200 {
+  border-color: var(--dark-border);
+}
+
+/* ========================================
+   📱 MOBILE-SPECIFIC ENHANCEMENTS
+   iOS and Android optimizations
+======================================== */
+
+/* iOS Safari optimizations */
+@supports (-webkit-touch-callout: none) {
+  /* Prevent zoom on input focus */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+  
+  /* Better touch scrolling */
+  .scrollable {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Android optimizations */
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+  /* Better rendering on Android */
+  body {
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+/* ========================================
+   🎯 UTILITY CLASSES
+   Common responsive patterns
+======================================== */
+
+/* Safe area support for notched devices */
+.safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.safe-left {
+  padding-left: env(safe-area-inset-left);
+}
+
+.safe-right {
+  padding-right: env(safe-area-inset-right);
+}
+
+/* Scroll snap for touch interfaces */
+.scroll-snap-x {
+  scroll-snap-type: x mandatory;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.scroll-snap-item {
+  scroll-snap-align: start;
+}
+
+/* Better select styling */
+select.input-responsive {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right var(--space-3) center;
+  background-repeat: no-repeat;
+  background-size: 16px 12px;
+  padding-right: var(--space-10);
 }
