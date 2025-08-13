@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="fa">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UI Test - تست رابط کاربری</title>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Vazirmatn', system-ui, -apple-system, sans-serif !important;
+        }
+        
+        body {
+            background: #f8fafc;
+            direction: rtl;
+            text-align: right;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            transition: all 0.2s ease-in-out;
+        }
+        
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .number {
+            font-size: 32px;
+            font-weight: 700;
+            color: #1f2937;
+            margin: 8px 0;
+        }
+        
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        .metric {
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .metric h3 {
+            color: #6b7280;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+        
+        .status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .status.success {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+        
+        .pulse-test {
+            animation: none !important;
+        }
+        
+        /* No pulse animations allowed */
+        .animate-pulse,
+        [class*="pulse"] {
+            animation: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 style="text-align: center; margin-bottom: 30px; color: #1f2937;">تست رابط کاربری - UI Verification</h1>
+        
+        <!-- Font Test -->
+        <div class="card">
+            <h2>🔤 تست فونت Vazirmatn</h2>
+            <p>این متن باید با فونت Vazirmatn نمایش داده شود</p>
+            <p style="font-weight: 600;">متن بولد: ۱۲۳۴۵۶۷۸۹۰</p>
+            <p style="font-weight: 300;">متن نازک: Legal Management System</p>
+            <div class="status success">وضعیت: فعال</div>
+        </div>
+        
+        <!-- Number Formatting Test -->
+        <div class="card">
+            <h2>🔢 تست فرمت اعداد</h2>
+            <div class="metric-grid">
+                <div class="metric">
+                    <h3>تعداد اسناد</h3>
+                    <div class="number" id="documents-count">1234567</div>
+                </div>
+                <div class="metric">
+                    <h3>کاربران فعال</h3>
+                    <div class="number" id="users-count">89521</div>
+                </div>
+                <div class="metric">
+                    <h3>حجم داده</h3>
+                    <div class="number" id="storage-size">2147483648</div>
+                </div>
+                <div class="metric">
+                    <h3>پروژه‌ها</h3>
+                    <div class="number" id="projects-count">3456</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Animation Test -->
+        <div class="card">
+            <h2>🎭 تست حذف انیمیشن‌های Pulse</h2>
+            <p>این عناصر نباید pulse داشته باشند:</p>
+            <div style="margin: 20px 0;">
+                <div class="animate-pulse" style="width: 200px; height: 20px; background: #e5e7eb; border-radius: 4px; margin: 10px 0;"></div>
+                <div class="pulse-test" style="width: 150px; height: 20px; background: #e5e7eb; border-radius: 4px; margin: 10px 0;"></div>
+                <div class="card pulse-test" style="width: 100px; height: 100px; background: #f3f4f6; display: inline-block; margin: 10px;"></div>
+            </div>
+            <p>✅ اگر هیچ انیمیشن پالس دیده نمی‌شود، موفق بوده‌ایم!</p>
+        </div>
+        
+        <!-- RTL Layout Test -->
+        <div class="card">
+            <h2>↩️ تست چیدمان راست‌چین</h2>
+            <p>متن باید از راست شروع شود</p>
+            <ul style="padding-right: 20px;">
+                <li>آیتم اول</li>
+                <li>آیتم دوم</li>
+                <li>آیتم سوم</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Test number formatting
+        function formatNumber(num) {
+            if (isNaN(num)) return '0';
+            
+            if (num >= 1000000000) {
+                return (num / 1000000000).toFixed(1) + 'B';
+            }
+            if (num >= 1000000) {
+                return (num / 1000000).toFixed(1) + 'M';
+            }
+            if (num >= 1000) {
+                return (num / 1000).toFixed(1) + 'K';
+            }
+            
+            return num.toLocaleString('fa-IR');
+        }
+        
+        function formatBytes(bytes) {
+            const units = ['بایت', 'کیلوبایت', 'مگابایت', 'گیگابایت'];
+            let size = bytes;
+            let unitIndex = 0;
+            
+            while (size >= 1024 && unitIndex < units.length - 1) {
+                size /= 1024;
+                unitIndex++;
+            }
+            
+            return size.toFixed(1) + ' ' + units[unitIndex];
+        }
+        
+        // Apply formatting on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('documents-count').textContent = formatNumber(1234567);
+            document.getElementById('users-count').textContent = formatNumber(89521);
+            document.getElementById('projects-count').textContent = formatNumber(3456);
+            document.getElementById('storage-size').textContent = formatBytes(2147483648);
+        });
+    </script>
+</body>
+</html>

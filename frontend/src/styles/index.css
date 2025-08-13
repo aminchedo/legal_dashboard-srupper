@@ -1,17 +1,28 @@
 /* ===========================================
+   FONT IMPORTS - GUARANTEED LOADING
+   =========================================== */
+@import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap');
+
+/* ===========================================
    RESET & BASE STYLES
    =========================================== */
 *, *::before, *::after {
   box-sizing: border-box;
+  font-family: 'Vazirmatn', system-ui, -apple-system, sans-serif !important;
 }
 
 * {
   margin: 0;
 }
 
-body {
-  line-height: 1.5;
+html, body {
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-family: 'Vazirmatn', system-ui, -apple-system, sans-serif !important;
+  direction: rtl;
+  text-align: right;
+  font-weight: 400;
 }
 
 img, picture, video, canvas, svg {
@@ -383,14 +394,7 @@ body {
   }
 }
 
-@keyframes pulse-glow {
-  0%, 100% {
-    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
-  }
-  50% {
-    box-shadow: 0 0 0 8px rgba(59, 130, 246, 0);
-  }
-}
+/* REMOVED: pulse-glow animation for professional UI */
 
 @keyframes shake {
   0%, 100% {
@@ -507,14 +511,7 @@ body {
   }
 }
 
-@keyframes skeleton-pulse {
-  0% {
-    background-position: -468px 0;
-  }
-  100% {
-    background-position: 468px 0;
-  }
-}
+/* REMOVED: skeleton-pulse animation for professional UI */
 
 /* ===========================================
    RESPONSIVE UTILITIES
@@ -687,18 +684,29 @@ body {
   animation: spin 1s linear infinite;
 }
 
-/* Pulse Animation */
-.animate-pulse {
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+/* REMOVED: Pulse animations for professional UI */
+.animate-pulse,
+[class*="pulse"],
+.pulse,
+.flicker,
+[class*="flicker"] {
+  animation: none !important;
 }
 
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
+/* Targeted override to kill only pulse animations */
+*[class*="animate-pulse"],
+*[class*="pulse"]:not(.card-hover) {
+  animation: none !important;
+}
+
+/* Professional hover effects instead */
+.card-hover {
+  transition: all 0.2s ease-in-out;
+}
+
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 /* Bounce Animation */
@@ -807,11 +815,11 @@ body {
   -webkit-line-clamp: 3;
 }
 
-/* Enhanced Loading States */
+/* Enhanced Loading States - NO PULSE */
 .skeleton {
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-  background-size: 200% 100%;
-  animation: skeleton-pulse 1.5s infinite;
+  background: #f0f0f0;
+  border-radius: 4px;
+  animation: none;
 }
 
 .loading-shimmer {

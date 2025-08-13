@@ -241,7 +241,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       <div className="p-3 border-t border-neutral-200 dark:border-neutral-700">
         <Card variant="glass" padding="sm">
           <div className="flex items-center gap-2 text-xs text-neutral-600 dark:text-neutral-400">
-            <div className="w-2 h-2 bg-success-500 rounded-full animate-pulse" />
+            <div className="w-2 h-2 bg-success-500 rounded-full" />
             <span>سیستم عملیاتی</span>
           </div>
           <div className="text-xs text-neutral-500 dark:text-neutral-500 mt-1">
