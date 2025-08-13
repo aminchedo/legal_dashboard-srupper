@@ -23,23 +23,7 @@ const queryClient = new QueryClient({
 
 function App() {
   useEffect(() => {
-     const fetchData = async () => {
-      try {
-        const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
-        const [statsRes, activityRes] = await Promise.all([
-          fetch(`${apiBase}/dashboard/statistics`),
-          fetch(`${apiBase}/dashboard/activity`),
-        ])
-
-        if (!statsRes.ok || !activityRes.ok) {
-          throw new Error('Failed fetching data')
-        }
-
-        setStats(await statsRes.json())
-        setActivity(await activityRes.json())
-      } catch (err) {
-        setError((err as Error).message)
-     // Hide loading screen when React app loads
+    // Hide loading screen when React app loads
     const hideLoadingScreen = () => {
       const loadingScreen = document.getElementById('loading-screen');
       if (loadingScreen) {
@@ -49,7 +33,7 @@ function App() {
             loadingScreen.parentNode.removeChild(loadingScreen);
           }
         }, 600);
-       }
+      }
     };
 
     const timer = setTimeout(hideLoadingScreen, 500);
