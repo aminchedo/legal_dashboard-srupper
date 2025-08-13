@@ -10,8 +10,14 @@ import {
   Cloud, HardDrive, Cpu, Wifi, WifiOff, Zap, TestTube, Settings2,
   // Additional missing icons
   BookOpen, Award, TrendingUp, Square, AlertCircle, PlugZap, CloudLightning,
-  MemoryStick, RotateCw, Loader2, OctagonAlert
+  MemoryStick, RotateCw, Loader2, Octagon
 } from 'lucide-react';
+
+// Import chart components from recharts  
+import {
+  ResponsiveContainer, AreaChart, PieChart, BarChart, Pie, Area, Bar,
+  XAxis, YAxis, CartesianGrid, Tooltip, Cell
+} from 'recharts';
 
 export const Icons = {
   Play, Server, Home, Settings, Users, FileText, BarChart3, Shield, Database,
@@ -24,11 +30,17 @@ export const Icons = {
   Cloud, HardDrive, Cpu, Wifi, WifiOff, Zap, TestTube, Settings2,
   // Additional missing icons
   BookOpen, Award, TrendingUp, Square, AlertCircle, PlugZap, CloudLightning,
-  MemoryStick, RotateCw, Loader2, OctagonAlert
+  MemoryStick, RotateCw, Loader2, OctagonX
 };
 
 export default Icons;
 export type IconName = keyof typeof Icons;
+
+// Export chart components
+export {
+  ResponsiveContainer, AreaChart, PieChart, BarChart, Pie, Area, Bar,
+  XAxis, YAxis, CartesianGrid, Tooltip, Cell
+};
 
 // Re-export individual icons for direct import if needed
 export {
@@ -42,5 +54,5 @@ export {
   Cloud, HardDrive, Cpu, Wifi, WifiOff, Zap, TestTube, Settings2,
   // Additional missing icons
   BookOpen, Award, TrendingUp, Square, AlertCircle, PlugZap, CloudLightning,
-  MemoryStick, RotateCw, Loader2, OctagonAlert
+  MemoryStick, RotateCw, Loader2, OctagonX
 };
