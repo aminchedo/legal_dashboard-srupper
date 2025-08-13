@@ -12,6 +12,8 @@ import { Loader2 } from 'lucide-react'
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend)
 
+const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
+
 interface StatsData {
   totalItems: number
   recentItems: number
@@ -42,8 +44,8 @@ const App: React.FC = () => {
     const fetchData = async () => {
       try {
         const [statsRes, activityRes] = await Promise.all([
-          fetch('/api/dashboard/statistics'),
-          fetch('/api/dashboard/activity'),
+          fetch(`${apiBase}/dashboard/statistics`),
+          fetch(`${apiBase}/dashboard/activity`),
         ])
 
         if (!statsRes.ok || !activityRes.ok) {
