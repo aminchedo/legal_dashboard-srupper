@@ -41,9 +41,10 @@ const App: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
         const [statsRes, activityRes] = await Promise.all([
-          fetch('/api/dashboard/statistics'),
-          fetch('/api/dashboard/activity'),
+          fetch(`${apiBase}/dashboard/statistics`),
+          fetch(`${apiBase}/dashboard/activity`),
         ])
 
         if (!statsRes.ok || !activityRes.ok) {
