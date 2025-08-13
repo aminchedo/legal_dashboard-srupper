@@ -1,20 +1,15 @@
 {
   "version": 2,
-  "buildCommand": "cd frontend && npm install --legacy-peer-deps && npm run build",
+  "buildCommand": "cd frontend && npm run vercel-build",
   "outputDirectory": "frontend/dist",
   "installCommand": "cd frontend && npm install --legacy-peer-deps",
   "framework": null,
   "functions": {
-     "api/**/*.py": {
- 
     "api/index.py": {
-       "runtime": "@vercel/python@3.12"
+      "runtime": "@vercel/python@3.12"
     }
   },
   "rewrites": [
-     { "source": "/api/(.*)", "destination": "/api/index.py" },
-    { "source": "/(.*)", "destination": "/index.html" }
- 
     {
       "source": "/api/(.*)",
       "destination": "/api/index.py"
@@ -23,7 +18,7 @@
       "source": "/(.*)",
       "destination": "/index.html"
     }
-   ],
+  ],
   "env": {
     "PYTHONPATH": "./",
     "PYTHON_SETUP_REQUIRES": "setuptools>=68.0.0 wheel>=0.41.0"
@@ -39,6 +34,13 @@
     ".gitignore",
     "frontend/node_modules/**",
     "frontend/.vite/**",
-    "frontend/src/**/*.test.*"
+    "frontend/src/**/*.test.*",
+    "backend/**",
+    "python/**",
+    "scrapers/**",
+    "scripts/**",
+    "temp/**",
+    "docs/**",
+    "examples/**"
   ]
 }
