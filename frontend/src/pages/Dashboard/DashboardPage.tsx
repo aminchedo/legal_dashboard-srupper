@@ -220,13 +220,13 @@ const useDashboardData = () => {
   return { mockStats, recentDocuments };
 };
 
-// Helper Components
+// Helper Components with Enhanced Responsive Design
 const Card: React.FC<{ children: React.ReactNode; className?: string }> = ({ 
   children, 
   className = '', 
   ...props 
 }) => (
-  <div className={`bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700/50 rounded-2xl shadow-sm hover:shadow-lg transition-shadow duration-300 ${className}`} {...props}>
+  <div className={`bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700/50 rounded-xl shadow-elegant hover:shadow-glass transition-all duration-300 ${className}`} {...props}>
     {children}
   </div>
 );
@@ -239,14 +239,14 @@ const Button: React.FC<{
   onClick?: () => void;
   disabled?: boolean;
 }> = ({ children, variant = 'primary', icon: Icon, className = '', onClick, disabled, ...props }) => {
-  const baseClasses = "px-4 py-2 rounded-lg font-semibold flex items-center justify-center space-x-reverse space-x-2 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-900 disabled:opacity-50 disabled:cursor-not-allowed";
+  const baseClasses = "btn-responsive focus-ring transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed";
   const variants = {
-    primary: 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500',
+    primary: 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500 dark:bg-blue-700 dark:hover:bg-blue-600',
     secondary: 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 focus:ring-gray-400',
-    danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500',
+    danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 dark:bg-red-700 dark:hover:bg-red-600',
     ghost: 'bg-transparent text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800',
-    outline: 'bg-transparent border border-gray-300 text-gray-700 hover:bg-gray-50',
-    destructive: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500',
+    outline: 'bg-transparent border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800',
+    destructive: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 dark:bg-red-700 dark:hover:bg-red-600',
   };
   
   return (
@@ -256,33 +256,35 @@ const Button: React.FC<{
       disabled={disabled}
       {...props}
     >
-      {Icon && <Icon className="w-4 h-4" />}
+      {Icon && <Icon style={{ width: 'var(--space-4)', height: 'var(--space-4)' }} />}
       <span>{children}</span>
     </button>
   );
 };
 
-// Enhanced Dashboard Components
+// Enhanced Dashboard Components with Full Responsive Design
 const StatisticsOverview: React.FC<{ stats: any }> = ({ stats }) => {
   const MetricCard: React.FC<MetricCardProps> = ({ icon, label, value, change, colorClass }) => (
-    <Card className="p-4 sm:p-6 hover:shadow-xl transition-all duration-300 hover:scale-105">
-      <div className="flex justify-between items-start mb-3 sm:mb-4">
-        <div className={`p-2 sm:p-3 rounded-lg ${colorClass} bg-opacity-10`}>
-          {React.createElement(icon, { className: "w-5 h-5 sm:w-6 sm:h-6" })}
+    <Card className="p-4 hover:shadow-xl transition-all duration-300 hover:scale-105 touch-target">
+      <div className="flex justify-between items-start mb-3">
+        <div className={`p-3 rounded-lg ${colorClass} bg-opacity-10 dark:bg-opacity-20`}>
+          {React.createElement(icon, { style: { width: 'var(--text-lg)', height: 'var(--text-lg)' } })}
         </div>
-        <div className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs font-semibold flex items-center ${
+        <div className={`px-2 py-1 rounded-full text-xs font-semibold flex items-center ${
           change >= 0 ? 'bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-400'
         }`}>
           {change >= 0 ? `+${change}` : change}
         </div>
       </div>
-      <p className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-white mb-2">{value.toLocaleString('fa-IR')}</p>
-      <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">{label}</p>
+      <p className="font-bold text-gray-800 dark:text-white mb-2 persian-numbers" style={{ fontSize: 'var(--text-2xl)' }}>
+        {value.toLocaleString('fa-IR')}
+      </p>
+      <p className="text-gray-500 dark:text-gray-400" style={{ fontSize: 'var(--text-sm)' }}>{label}</p>
     </Card>
   );
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
+    <div className="responsive-grid responsive-grid-auto tablet:grid-cols-2 desktop:grid-cols-4 mb-6">
       <MetricCard 
         icon={FileText} 
         label="کل اسناد" 
@@ -319,24 +321,36 @@ const QuickActions: React.FC<{ onEmergencyStop: () => Promise<void> }> = ({ onEm
   const [currentTab, setCurrentTab] = useState('dashboard');
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 mb-6 sm:mb-8">
-      <Button className="w-full h-10 sm:h-12 text-xs sm:text-sm" variant="primary" onClick={() => setCurrentTab('scraping')}>
-        <Play className="w-3 h-3 sm:w-4 sm:h-4" /> <span className="hidden sm:inline">شروع اسکرپ جدید</span><span className="sm:hidden">اسکرپ</span>
+    <div className="responsive-grid responsive-grid-2 tablet:grid-cols-3 desktop:grid-cols-6 mb-6">
+      <Button className="w-full touch-target" variant="primary" onClick={() => setCurrentTab('scraping')}>
+        <Play style={{ width: 'var(--space-4)', height: 'var(--space-4)' }} />
+        <span className="tablet-up:hidden">اسکرپ</span>
+        <span className="mobile-only:hidden">شروع اسکرپ جدید</span>
       </Button>
-      <Button className="w-full h-10 sm:h-12 text-xs sm:text-sm" variant="secondary" onClick={() => setCurrentTab('proxies')}>
-        <Server className="w-3 h-3 sm:w-4 sm:h-4" /> <span className="hidden sm:inline">تست پروکسی‌ها</span><span className="sm:hidden">پروکسی</span>
+      <Button className="w-full touch-target" variant="secondary" onClick={() => setCurrentTab('proxies')}>
+        <Server style={{ width: 'var(--space-4)', height: 'var(--space-4)' }} />
+        <span className="tablet-up:hidden">پروکسی</span>
+        <span className="mobile-only:hidden">تست پروکسی‌ها</span>
       </Button>
-      <Button className="w-full h-10 sm:h-12 text-xs sm:text-sm" variant="outline" onClick={() => setCurrentTab('documents')}>
-        <FileText className="w-3 h-3 sm:w-4 sm:h-4" /> <span className="hidden sm:inline">مشاهده اسناد</span><span className="sm:hidden">اسناد</span>
+      <Button className="w-full touch-target" variant="outline" onClick={() => setCurrentTab('documents')}>
+        <FileText style={{ width: 'var(--space-4)', height: 'var(--space-4)' }} />
+        <span className="tablet-up:hidden">اسناد</span>
+        <span className="mobile-only:hidden">مشاهده اسناد</span>
       </Button>
-      <Button className="w-full h-10 sm:h-12 text-xs sm:text-sm" variant="ghost" onClick={() => setCurrentTab('analytics')}>
-        <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4" /> <span className="hidden sm:inline">تحلیل‌ها</span><span className="sm:hidden">تحلیل</span>
+      <Button className="w-full touch-target" variant="ghost" onClick={() => setCurrentTab('analytics')}>
+        <BarChart3 style={{ width: 'var(--space-4)', height: 'var(--space-4)' }} />
+        <span className="tablet-up:hidden">تحلیل</span>
+        <span className="mobile-only:hidden">تحلیل‌ها</span>
       </Button>
-      <Button className="w-full h-10 sm:h-12 text-xs sm:text-sm" variant="outline" onClick={() => setCurrentTab('settings')}>
-        <Settings className="w-3 h-3 sm:w-4 sm:h-4" /> <span className="hidden sm:inline">تنظیمات</span><span className="sm:hidden">تنظیمات</span>
+      <Button className="w-full touch-target" variant="outline" onClick={() => setCurrentTab('settings')}>
+        <Settings style={{ width: 'var(--space-4)', height: 'var(--space-4)' }} />
+        <span className="tablet-up:hidden">تنظیمات</span>
+        <span className="mobile-only:hidden">تنظیمات</span>
       </Button>
-      <Button className="w-full h-10 sm:h-12 text-xs sm:text-sm" variant="danger" onClick={onEmergencyStop}>
-        <PowerOff className="w-3 h-3 sm:w-4 sm:h-4" /> <span className="hidden sm:inline">توقف اضطراری</span><span className="sm:hidden">توقف</span>
+      <Button className="w-full touch-target" variant="danger" onClick={onEmergencyStop}>
+        <PowerOff style={{ width: 'var(--space-4)', height: 'var(--space-4)' }} />
+        <span className="tablet-up:hidden">توقف</span>
+        <span className="mobile-only:hidden">توقف اضطراری</span>
       </Button>
     </div>
   );
@@ -389,32 +403,34 @@ const NavigationHub: React.FC<{ stats: any }> = ({ stats }) => {
   ];
 
   return (
-    <div className="mb-6 sm:mb-8">
-      <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-gray-900 dark:text-white">دسترسی سریع به بخش‌ها</h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+    <div className="mb-6">
+      <h2 className="font-bold mb-4 text-gray-900 dark:text-white" style={{ fontSize: 'var(--text-xl)' }}>
+        دسترسی سریع به بخش‌ها
+      </h2>
+      <div className="responsive-grid responsive-grid-auto tablet:grid-cols-2 desktop:grid-cols-3">
         {navigationCards.map((item) => (
           <div
             key={item.title}
             onClick={item.onClick}
-            className="bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer p-4 sm:p-6 border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:-translate-y-2 group"
+            className="bg-white dark:bg-gray-800 rounded-xl shadow-elegant hover:shadow-glass transition-all duration-300 cursor-pointer p-4 border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:-translate-y-1 group touch-target animate-fade-in"
           >
-            <div className="flex items-center justify-between mb-3 sm:mb-4">
-              <div className="p-2 sm:p-3 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg group-hover:scale-110 transition-transform duration-300">
-                <item.icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-3 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg group-hover:scale-110 transition-transform duration-300">
+                <item.icon style={{ width: 'var(--text-lg)', height: 'var(--text-lg)' }} className="text-white" />
               </div>
               {typeof item.count === 'number' && (
-                <span className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs sm:text-sm px-2 sm:px-3 py-1 rounded-full font-medium">
+                <span className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-3 py-1 rounded-full font-medium persian-numbers" style={{ fontSize: 'var(--text-sm)' }}>
                   {item.count.toLocaleString('fa-IR')}
                 </span>
               )}
               {item.status && (
-                <span className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 text-xs sm:text-sm px-2 sm:px-3 py-1 rounded-full font-medium">
+                <span className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-3 py-1 rounded-full font-medium" style={{ fontSize: 'var(--text-sm)' }}>
                   سالم
                 </span>
               )}
             </div>
-            <h3 className="font-bold text-gray-900 dark:text-white mb-2 text-base sm:text-lg">{item.title}</h3>
-            <p className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm">{item.description}</p>
+            <h3 className="font-bold text-gray-900 dark:text-white mb-2" style={{ fontSize: 'var(--text-lg)' }}>{item.title}</h3>
+            <p className="text-gray-600 dark:text-gray-400" style={{ fontSize: 'var(--text-sm)' }}>{item.description}</p>
           </div>
         ))}
       </div>
@@ -427,39 +443,51 @@ const ChartsSection: React.FC<{ stats: any }> = ({ stats }) => {
   const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 mb-6 sm:mb-8">
-      <div className="lg:col-span-8">
-        <Card className="p-4 sm:p-6">
-          <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">اسناد جمع‌آوری شده (هفته اخیر)</h3>
-          <ResponsiveContainer width="100%" height={250} className="sm:h-[300px]">
-            <AreaChart data={stats.dailyScraped} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-              <defs>
-                <linearGradient id="colorUv" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8}/>
-                  <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.2} />
-              <XAxis dataKey="name" tick={{ fill: 'currentColor' }} fontSize={10} className="sm:text-xs" />
-              <YAxis tick={{ fill: 'currentColor' }} fontSize={10} className="sm:text-xs" />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: 'rgba(255, 255, 255, 0.95)', 
-                  backdropFilter: 'blur(5px)', 
-                  border: '1px solid #e5e7eb', 
-                  borderRadius: '0.75rem' 
-                }} 
-              />
-              <Area type="monotone" dataKey="count" stroke="#3B82F6" fill="url(#colorUv)" strokeWidth={2} name="تعداد اسناد" />
-            </AreaChart>
-          </ResponsiveContainer>
+    <div className="responsive-grid responsive-grid-auto desktop:grid-cols-12 mb-6 space-y-4 desktop:space-y-0">
+      <div className="desktop:col-span-8">
+        <Card className="p-4">
+          <h3 className="font-semibold text-gray-900 dark:text-white mb-4" style={{ fontSize: 'var(--text-lg)' }}>
+            اسناد جمع‌آوری شده (هفته اخیر)
+          </h3>
+          <div className="h-64 tablet:h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={stats.dailyScraped} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                <defs>
+                  <linearGradient id="colorUv" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.2} />
+                <XAxis 
+                  dataKey="name" 
+                  tick={{ fill: 'currentColor', fontSize: 12 }}
+                />
+                <YAxis 
+                  tick={{ fill: 'currentColor', fontSize: 12 }}
+                />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)', 
+                    backdropFilter: 'blur(5px)', 
+                    border: '1px solid #e5e7eb', 
+                    borderRadius: '0.75rem',
+                    fontSize: '14px'
+                  }} 
+                />
+                <Area type="monotone" dataKey="count" stroke="#3B82F6" fill="url(#colorUv)" strokeWidth={2} name="تعداد اسناد" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
         </Card>
       </div>
 
-      <div className="lg:col-span-4">
-        <Card className="p-4 sm:p-6 h-full flex flex-col">
-          <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">توزیع دسته‌بندی‌ها</h3>
-          <div className="flex-grow min-h-[200px] sm:min-h-[250px]">
+      <div className="desktop:col-span-4">
+        <Card className="p-4 h-full flex flex-col">
+          <h3 className="font-semibold text-gray-900 dark:text-white mb-4" style={{ fontSize: 'var(--text-lg)' }}>
+            توزیع دسته‌بندی‌ها
+          </h3>
+          <div className="flex-grow min-h-[250px]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie 
@@ -471,14 +499,19 @@ const ChartsSection: React.FC<{ stats: any }> = ({ stats }) => {
                   paddingAngle={3} 
                   dataKey="value" 
                   labelLine={false}
-                  className="sm:inner-radius-[70px] sm:outer-radius-[100px]"
                 >
                   {categoryData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
                 <Tooltip />
-                <Legend iconType="circle" layout="vertical" align="right" verticalAlign="middle" wrapperStyle={{ fontSize: '12px' }} className="sm:text-sm" />
+                <Legend 
+                  iconType="circle" 
+                  layout="vertical" 
+                  align="right" 
+                  verticalAlign="middle" 
+                  wrapperStyle={{ fontSize: '12px' }}
+                />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -497,49 +530,64 @@ const SystemHealth: React.FC<{ stats: any }> = ({ stats }) => {
   ];
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
-      <div className="xl:col-span-3">
-        <Card className="p-4 sm:p-6">
-          <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">مصرف منابع (لحظه‌ای)</h3>
-          <ResponsiveContainer width="100%" height={180} className="sm:h-[200px]">
-            <LineChart data={stats.systemHealth.cpu} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.2} />
-              <XAxis dataKey="x" hide />
-              <YAxis domain={[0, 100]} tick={{ fill: 'currentColor' }} fontSize={10} className="sm:text-xs" />
-              <Tooltip />
-              <Line type="monotone" dataKey="y" stroke="#3B82F6" strokeWidth={2} dot={false} name="CPU" />
-              <Line type="monotone" dataKey="y" data={stats.systemHealth.memory} stroke="#10B981" strokeWidth={2} dot={false} name="Memory" />
-            </LineChart>
-          </ResponsiveContainer>
+    <div className="responsive-grid responsive-grid-auto desktop:grid-cols-4 mb-6 space-y-4 desktop:space-y-0">
+      <div className="desktop:col-span-3">
+        <Card className="p-4">
+          <h3 className="font-semibold text-gray-900 dark:text-white mb-4" style={{ fontSize: 'var(--text-lg)' }}>
+            مصرف منابع (لحظه‌ای)
+          </h3>
+          <div className="h-48 tablet:h-56">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={stats.systemHealth.cpu} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.2} />
+                <XAxis dataKey="x" hide />
+                <YAxis 
+                  domain={[0, 100]} 
+                  tick={{ fill: 'currentColor', fontSize: 12 }}
+                />
+                <Tooltip />
+                <Line type="monotone" dataKey="y" stroke="#3B82F6" strokeWidth={2} dot={false} name="CPU" />
+                <Line type="monotone" dataKey="y" data={stats.systemHealth.memory} stroke="#10B981" strokeWidth={2} dot={false} name="Memory" />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         </Card>
       </div>
       
-      <div className="xl:col-span-1">
-        <Card className="p-4 sm:p-6 h-full">
-          <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">وضعیت سیستم</h3>
-          <div className="space-y-3 sm:space-y-4">
+      <div className="desktop:col-span-1">
+        <Card className="p-4 h-full">
+          <h3 className="font-semibold text-gray-900 dark:text-white mb-4" style={{ fontSize: 'var(--text-lg)' }}>
+            وضعیت سیستم
+          </h3>
+          <div className="space-y-4">
             {systemMetrics.map((metric) => (
               <div key={metric.name} className="flex items-center justify-between">
-                <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 min-w-0 flex-shrink-0">{metric.name}</span>
-                <div className="flex-1 mx-2 sm:mx-3">
-                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 sm:h-2">
+                <span className="text-gray-600 dark:text-gray-400 min-w-0 flex-shrink-0" style={{ fontSize: 'var(--text-sm)' }}>
+                  {metric.name}
+                </span>
+                <div className="flex-1 mx-3">
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                     <div 
-                      className={`${metric.color} h-1.5 sm:h-2 rounded-full transition-all duration-1000`}
+                      className={`${metric.color} h-2 rounded-full transition-all duration-1000`}
                       style={{ width: `${metric.value}%` }}
                     />
                   </div>
                 </div>
-                <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 font-medium flex-shrink-0">{metric.value}%</span>
+                <span className="text-gray-600 dark:text-gray-400 font-medium flex-shrink-0 persian-numbers" style={{ fontSize: 'var(--text-sm)' }}>
+                  {metric.value}%
+                </span>
               </div>
             ))}
           </div>
           
-          <div className="mt-4 sm:mt-6 p-2 sm:p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
+          <div className="mt-6 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
             <div className="flex items-center space-x-reverse space-x-2">
-              <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-500 rounded-full animate-pulse flex-shrink-0" />
-              <span className="text-xs sm:text-sm font-medium text-green-800 dark:text-green-300">سیستم فعال</span>
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse flex-shrink-0" />
+              <span className="font-medium text-green-800 dark:text-green-300" style={{ fontSize: 'var(--text-sm)' }}>
+                سیستم فعال
+              </span>
             </div>
-            <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+            <p className="text-green-600 dark:text-green-400 mt-1" style={{ fontSize: 'var(--text-xs)' }}>
               تمام سرویس‌ها عملیاتی
             </p>
           </div>
@@ -550,30 +598,34 @@ const SystemHealth: React.FC<{ stats: any }> = ({ stats }) => {
 };
 
 const RecentActivity: React.FC<{ documents: any[] }> = ({ documents }) => (
-  <Card className="p-4 sm:p-6">
-    <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4 sm:mb-6">آخرین فعالیت‌ها</h3>
-    <div className="space-y-3 sm:space-y-4">
+  <Card className="p-4">
+    <h3 className="font-semibold text-gray-900 dark:text-white mb-6" style={{ fontSize: 'var(--text-lg)' }}>
+      آخرین فعالیت‌ها
+    </h3>
+    <div className="space-y-4">
       {documents.slice(0, 5).map((item) => (
-        <div key={item.id} className="border-b border-gray-100 dark:border-gray-700 last:border-b-0 pb-3 sm:pb-4 last:pb-0">
-          <div className="flex items-start justify-between gap-3 sm:gap-4">
+        <div key={item.id} className="border-b border-gray-100 dark:border-gray-700 last:border-b-0 pb-4 last:pb-0">
+          <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
-              <h4 className="font-medium text-sm sm:text-base text-gray-900 dark:text-white truncate mb-1">{item.title}</h4>
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-2">
+              <h4 className="font-medium text-gray-900 dark:text-white truncate mb-1" style={{ fontSize: 'var(--text-md)' }}>
+                {item.title}
+              </h4>
+              <div className="flex flex-col tablet:flex-row tablet:items-center gap-2 text-gray-500 dark:text-gray-400 mb-2" style={{ fontSize: 'var(--text-sm)' }}>
                 <div className="flex items-center gap-1">
-                  <ExternalLink size={12} className="sm:w-[14px] sm:h-[14px]" />
+                  <ExternalLink style={{ width: 'var(--space-3)', height: 'var(--space-3)' }} />
                   <span>{item.source}</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <Calendar size={12} className="sm:w-[14px] sm:h-[14px]" />
+                  <Calendar style={{ width: 'var(--space-3)', height: 'var(--space-3)' }} />
                   <span>{formatDate(item.createdAt)}</span>
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                  <Tag size={10} className="sm:w-3 sm:h-3" />
+                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full font-medium bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800" style={{ fontSize: 'var(--text-xs)' }}>
+                  <Tag style={{ width: 'var(--space-3)', height: 'var(--space-3)' }} />
                   {item.category}
                 </span>
-                <span className="text-xs text-gray-500 dark:text-gray-400">
+                <span className="text-gray-500 dark:text-gray-400 persian-numbers" style={{ fontSize: 'var(--text-xs)' }}>
                   {item.wordCount.toLocaleString('fa-IR')} کلمه
                 </span>
               </div>
@@ -582,9 +634,9 @@ const RecentActivity: React.FC<{ documents: any[] }> = ({ documents }) => (
               href={item.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors flex-shrink-0"
+              className="flex items-center justify-center touch-target text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors flex-shrink-0"
             >
-              <ExternalLink size={14} className="sm:w-4 sm:h-4" />
+              <ExternalLink style={{ width: 'var(--space-4)', height: 'var(--space-4)' }} />
             </a>
           </div>
         </div>
@@ -593,9 +645,10 @@ const RecentActivity: React.FC<{ documents: any[] }> = ({ documents }) => (
   </Card>
 );
 
-// Main Dashboard Page Component
+// Main Dashboard Page Component with Enhanced Mobile Navigation
 export default function DashboardPage() {
   const { mockStats, recentDocuments } = useDashboardData();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleEmergencyStop = async () => {
     try {
@@ -608,53 +661,59 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="space-y-4 sm:space-y-6 min-h-screen bg-gray-50 dark:bg-gray-900" dir="rtl">
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;700;800&display=swap');
-        body, html { font-family: 'Vazirmatn', sans-serif; }
-      `}</style>
+    <div className="responsive-container prevent-horizontal-scroll safe-area-inset" dir="rtl">
+      <div className="space-y-6 min-h-screen bg-gray-50 dark:bg-gray-900">
+        <style>{`
+          @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;700;800&display=swap');
+          body, html { 
+            font-family: 'Vazirmatn', var(--font-family); 
+          }
+        `}</style>
 
-      {/* Enhanced Page Header */}
-      <div className="mb-6 sm:mb-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl sm:rounded-2xl shadow-xl p-4 sm:p-6 lg:p-8 text-white">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="min-w-0 flex-1">
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2 sm:mb-3">نمای کلی سیستم</h1>
-            <p className="text-blue-100 text-sm sm:text-base lg:text-lg">
-              سیستم جامع مدیریت اطلاعات حقوقی جمهوری اسلامی ایران
-            </p>
-            <p className="text-blue-200 text-xs sm:text-sm mt-1 sm:mt-2">
-              {`امروز ${formatDateTime(new Date())}`}
-            </p>
-          </div>
-          <div className="flex items-center gap-3 sm:gap-4 lg:gap-6 flex-shrink-0">
-            <div className="text-center sm:text-left">
-              <div className="text-blue-100 text-xs sm:text-sm">آخرین بروزرسانی</div>
-              <div className="text-lg sm:text-xl font-bold">
-                {formatDate(new Date())}
-              </div>
+        {/* Enhanced Mobile-First Page Header */}
+        <div className="mb-6 bg-gradient-mobile rounded-xl shadow-glass p-4 text-white animate-fade-in">
+          <div className="flex-responsive-between">
+            <div className="min-w-0 flex-1">
+              <h1 className="font-bold mb-2 text-white" style={{ fontSize: 'var(--text-3xl)' }}>
+                نمای کلی سیستم
+              </h1>
+              <p className="text-blue-100" style={{ fontSize: 'var(--text-md)', lineHeight: 'var(--leading-relaxed)' }}>
+                سیستم جامع مدیریت اطلاعات حقوقی جمهوری اسلامی ایران
+              </p>
+              <p className="text-blue-200 mt-2" style={{ fontSize: 'var(--text-sm)' }}>
+                {`امروز ${formatDateTime(new Date())}`}
+              </p>
             </div>
-            <div className="w-3 h-3 sm:w-4 sm:h-4 bg-green-400 rounded-full animate-pulse shadow-lg flex-shrink-0" />
+            <div className="flex items-center gap-4 flex-shrink-0">
+              <div className="text-center tablet:text-left">
+                <div className="text-blue-100" style={{ fontSize: 'var(--text-sm)' }}>آخرین بروزرسانی</div>
+                <div className="font-bold persian-numbers" style={{ fontSize: 'var(--text-xl)' }}>
+                  {formatDate(new Date())}
+                </div>
+              </div>
+              <div className="w-4 h-4 bg-green-400 rounded-full animate-pulse shadow-lg flex-shrink-0" />
+            </div>
           </div>
         </div>
+
+        {/* Quick Actions with Responsive Grid */}
+        <QuickActions onEmergencyStop={handleEmergencyStop} />
+
+        {/* Navigation Hub with Enhanced Cards */}
+        <NavigationHub stats={mockStats} />
+
+        {/* System Health with Real-time Updates */}
+        <SystemHealth stats={mockStats} />
+
+        {/* Statistics Cards with Hover Effects */}
+        <StatisticsOverview stats={mockStats} />
+
+        {/* Charts Section with Responsive Layout */}
+        <ChartsSection stats={mockStats} />
+
+        {/* Recent Activity with Mobile Optimization */}
+        <RecentActivity documents={recentDocuments} />
       </div>
-
-      {/* Quick Actions */}
-      <QuickActions onEmergencyStop={handleEmergencyStop} />
-
-      {/* Navigation Hub */}
-      <NavigationHub stats={mockStats} />
-
-      {/* System Health */}
-      <SystemHealth stats={mockStats} />
-
-      {/* Statistics Cards */}
-      <StatisticsOverview stats={mockStats} />
-
-      {/* Charts Section */}
-      <ChartsSection stats={mockStats} />
-
-      {/* Recent Activity */}
-      <RecentActivity documents={recentDocuments} />
     </div>
   );
 }
