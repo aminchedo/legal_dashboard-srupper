@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { CloseOutlined } from '@ant-design/icons';
+import { X } from '../../../utils/iconRegistry';
 import { ProxyRecord, ProxyType } from '../../../types';
 
 interface Props {

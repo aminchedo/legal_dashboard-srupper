@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { GlobalOutlined, CaretRightOutlined, StopOutlined, DeleteOutlined, SettingOutlined, WarningOutlined } from '@ant-design/icons';
+import { Play, Globe, Settings, Square, Trash2, AlertCircle } from '../../utils/iconRegistry';
 import { webScraper } from '../../services/webScraper';
 import { useScrapingSources } from '../../hooks/useDatabase';
 import { ScrapingSettings, ScrapedItem } from '../../types';

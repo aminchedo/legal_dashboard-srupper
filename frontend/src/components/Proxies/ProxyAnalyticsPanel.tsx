@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { BarChartOutlined, DashboardOutlined, LineChartOutlined, PieChartOutlined } from '@ant-design/icons';
+import { BarChart3 } from '../../utils/iconRegistry';
 import { ProxyRecord, ProxyTestResult } from '../../types';
 import { databaseService } from '../../services/database';
 

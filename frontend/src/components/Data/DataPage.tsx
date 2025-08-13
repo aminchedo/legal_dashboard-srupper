@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { SearchOutlined, LinkOutlined, TagOutlined, StarOutlined, CalendarOutlined, FileTextOutlined, DeleteOutlined } from '@ant-design/icons';
+import { FileText } from '../../utils/iconRegistry';
 import { useDocuments, useStatistics } from '../../hooks/useDatabase';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../../services/apiClient';

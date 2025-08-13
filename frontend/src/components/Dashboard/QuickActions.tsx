@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { CaretRightOutlined, ExperimentOutlined, FileTextOutlined, BarChartOutlined, SettingOutlined, ExclamationOutlined } from '@ant-design/icons';
+import { Play, FlaskConical, FileText, BarChart3, Settings, Octagon } from '../../utils/iconRegistry';
 import { Button } from '../ui/button';
 
 interface Props {
@@ -28,7 +29,7 @@ export default function QuickActions({ onStartScraping, onTestProxy, onEmergency
                 <Settings size={16} className="ml-2" /> تنظیمات سیستم
             </Button>
             <Button className="w-full" variant="destructive" onClick={onEmergencyStop}>
-                <OctagonAlert size={16} className="ml-2" /> توقف اضطراری همه
+                <Octagon size={16} className="ml-2" /> توقف اضطراری همه
             </Button>
         </div>
     );
