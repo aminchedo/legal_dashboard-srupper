@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export interface CommandItem {
     id: string;
@@ -22,6 +23,7 @@ export default function CommandPalette({ open, onOpenChange, items, placeholder 
     const [activeIndex, setActiveIndex] = useState(0);
     const inputRef = useRef<HTMLInputElement | null>(null);
     const listRef = useRef<HTMLDivElement | null>(null);
+    const { t } = useTranslation();
 
     useEffect(() => {
         if (open) {
@@ -89,7 +91,7 @@ export default function CommandPalette({ open, onOpenChange, items, placeholder 
                             ref={inputRef}
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
-                            placeholder={placeholder || 'Type a command or search...'}
+                            placeholder={placeholder || t('app.searchPlaceholder')}
                             className="w-full bg-transparent text-gray-900 placeholder-gray-400 focus:outline-none dark:text-slate-100"
                             aria-label="Command search"
                         />
@@ -100,7 +102,7 @@ export default function CommandPalette({ open, onOpenChange, items, placeholder 
 
                     <div ref={listRef} className="max-h-80 overflow-y-auto p-2">
                         {filteredItems.length === 0 ? (
-                            <div className="p-6 text-center text-sm text-gray-500 dark:text-slate-400">No results</div>
+                            <div className="p-6 text-center text-sm text-gray-500 dark:text-slate-400">{t('palette.noResults')}</div>
                         ) : (
                             <div className="space-y-1">
                                 {filteredItems.map((item, idx) => (
