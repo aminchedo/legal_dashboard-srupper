@@ -265,24 +265,24 @@ const Button: React.FC<{
 // Enhanced Dashboard Components
 const StatisticsOverview: React.FC<{ stats: any }> = ({ stats }) => {
   const MetricCard: React.FC<MetricCardProps> = ({ icon, label, value, change, colorClass }) => (
-    <Card className="p-6 hover:shadow-xl transition-all duration-300 hover:scale-105">
-      <div className="flex justify-between items-start mb-4">
-        <div className={`p-3 rounded-lg ${colorClass} bg-opacity-10`}>
-          {React.createElement(icon, { className: "w-6 h-6" })}
+    <Card className="p-4 sm:p-6 hover:shadow-xl transition-all duration-300 hover:scale-105">
+      <div className="flex justify-between items-start mb-3 sm:mb-4">
+        <div className={`p-2 sm:p-3 rounded-lg ${colorClass} bg-opacity-10`}>
+          {React.createElement(icon, { className: "w-5 h-5 sm:w-6 sm:h-6" })}
         </div>
-        <div className={`px-3 py-1 rounded-full text-xs font-semibold flex items-center ${
+        <div className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs font-semibold flex items-center ${
           change >= 0 ? 'bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-400'
         }`}>
           {change >= 0 ? `+${change}` : change}
         </div>
       </div>
-      <p className="text-3xl font-bold text-gray-800 dark:text-white mb-2">{value.toLocaleString('fa-IR')}</p>
-      <p className="text-sm text-gray-500 dark:text-gray-400">{label}</p>
+      <p className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-white mb-2">{value.toLocaleString('fa-IR')}</p>
+      <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">{label}</p>
     </Card>
   );
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
       <MetricCard 
         icon={FileText} 
         label="کل اسناد" 
@@ -319,24 +319,24 @@ const QuickActions: React.FC<{ onEmergencyStop: () => Promise<void> }> = ({ onEm
   const [currentTab, setCurrentTab] = useState('dashboard');
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-      <Button className="w-full h-12" variant="primary" onClick={() => setCurrentTab('scraping')}>
-        <Play className="w-4 h-4" /> شروع اسکرپ جدید
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 mb-6 sm:mb-8">
+      <Button className="w-full h-10 sm:h-12 text-xs sm:text-sm" variant="primary" onClick={() => setCurrentTab('scraping')}>
+        <Play className="w-3 h-3 sm:w-4 sm:h-4" /> <span className="hidden sm:inline">شروع اسکرپ جدید</span><span className="sm:hidden">اسکرپ</span>
       </Button>
-      <Button className="w-full h-12" variant="secondary" onClick={() => setCurrentTab('proxies')}>
-        <Server className="w-4 h-4" /> تست پروکسی‌ها
+      <Button className="w-full h-10 sm:h-12 text-xs sm:text-sm" variant="secondary" onClick={() => setCurrentTab('proxies')}>
+        <Server className="w-3 h-3 sm:w-4 sm:h-4" /> <span className="hidden sm:inline">تست پروکسی‌ها</span><span className="sm:hidden">پروکسی</span>
       </Button>
-      <Button className="w-full h-12" variant="outline" onClick={() => setCurrentTab('documents')}>
-        <FileText className="w-4 h-4" /> مشاهده اسناد
+      <Button className="w-full h-10 sm:h-12 text-xs sm:text-sm" variant="outline" onClick={() => setCurrentTab('documents')}>
+        <FileText className="w-3 h-3 sm:w-4 sm:h-4" /> <span className="hidden sm:inline">مشاهده اسناد</span><span className="sm:hidden">اسناد</span>
       </Button>
-      <Button className="w-full h-12" variant="ghost" onClick={() => setCurrentTab('analytics')}>
-        <BarChart3 className="w-4 h-4" /> تحلیل‌ها
+      <Button className="w-full h-10 sm:h-12 text-xs sm:text-sm" variant="ghost" onClick={() => setCurrentTab('analytics')}>
+        <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4" /> <span className="hidden sm:inline">تحلیل‌ها</span><span className="sm:hidden">تحلیل</span>
       </Button>
-      <Button className="w-full h-12" variant="outline" onClick={() => setCurrentTab('settings')}>
-        <Settings className="w-4 h-4" /> تنظیمات
+      <Button className="w-full h-10 sm:h-12 text-xs sm:text-sm" variant="outline" onClick={() => setCurrentTab('settings')}>
+        <Settings className="w-3 h-3 sm:w-4 sm:h-4" /> <span className="hidden sm:inline">تنظیمات</span><span className="sm:hidden">تنظیمات</span>
       </Button>
-      <Button className="w-full h-12" variant="danger" onClick={onEmergencyStop}>
-        <PowerOff className="w-4 h-4" /> توقف اضطراری
+      <Button className="w-full h-10 sm:h-12 text-xs sm:text-sm" variant="danger" onClick={onEmergencyStop}>
+        <PowerOff className="w-3 h-3 sm:w-4 sm:h-4" /> <span className="hidden sm:inline">توقف اضطراری</span><span className="sm:hidden">توقف</span>
       </Button>
     </div>
   );
@@ -389,32 +389,32 @@ const NavigationHub: React.FC<{ stats: any }> = ({ stats }) => {
   ];
 
   return (
-    <div className="mb-8">
-      <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white">دسترسی سریع به بخش‌ها</h2>
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="mb-6 sm:mb-8">
+      <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-gray-900 dark:text-white">دسترسی سریع به بخش‌ها</h2>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {navigationCards.map((item) => (
           <div
             key={item.title}
             onClick={item.onClick}
-            className="bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer p-6 border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:-translate-y-2 group"
+            className="bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer p-4 sm:p-6 border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:-translate-y-2 group"
           >
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg group-hover:scale-110 transition-transform duration-300">
-                <item.icon className="w-6 h-6 text-white" />
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <div className="p-2 sm:p-3 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg group-hover:scale-110 transition-transform duration-300">
+                <item.icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </div>
               {typeof item.count === 'number' && (
-                <span className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-sm px-3 py-1 rounded-full font-medium">
+                <span className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs sm:text-sm px-2 sm:px-3 py-1 rounded-full font-medium">
                   {item.count.toLocaleString('fa-IR')}
                 </span>
               )}
               {item.status && (
-                <span className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 text-sm px-3 py-1 rounded-full font-medium">
+                <span className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 text-xs sm:text-sm px-2 sm:px-3 py-1 rounded-full font-medium">
                   سالم
                 </span>
               )}
             </div>
-            <h3 className="font-bold text-gray-900 dark:text-white mb-2 text-lg">{item.title}</h3>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">{item.description}</p>
+            <h3 className="font-bold text-gray-900 dark:text-white mb-2 text-base sm:text-lg">{item.title}</h3>
+            <p className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm">{item.description}</p>
           </div>
         ))}
       </div>
@@ -427,11 +427,11 @@ const ChartsSection: React.FC<{ stats: any }> = ({ stats }) => {
   const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
 
   return (
-    <div className="grid grid-cols-12 gap-6 mb-8">
-      <div className="col-span-12 lg:col-span-8">
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">اسناد جمع‌آوری شده (هفته اخیر)</h3>
-          <ResponsiveContainer width="100%" height={300}>
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 mb-6 sm:mb-8">
+      <div className="lg:col-span-8">
+        <Card className="p-4 sm:p-6">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">اسناد جمع‌آوری شده (هفته اخیر)</h3>
+          <ResponsiveContainer width="100%" height={250} className="sm:h-[300px]">
             <AreaChart data={stats.dailyScraped} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
               <defs>
                 <linearGradient id="colorUv" x1="0" y1="0" x2="0" y2="1">
@@ -440,8 +440,8 @@ const ChartsSection: React.FC<{ stats: any }> = ({ stats }) => {
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.2} />
-              <XAxis dataKey="name" tick={{ fill: 'currentColor' }} fontSize={12} />
-              <YAxis tick={{ fill: 'currentColor' }} fontSize={12} />
+              <XAxis dataKey="name" tick={{ fill: 'currentColor' }} fontSize={10} className="sm:text-xs" />
+              <YAxis tick={{ fill: 'currentColor' }} fontSize={10} className="sm:text-xs" />
               <Tooltip 
                 contentStyle={{ 
                   backgroundColor: 'rgba(255, 255, 255, 0.95)', 
@@ -456,28 +456,29 @@ const ChartsSection: React.FC<{ stats: any }> = ({ stats }) => {
         </Card>
       </div>
 
-      <div className="col-span-12 lg:col-span-4">
-        <Card className="p-6 h-full flex flex-col">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">توزیع دسته‌بندی‌ها</h3>
-          <div className="flex-grow">
+      <div className="lg:col-span-4">
+        <Card className="p-4 sm:p-6 h-full flex flex-col">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">توزیع دسته‌بندی‌ها</h3>
+          <div className="flex-grow min-h-[200px] sm:min-h-[250px]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie 
                   data={categoryData} 
                   cx="50%" 
                   cy="50%" 
-                  innerRadius={70} 
-                  outerRadius={100} 
+                  innerRadius={50} 
+                  outerRadius={80} 
                   paddingAngle={3} 
                   dataKey="value" 
                   labelLine={false}
+                  className="sm:inner-radius-[70px] sm:outer-radius-[100px]"
                 >
                   {categoryData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
                 <Tooltip />
-                <Legend iconType="circle" layout="vertical" align="right" verticalAlign="middle" />
+                <Legend iconType="circle" layout="vertical" align="right" verticalAlign="middle" wrapperStyle={{ fontSize: '12px' }} className="sm:text-sm" />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -496,15 +497,15 @@ const SystemHealth: React.FC<{ stats: any }> = ({ stats }) => {
   ];
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
-      <div className="lg:col-span-3">
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">مصرف منابع (لحظه‌ای)</h3>
-          <ResponsiveContainer width="100%" height={200}>
+    <div className="grid grid-cols-1 xl:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
+      <div className="xl:col-span-3">
+        <Card className="p-4 sm:p-6">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">مصرف منابع (لحظه‌ای)</h3>
+          <ResponsiveContainer width="100%" height={180} className="sm:h-[200px]">
             <LineChart data={stats.systemHealth.cpu} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.2} />
               <XAxis dataKey="x" hide />
-              <YAxis domain={[0, 100]} tick={{ fill: 'currentColor' }} fontSize={12} />
+              <YAxis domain={[0, 100]} tick={{ fill: 'currentColor' }} fontSize={10} className="sm:text-xs" />
               <Tooltip />
               <Line type="monotone" dataKey="y" stroke="#3B82F6" strokeWidth={2} dot={false} name="CPU" />
               <Line type="monotone" dataKey="y" data={stats.systemHealth.memory} stroke="#10B981" strokeWidth={2} dot={false} name="Memory" />
@@ -513,30 +514,30 @@ const SystemHealth: React.FC<{ stats: any }> = ({ stats }) => {
         </Card>
       </div>
       
-      <div className="lg:col-span-1">
-        <Card className="p-6 h-full">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">وضعیت سیستم</h3>
-          <div className="space-y-4">
+      <div className="xl:col-span-1">
+        <Card className="p-4 sm:p-6 h-full">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">وضعیت سیستم</h3>
+          <div className="space-y-3 sm:space-y-4">
             {systemMetrics.map((metric) => (
               <div key={metric.name} className="flex items-center justify-between">
-                <span className="text-sm text-gray-600 dark:text-gray-400">{metric.name}</span>
-                <div className="flex-1 mx-3">
-                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 min-w-0 flex-shrink-0">{metric.name}</span>
+                <div className="flex-1 mx-2 sm:mx-3">
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 sm:h-2">
                     <div 
-                      className={`${metric.color} h-2 rounded-full transition-all duration-1000`}
+                      className={`${metric.color} h-1.5 sm:h-2 rounded-full transition-all duration-1000`}
                       style={{ width: `${metric.value}%` }}
                     />
                   </div>
                 </div>
-                <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">{metric.value}%</span>
+                <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 font-medium flex-shrink-0">{metric.value}%</span>
               </div>
             ))}
           </div>
           
-          <div className="mt-6 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
+          <div className="mt-4 sm:mt-6 p-2 sm:p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
             <div className="flex items-center space-x-reverse space-x-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-              <span className="text-sm font-medium text-green-800 dark:text-green-300">سیستم فعال</span>
+              <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-500 rounded-full animate-pulse flex-shrink-0" />
+              <span className="text-xs sm:text-sm font-medium text-green-800 dark:text-green-300">سیستم فعال</span>
             </div>
             <p className="text-xs text-green-600 dark:text-green-400 mt-1">
               تمام سرویس‌ها عملیاتی
@@ -549,27 +550,27 @@ const SystemHealth: React.FC<{ stats: any }> = ({ stats }) => {
 };
 
 const RecentActivity: React.FC<{ documents: any[] }> = ({ documents }) => (
-  <Card className="p-6">
-    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">آخرین فعالیت‌ها</h3>
-    <div className="space-y-4">
+  <Card className="p-4 sm:p-6">
+    <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4 sm:mb-6">آخرین فعالیت‌ها</h3>
+    <div className="space-y-3 sm:space-y-4">
       {documents.slice(0, 5).map((item) => (
-        <div key={item.id} className="border-b border-gray-100 dark:border-gray-700 last:border-b-0 pb-4 last:pb-0">
-          <div className="flex items-start justify-between gap-4">
+        <div key={item.id} className="border-b border-gray-100 dark:border-gray-700 last:border-b-0 pb-3 sm:pb-4 last:pb-0">
+          <div className="flex items-start justify-between gap-3 sm:gap-4">
             <div className="flex-1 min-w-0">
-              <h4 className="font-medium text-gray-900 dark:text-white truncate mb-1">{item.title}</h4>
-              <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400 mb-2">
+              <h4 className="font-medium text-sm sm:text-base text-gray-900 dark:text-white truncate mb-1">{item.title}</h4>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-2">
                 <div className="flex items-center gap-1">
-                  <ExternalLink size={14} />
+                  <ExternalLink size={12} className="sm:w-[14px] sm:h-[14px]" />
                   <span>{item.source}</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <Calendar size={14} />
+                  <Calendar size={12} className="sm:w-[14px] sm:h-[14px]" />
                   <span>{formatDate(item.createdAt)}</span>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                  <Tag size={12} />
+                  <Tag size={10} className="sm:w-3 sm:h-3" />
                   {item.category}
                 </span>
                 <span className="text-xs text-gray-500 dark:text-gray-400">
@@ -581,9 +582,9 @@ const RecentActivity: React.FC<{ documents: any[] }> = ({ documents }) => (
               href={item.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center w-8 h-8 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+              className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors flex-shrink-0"
             >
-              <ExternalLink size={16} />
+              <ExternalLink size={14} className="sm:w-4 sm:h-4" />
             </a>
           </div>
         </div>
@@ -607,32 +608,32 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="space-y-6 min-h-screen bg-gray-50 dark:bg-gray-900" dir="rtl">
+    <div className="space-y-4 sm:space-y-6 min-h-screen bg-gray-50 dark:bg-gray-900" dir="rtl">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;700;800&display=swap');
         body, html { font-family: 'Vazirmatn', sans-serif; }
       `}</style>
 
       {/* Enhanced Page Header */}
-      <div className="mb-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl shadow-xl p-8 text-white">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-4xl font-bold mb-3">نمای کلی سیستم</h1>
-            <p className="text-blue-100 text-lg">
+      <div className="mb-6 sm:mb-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl sm:rounded-2xl shadow-xl p-4 sm:p-6 lg:p-8 text-white">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="min-w-0 flex-1">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2 sm:mb-3">نمای کلی سیستم</h1>
+            <p className="text-blue-100 text-sm sm:text-base lg:text-lg">
               سیستم جامع مدیریت اطلاعات حقوقی جمهوری اسلامی ایران
             </p>
-            <p className="text-blue-200 text-sm mt-2">
+            <p className="text-blue-200 text-xs sm:text-sm mt-1 sm:mt-2">
               {`امروز ${formatDateTime(new Date())}`}
             </p>
           </div>
-          <div className="flex items-center space-x-reverse space-x-6">
-            <div className="text-left">
-              <div className="text-blue-100 text-sm">آخرین بروزرسانی</div>
-              <div className="text-xl font-bold">
+          <div className="flex items-center gap-3 sm:gap-4 lg:gap-6 flex-shrink-0">
+            <div className="text-center sm:text-left">
+              <div className="text-blue-100 text-xs sm:text-sm">آخرین بروزرسانی</div>
+              <div className="text-lg sm:text-xl font-bold">
                 {formatDate(new Date())}
               </div>
             </div>
-            <div className="w-4 h-4 bg-green-400 rounded-full animate-pulse shadow-lg" />
+            <div className="w-3 h-3 sm:w-4 sm:h-4 bg-green-400 rounded-full animate-pulse shadow-lg flex-shrink-0" />
           </div>
         </div>
       </div>

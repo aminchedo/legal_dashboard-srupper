@@ -167,26 +167,26 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
       {/* Header */}
       <header className="relative overflow-hidden bg-gradient-to-l from-blue-800 to-blue-900 text-white shadow-lg">
         <div className="absolute inset-0 opacity-20 bg-gradient-radial" />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 gap-3">
-            <div className="flex items-center gap-3">
+        <div className="max-w-full mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-14 sm:h-16 gap-2 sm:gap-3">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="md:hidden p-2 rounded-md hover:bg-white/10 transition-colors"
+                className="md:hidden p-1.5 sm:p-2 rounded-md hover:bg-white/10 transition-colors flex-shrink-0"
               >
-                <MenuOutlined />
+                <MenuOutlined className="text-sm sm:text-base" />
               </button>
-              <div className="flex items-center gap-3">
-                <AlertOutlined className="text-yellow-400" />
-                <div>
-                  <h1 className="text-xl font-bold">{t('app.title')}</h1>
-                  <p className="text-blue-200 text-sm">{t('app.subtitle')}</p>
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                <AlertOutlined className="text-yellow-400 text-sm sm:text-base flex-shrink-0" />
+                <div className="min-w-0">
+                  <h1 className="text-base sm:text-lg lg:text-xl font-bold truncate">{t('app.title')}</h1>
+                  <p className="text-blue-200 text-xs sm:text-sm hidden sm:block truncate">{t('app.subtitle')}</p>
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-3 flex-1 max-w-xl">
+            <div className="hidden lg:flex items-center gap-3 flex-1 max-w-xl mx-4">
               {/* Global search */}
-              <div className="hidden md:flex items-center gap-2 flex-1 bg-white/10 hover:bg-white/15 border border-white/20 rounded-lg px-3 py-1.5">
+              <div className="flex items-center gap-2 flex-1 bg-white/10 hover:bg-white/15 border border-white/20 rounded-lg px-3 py-1.5">
                 <SearchOutlined className="text-blue-100" />
                 <input
                   ref={searchInputRef}
@@ -198,43 +198,42 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
                 />
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
               <button
                 onClick={() => setLanguage(prev => prev === 'fa' ? 'en' : 'fa')}
-                className="px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 text-white text-sm"
+                className="px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs sm:text-sm"
                 title={language === 'fa' ? 'Switch to English' : 'تغییر به فارسی'}
               >
                 {language === 'fa' ? 'FA' : 'EN'}
               </button>
               <button
                 onClick={() => setIsPaletteOpen(true)}
-                className="hidden md:inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-3 py-1.5 text-white hover:bg-white/20 text-sm"
+                className="hidden lg:inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-3 py-1.5 text-white hover:bg-white/20 text-sm"
                 title="Command menu (Ctrl+K)"
               >
                 ⌘K
               </button>
               <button
-                className="relative p-2 rounded-lg hover:bg-white/10 border border-white/10 text-blue-100"
+                className="relative p-1.5 sm:p-2 rounded-lg hover:bg-white/10 border border-white/10 text-blue-100"
                 aria-label="notifications"
                 title={t('aria.notifications')}
               >
-                <BellOutlined />
-                <span className="absolute -top-0.5 -left-0.5 w-2 h-2 bg-yellow-400 rounded-full" />
+                <BellOutlined className="text-sm sm:text-base" />
+                <span className="absolute -top-0.5 -left-0.5 w-1.5 h-1.5 sm:w-2 sm:h-2 bg-yellow-400 rounded-full" />
               </button>
               <button
                 onClick={() => setDarkMode(v => !v)}
-                className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 text-white text-sm"
+                className="hidden sm:inline-flex px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs sm:text-sm"
                 title={t('commands.toggleTheme')}
               >
                 {darkMode ? t('theme.light') : t('theme.dark')}
               </button>
               <SettingOutlined
                 onClick={() => onPageChange('settings')}
-                size={20}
-                className="text-blue-200 hover:text-white cursor-pointer transition-colors"
+                className="hidden sm:block text-blue-200 hover:text-white cursor-pointer transition-colors text-base sm:text-lg"
               />
               {/* User avatar */}
-              <div className="w-8 h-8 rounded-full bg-white/20 border border-white/30 flex items-center justify-center text-white text-xs font-semibold">
+              <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-white/20 border border-white/30 flex items-center justify-center text-white text-xs font-semibold">
                 U
               </div>
             </div>
@@ -242,15 +241,16 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
         </div>
       </header>
 
-      <div className="flex">
+      <div className="flex min-h-[calc(100vh-4rem)]">
         {/* Sidebar */}
         <aside className={`
           fixed inset-y-0 right-0 z-50 w-64 bg-white dark:bg-slate-900 shadow-xl transform transition-transform duration-300 ease-in-out mt-16
-          md:relative md:translate-x-0 md:mt-0 md:z-0
-          ${sidebarOpen ? 'translate-x-0' : 'translate-x-full'}
+          lg:relative lg:translate-x-0 lg:mt-0 lg:z-0 lg:w-64
+          md:w-72 md:relative md:translate-x-0 md:mt-0 md:z-0
+          ${sidebarOpen ? 'translate-x-0' : 'translate-x-full md:translate-x-0'}
         `}>
           <nav className="h-full overflow-y-auto py-6">
-            <div className="px-4 space-y-2">
+            <div className="px-3 sm:px-4 space-y-1 sm:space-y-2">
               {[...navItems, { id: 'settings' as any, label: t('nav.settings'), icon: SettingOutlined }, { id: 'help' as any, label: t('nav.help'), icon: AlertOutlined }].map((item) => {
                 const Icon = item.icon;
                 const isActive = currentPage === item.id;
@@ -263,14 +263,14 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
                       setSidebarOpen(false);
                     }}
                     className={`
-                      w-full flex items-center gap-3 px-4 py-3 text-right rounded-lg transition-all duration-200
+                      w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 text-right rounded-lg transition-all duration-200 text-sm sm:text-base
                       ${isActive
                         ? 'bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-200 border-r-4 border-blue-700 dark:border-blue-400 font-semibold shadow-sm'
                         : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-gray-800'
                       }
                     `}
                   >
-                    <Icon size={20} />
+                    <Icon size={18} className="sm:w-5 sm:h-5" />
                     <span className="font-medium">{item.label}</span>
                   </button>
                 );
@@ -288,8 +288,8 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
         )}
 
         {/* Main content */}
-        <main className="flex-1 md:pr-64">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <main className="flex-1 w-full md:pl-0 lg:pl-0">
+          <div className="max-w-full mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
             {children}
           </div>
         </main>
