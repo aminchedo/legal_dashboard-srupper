@@ -1,149 +1,82 @@
-import React, { useEffect, useState } from 'react'
-import { Bar } from 'react-chartjs-2'
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Tooltip,
-  Legend,
-} from 'chart.js'
-import { Loader2 } from 'lucide-react'
+import React, { Suspense, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import AppRoutes from './routes/AppRoutes';
+import DashboardPage from './pages/Dashboard/DashboardPage';
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend)
+// Lazy load other pages to prevent initial loading errors
+const JobsListPage = React.lazy(() => import('./pages/Jobs/JobsListPage').catch(() => ({ default: () => <div>Jobs page temporarily unavailable</div> })));
+const DocumentsListPage = React.lazy(() => import('./pages/Documents/DocumentsListPage').catch(() => ({ default: () => <div>Documents page temporarily unavailable</div> })));
+const SystemHealthPage = React.lazy(() => import('./pages/System/SystemHealthPage').catch(() => ({ default: () => <div>System page temporarily unavailable</div> })));
+const ProxiesPage = React.lazy(() => import('./pages/Proxies/ProxiesPage').catch(() => ({ default: () => <div>Proxies page temporarily unavailable</div> })));
+const SettingsPage = React.lazy(() => import('./pages/Settings/SettingsPage').catch(() => ({ default: () => <div>Settings page temporarily unavailable</div> })));
+const HelpPage = React.lazy(() => import('./pages/Help/HelpPage').catch(() => ({ default: () => <div>Help page temporarily unavailable</div> })));
 
-interface StatsData {
-  totalItems: number
-  recentItems: number
-  categories: Record<string, number>
-  avgRating: number
-  todayStats: { success_rate: number }
-  weeklyTrend: { day: string; success: number }[]
-  monthlyGrowth: number
-}
+// Create a basic query client mock if @tanstack/react-query is not available
+let QueryClientProvider: React.ComponentType<{ client: any; children: React.ReactNode }>;
+let queryClient: any;
 
-interface ActivityItem {
-  id: string
-  title: string
-  domain: string
-  status: string
-}
-
-interface ActivityData {
-  items: ActivityItem[]
+try {
+  const ReactQuery = require('@tanstack/react-query');
+  QueryClientProvider = ReactQuery.QueryClientProvider;
+  queryClient = new ReactQuery.QueryClient({
+    defaultOptions: {
+      queries: {
+        staleTime: 1000 * 60 * 5, // 5 minutes
+        retry: 1,
+      },
+    },
+  });
+} catch (error) {
+  // Fallback if react-query is not available
+  QueryClientProvider = ({ children }: { children: React.ReactNode; client?: any }) => <>{children}</>;
+  queryClient = {};
 }
 
 const App: React.FC = () => {
-  const [stats, setStats] = useState<StatsData | null>(null)
-  const [activity, setActivity] = useState<ActivityData | null>(null)
-  const [error, setError] = useState<string | null>(null)
-
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [statsRes, activityRes] = await Promise.all([
-          fetch('/api/dashboard/statistics'),
-          fetch('/api/dashboard/activity'),
-        ])
-
-        if (!statsRes.ok || !activityRes.ok) {
-          throw new Error('Failed fetching data')
-        }
-
-        setStats(await statsRes.json())
-        setActivity(await activityRes.json())
-      } catch (err) {
-        setError((err as Error).message)
+    // Hide loading screen when React app loads
+    const hideLoadingScreen = () => {
+      const loadingScreen = document.getElementById('loading-screen');
+      if (loadingScreen) {
+        loadingScreen.classList.add('fade-out');
+        // Remove from DOM after animation
+        setTimeout(() => {
+          if (loadingScreen.parentNode) {
+            loadingScreen.parentNode.removeChild(loadingScreen);
+          }
+        }, 600); // Match CSS transition duration
       }
-    }
+    };
 
-    fetchData()
-  }, [])
-
-  if (error) {
-    return (
-      <div className="flex items-center justify-center h-screen text-red-600">
-        Error loading data: {error}
-      </div>
-    )
-  }
-
-  if (!stats || !activity) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <Loader2 className="w-10 h-10 animate-spin text-indigo-600" />
-      </div>
-    )
-  }
-
-  const barData = {
-    labels: stats.weeklyTrend.map((d) => d.day),
-    datasets: [
-      {
-        label: 'Successful Items',
-        data: stats.weeklyTrend.map((d) => d.success),
-        backgroundColor: '#4f46e5',
-      },
-    ],
-  }
+    // Hide loading screen after a short delay to ensure app is rendered
+    const timer = setTimeout(hideLoadingScreen, 100);
+    
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
-    <div className="p-6 space-y-8 max-w-5xl mx-auto">
-      <h1 className="text-3xl font-bold text-center">Dashboard</h1>
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Total Items" value={stats.totalItems.toLocaleString()} />
-        <StatCard title="Recent Items" value={stats.recentItems.toLocaleString()} />
-        <StatCard title="Avg. Rating" value={stats.avgRating.toFixed(2)} />
-        <StatCard title="Monthly Growth (%)" value={stats.monthlyGrowth.toFixed(1)} />
-      </div>
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <AppRoutes>
+          <Suspense fallback={<div className="flex items-center justify-center h-screen">
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+          </div>}>
+            <Routes>
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/jobs" element={<JobsListPage />} />
+              <Route path="/documents" element={<DocumentsListPage />} />
+              <Route path="/system" element={<SystemHealthPage />} />
+              <Route path="/proxies" element={<ProxiesPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/help" element={<HelpPage />} />
+              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            </Routes>
+          </Suspense>
+        </AppRoutes>
+      </BrowserRouter>
+    </QueryClientProvider>
+  );
+};
 
-      <div>
-        <h2 className="text-xl font-semibold mb-2">Weekly Success Trend</h2>
-        <Bar data={barData} />
-      </div>
-
-      <div>
-        <h2 className="text-xl font-semibold mb-2">Recent Activity</h2>
-        <ul className="space-y-2">
-          {activity.items.map((item) => (
-            <li
-              key={item.id}
-              className="p-4 bg-white rounded shadow flex justify-between items-center"
-            >
-              <div>
-                <p className="font-medium">{item.title}</p>
-                <p className="text-sm text-gray-500">{item.domain}</p>
-              </div>
-              <StatusBadge status={item.status} />
-            </li>
-          ))}
-        </ul>
-      </div>
-    </div>
-  )
-}
-
-const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
-  const color =
-    status === 'completed'
-      ? 'bg-emerald-500'
-      : status === 'processing'
-      ? 'bg-amber-500'
-      : 'bg-rose-500'
-  return (
-    <span
-      className={`${color} text-white text-xs font-medium px-2 py-1 rounded-full capitalize`}
-    >
-      {status}
-    </span>
-  )
-}
-
-const StatCard: React.FC<{ title: string; value: string }> = ({ title, value }) => (
-  <div className="p-4 bg-white rounded shadow">
-    <p className="text-sm text-gray-500">{title}</p>
-    <p className="mt-1 text-2xl font-semibold">{value}</p>
-  </div>
-)
-
-export default App
+export default App;
