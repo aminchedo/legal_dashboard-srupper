@@ -1,13 +1,25 @@
 import React from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
+import LoadingSpinner from '../UI/LoadingSpinner';
 
 const PrivateRoute: React.FC = () => {
-    // Normalize: prefer accessToken across app
-    const isAuthenticated = !!(localStorage.getItem('accessToken') || localStorage.getItem('authToken'));
-    if (!localStorage.getItem('accessToken') && localStorage.getItem('authToken')) {
-        localStorage.setItem('accessToken', localStorage.getItem('authToken') as string);
-    }
-    return isAuthenticated ? <Outlet /> : <Navigate to="/login" replace />;
+  const { isAuthenticated, isLoading } = useAuth();
+  const location = useLocation();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <LoadingSpinner size="lg" text="Loading..." />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  return <Outlet />;
 };
 
 export default PrivateRoute;
