@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { CaretRightOutlined, ExperimentOutlined, FileTextOutlined, BarChartOutlined, SettingOutlined, ExclamationOutlined } from '@ant-design/icons';
 import { Play, FlaskConical, FileText, BarChart3, Settings, Octagon } from '../../utils/iconRegistry';
-import { Button } from '../ui/button';
+import Button from '../ui/Button';
 
 interface Props {
     onStartScraping?: () => void;
@@ -28,7 +28,7 @@ export default function QuickActions({ onStartScraping, onTestProxy, onEmergency
             <Button className="w-full" variant="outline" onClick={() => navigate('/settings')}>
                 <Settings size={16} className="ml-2" /> تنظیمات سیستم
             </Button>
-            <Button className="w-full" variant="destructive" onClick={onEmergencyStop}>
+            <Button className="w-full" variant="error" onClick={onEmergencyStop}>
                 <Octagon size={16} className="ml-2" /> توقف اضطراری همه
             </Button>
         </div>

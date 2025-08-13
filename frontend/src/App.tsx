@@ -3,6 +3,12 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import AppRoutes from './routes/AppRoutes';
 import DashboardPage from './pages/Dashboard/DashboardPage';
+import JobsListPage from './pages/Jobs/JobsListPage';
+import DocumentsListPage from './pages/Documents/DocumentsListPage';
+import SystemHealthPage from './pages/System/SystemHealthPage';
+import ProxiesPage from './pages/Proxies/ProxiesPage';
+import SettingsPage from './pages/Settings/SettingsPage';
+import HelpPage from './pages/Help/HelpPage';
 
 // Create QueryClient properly - NO try-catch needed
 const queryClient = new QueryClient({
@@ -39,19 +45,19 @@ function App() {
       <Router>
         <AppRoutes>
           <Routes>
-            {/* Simple routing - no complex lazy loading for now */}
+            {/* Main application routes */}
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/jobs" element={<JobsListPage />} />
+            <Route path="/documents" element={<DocumentsListPage />} />
+            <Route path="/system" element={<SystemHealthPage />} />
+            <Route path="/proxies" element={<ProxiesPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/help" element={<HelpPage />} />
             
-            {/* Temporary placeholder routes */}
-            <Route path="/jobs" element={<div className="p-8 text-center">Jobs page coming soon</div>} />
-            <Route path="/documents" element={<div className="p-8 text-center">Documents page coming soon</div>} />
-            <Route path="/system" element={<div className="p-8 text-center">System page coming soon</div>} />
-            <Route path="/proxies" element={<div className="p-8 text-center">Proxies page coming soon</div>} />
-            <Route path="/data" element={<div className="p-8 text-center">Data page coming soon</div>} />
-            <Route path="/analytics" element={<div className="p-8 text-center">Analytics page coming soon</div>} />
-            <Route path="/settings" element={<div className="p-8 text-center">Settings page coming soon</div>} />
-            <Route path="/help" element={<div className="p-8 text-center">Help page coming soon</div>} />
+            {/* Legacy routes - redirect to new structure */}
+            <Route path="/data" element={<Navigate to="/documents" replace />} />
+            <Route path="/analytics" element={<Navigate to="/dashboard" replace />} />
             
             {/* Fallback */}
             <Route path="*" element={<Navigate to="/dashboard" replace />} />

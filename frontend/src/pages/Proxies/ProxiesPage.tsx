@@ -5,9 +5,8 @@ import { useProxies, useProxyBulkImport, useProxyDelete, useProxyUpsert } from '
 import { ProxyRecord, ProxyType } from '../../types';
 import ProxyTable from './components/ProxiesTable';
 import ProxyForm from './components/ProxyForm';
-// import ProxyTestingPanel from './ProxyTestingPanel';
 import ProxyRotationPanel from './components/ProxyRotationPanel';
-// import ProxyAnalyticsPanel from './ProxyAnalyticsPanel.tsx';
+import ProxyAnalyticsPanel from './components/ProxyAnalyticsPanel';
 // import { databaseService } from '../../lib/database';
 
 export default function ProxyPage() {
@@ -130,6 +129,9 @@ export default function ProxyPage() {
                 <button disabled={!selected.length} onClick={handleDeleteSelected} className="text-red-600 hover:text-red-700 disabled:text-gray-300">حذف انتخاب‌شده‌ها ({selected.length})</button>
             </div>
 
+            {/* Enhanced Analytics Overview */}
+            <ProxyAnalyticsPanel proxies={proxies || []} />
+
             {/* Content Grid */}
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
                 <div className="xl:col-span-2">
@@ -139,14 +141,13 @@ export default function ProxyPage() {
                         selected={selected}
                         onSelectedChange={setSelected}
                         onEdit={handleEdit}
+                        onDelete={(proxy) => remove.mutateAsync(proxy.id).then(() => refetch())}
                         onFiltersChange={({ status, types, countries }) => { setStatusFilter(status); setTypeFilter(types); setCountryFilter(countries); }}
                         allCountries={allCountries}
                     />
                 </div>
                 <div className="space-y-6">
-                    {/* <ProxyTestingPanel items={proxies || []} onAfterTest={() => refetch()} /> */}
                     <ProxyRotationPanel />
-                    {/* <ProxyAnalyticsPanel /> */}
                 </div>
             </div>
 

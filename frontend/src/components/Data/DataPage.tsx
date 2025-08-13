@@ -6,7 +6,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../../services/apiClient';
 import { format } from 'date-fns';
 import { faIR } from 'date-fns/locale';
-import CategoryBadge from '../CategoryBadge';
+import CategoryBadge from '../ui/Badge';
 
 const useDeleteDocument = () => {
   const queryClient = useQueryClient();
