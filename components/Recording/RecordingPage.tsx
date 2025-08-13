@@ -168,7 +168,7 @@ const RecordingPage: React.FC<RecordingPageProps> = () => {
               {/* Recording Status */}
               {isRecording && (
                 <div className="flex items-center space-x-2 mb-4">
-                  <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                  <div className="w-3 h-3 bg-red-500 rounded-full"></div>
                   <span className="text-lg font-mono">{formatTime(recordingTime)}</span>
                 </div>
               )}
