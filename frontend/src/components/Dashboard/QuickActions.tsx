@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { CaretRightOutlined, ExperimentOutlined, FileTextOutlined, BarChartOutlined, SettingOutlined, ExclamationOutlined } from '@ant-design/icons';
+import { Play, FlaskConical, FileText, BarChart3, Settings, OctagonAlert } from '../../utils/iconRegistry';
 import { Button } from '../ui/button';
 
 interface Props {

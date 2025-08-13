@@ -1,4 +1,5 @@
 import { LinkOutlined, CalendarOutlined, TagOutlined, StarOutlined } from '@ant-design/icons';
+import { ExternalLink, Calendar, Star, Tag } from '../../utils/iconRegistry';
 import { useScrapedItems } from '../../hooks/useDatabase';
 import { format } from 'date-fns';
 import { faIR } from 'date-fns/locale';
