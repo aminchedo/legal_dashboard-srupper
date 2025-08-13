@@ -28,3 +28,18 @@ export interface DocumentVersionRaw {
   created_by: string;
   change_summary?: string | null;
 }
+
+export interface DatabaseTransaction {
+  query<T = unknown>(sql: string, params?: unknown[]): T[];
+  run(sql: string, params?: unknown[]): { changes: number; lastInsertRowid: number };
+  begin(): void;
+  commit(): void;
+  rollback(): void;
+}
+
+export interface DatabaseClient {
+  query<T = unknown>(sql: string, params?: unknown[]): T[];
+  run(sql: string, params?: unknown[]): { changes: number; lastInsertRowid: number };
+  transaction<T>(callback?: (tx: DatabaseTransaction) => T): T | DatabaseTransaction;
+  close(): void;
+}

@@ -1,9 +1,9 @@
 name: Complete Docker CI/CD Pipeline - All Issues Fixed
 on:
   push:
-    branches: [main, master]
+    branches: [main]
   pull_request:
-    branches: [main, master]
+    branches: [main]
   workflow_dispatch:
 
 env:

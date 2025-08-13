@@ -1,5 +1,5 @@
 import Database from 'better-sqlite3';
-import { DatabaseClient, DatabaseTransaction } from '@interfaces/database.interface';
+import { DatabaseClient, DatabaseTransaction } from '../types/database.types';
 import { config } from '@utils/config';
 import { logger } from '@utils/logger';
 
@@ -8,6 +8,13 @@ class BetterSqliteTransaction implements DatabaseTransaction {
     private inTransaction = false;
     constructor(db: Database.Database) {
         this.db = db;
+    }
+    query<T = unknown>(sql: string, params: unknown[] = []): T[] {
+        return this.db.prepare(sql).all(params) as T[];
+    }
+    run(sql: string, params: unknown[] = []): { changes: number; lastInsertRowid: number } {
+        const result = this.db.prepare(sql).run(params);
+        return { changes: result.changes, lastInsertRowid: Number(result.lastInsertRowid) };
     }
     begin(): void {
         if (this.inTransaction) return;
@@ -36,11 +43,30 @@ class BetterSqliteClient implements DatabaseClient {
     query<T = unknown>(sql: string, params: unknown[] = []): T[] {
         return this.db.prepare(sql).all(params) as T[];
     }
-    run(sql: string, params: unknown[] = []): void {
-        this.db.prepare(sql).run(params);
+    run(sql: string, params: unknown[] = []): { changes: number; lastInsertRowid: number } {
+        const result = this.db.prepare(sql).run(params);
+        return { changes: result.changes, lastInsertRowid: Number(result.lastInsertRowid) };
     }
-    transaction(): DatabaseTransaction {
-        return new BetterSqliteTransaction(this.db);
+    transaction<T>(callback?: (tx: DatabaseTransaction) => T): T | DatabaseTransaction {
+        if (callback) {
+            // Callback-style transaction
+            const tx = new BetterSqliteTransaction(this.db);
+            tx.begin();
+            try {
+                const result = callback(tx);
+                tx.commit();
+                return result;
+            } catch (error) {
+                tx.rollback();
+                throw error;
+            }
+        } else {
+            // Return transaction object for imperative style
+            return new BetterSqliteTransaction(this.db);
+        }
+    }
+    close(): void {
+        this.db.close();
     }
 }
 

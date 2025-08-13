@@ -13,6 +13,7 @@ import {
 } from '@ant-design/icons';
 import { PageType } from '../../types';
 import CommandPalette, { CommandItem } from '../common/CommandPalette';
+import { useTranslation } from 'react-i18next';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -20,15 +21,16 @@ interface LayoutProps {
   onPageChange: (page: PageType) => void;
 }
 
-const navigationItems = [
-  { id: 'dashboard' as PageType, label: 'داشبورد کلی', icon: HomeOutlined },
-  { id: 'jobs' as PageType, label: 'وب اسکرپینگ', icon: GlobalOutlined },
-  { id: 'documents' as PageType, label: 'داده‌های جمع‌آوری شده', icon: DatabaseOutlined },
-  { id: 'system' as PageType, label: 'تحلیل و گزارش', icon: BarChartOutlined },
-  { id: 'proxies' as PageType, label: 'پروکسی‌ها', icon: SwapOutlined },
-];
+const navigationItems = (t: (key: string) => string) => ([
+  { id: 'dashboard' as PageType, label: t('nav.dashboard'), icon: HomeOutlined },
+  { id: 'jobs' as PageType, label: t('nav.jobs'), icon: GlobalOutlined },
+  { id: 'documents' as PageType, label: t('nav.documents'), icon: DatabaseOutlined },
+  { id: 'system' as PageType, label: t('nav.system'), icon: BarChartOutlined },
+  { id: 'proxies' as PageType, label: t('nav.proxies'), icon: SwapOutlined },
+]);
 
 export default function Layout({ children, currentPage, onPageChange }: LayoutProps) {
+  const { t, i18n } = useTranslation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [darkMode, setDarkMode] = useState<boolean>(() => {
     try {
@@ -64,10 +66,14 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
   }, [darkMode]);
 
   useEffect(() => {
-    const root = document.documentElement;
-    root.setAttribute('dir', language === 'fa' ? 'rtl' : 'ltr');
+    const dir = language === 'fa' ? 'rtl' : 'ltr';
+    document.documentElement.setAttribute('dir', dir);
+    document.documentElement.setAttribute('lang', language);
     localStorage.setItem('lang', language);
-  }, [language]);
+    if (i18n.language !== language) {
+      i18n.changeLanguage(language);
+    }
+  }, [language, i18n]);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -84,75 +90,77 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
   const commands: CommandItem[] = useMemo(() => [
     {
       id: 'nav-dashboard',
-      label: 'رفتن به داشبورد',
-      hint: 'نمای کلی سیستم',
+      label: t('commands.goDashboard'),
+      hint: t('app.subtitle'),
       action: () => onPageChange('dashboard'),
       keywords: ['home', 'overview', 'dashboard'],
     },
     {
       id: 'nav-scraping',
-      label: 'رفتن به وب اسکرپینگ',
-      hint: 'جمع‌آوری اطلاعات',
+      label: t('commands.goJobs'),
+      hint: t('nav.jobs'),
       action: () => onPageChange('jobs'),
       keywords: ['crawl', 'scrape'],
     },
     {
       id: 'nav-data',
-      label: 'رفتن به داده‌ها',
-      hint: 'مدیریت داده‌های جمع‌آوری شده',
+      label: t('commands.goDocuments'),
+      hint: t('nav.documents'),
       action: () => onPageChange('documents'),
       keywords: ['documents', 'items'],
     },
     {
       id: 'nav-analytics',
-      label: 'رفتن به تحلیل و گزارش',
-      hint: 'نمودارها و گزارش‌ها',
+      label: t('commands.goSystem'),
+      hint: t('nav.system'),
       action: () => onPageChange('system'),
       keywords: ['charts', 'reports', 'analytics'],
     },
     {
       id: 'nav-proxies',
-      label: 'مدیریت پروکسی',
-      hint: 'افزودن/تست/چرخش',
+      label: t('commands.goProxies'),
+      hint: t('nav.proxies'),
       action: () => onPageChange('proxies'),
       keywords: ['proxy', 'proxies', 'rotation', 'network'],
     },
     {
       id: 'toggle-theme',
-      label: darkMode ? 'تغییر به حالت روشن' : 'تغییر به حالت تاریک',
+      label: darkMode ? t('theme.light') : t('theme.dark'),
       hint: 'Theme',
       action: () => setDarkMode((v) => !v),
       keywords: ['theme', 'dark', 'light'],
     },
     {
       id: 'toggle-lang',
-      label: 'تغییر زبان',
+      label: t('commands.toggleLang'),
       hint: 'FA / EN',
       action: () => setLanguage((prev) => (prev === 'fa' ? 'en' : 'fa')),
       keywords: ['language', 'rtl', 'ltr'],
     },
     {
       id: 'focus-search',
-      label: 'تمرکز روی جستجوی سراسری',
-      hint: 'جعبه جستجو در هدر',
+      label: t('commands.focusSearch'),
+      hint: t('app.subtitle'),
       action: () => searchInputRef.current?.focus(),
       keywords: ['search', 'find'],
     },
     {
       id: 'nav-settings',
-      label: 'تنظیمات سیستم',
-      hint: 'پیکربندی و ترجیحات',
+      label: t('commands.settings'),
+      hint: t('nav.settings'),
       action: () => onPageChange('settings'),
       keywords: ['settings', 'config'],
     },
     {
       id: 'nav-help',
-      label: 'راهنما',
-      hint: 'سوالات متداول و مستندات',
+      label: t('commands.help'),
+      hint: t('nav.help'),
       action: () => onPageChange('help'),
       keywords: ['help', 'docs'],
     },
-  ], [darkMode]);
+  ], [darkMode, t, onPageChange]);
+
+  const navItems = navigationItems(t);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-slate-950">
@@ -171,8 +179,8 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
               <div className="flex items-center gap-3">
                 <AlertOutlined className="text-yellow-400" />
                 <div>
-                  <h1 className="text-xl font-bold">داشبورد حقوقی ایران</h1>
-                  <p className="text-blue-200 text-sm">سامانه هوشمند مدیریت اطلاعات حقوقی</p>
+                  <h1 className="text-xl font-bold">{t('app.title')}</h1>
+                  <p className="text-blue-200 text-sm">{t('app.subtitle')}</p>
                 </div>
               </div>
             </div>
@@ -184,7 +192,7 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
                   ref={searchInputRef}
                   value={globalQuery}
                   onChange={(e) => setGlobalQuery(e.target.value)}
-                  placeholder={language === 'fa' ? 'جستجوی سریع...' : 'Global search...'}
+                  placeholder={t('app.searchPlaceholder')}
                   aria-label="global-search"
                   className="bg-transparent placeholder-blue-200 text-white text-sm w-full focus:outline-none"
                 />
@@ -208,7 +216,7 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
               <button
                 className="relative p-2 rounded-lg hover:bg-white/10 border border-white/10 text-blue-100"
                 aria-label="notifications"
-                title={language === 'fa' ? 'اعلان‌ها' : 'Notifications'}
+                title={t('aria.notifications')}
               >
                 <BellOutlined />
                 <span className="absolute -top-0.5 -left-0.5 w-2 h-2 bg-yellow-400 rounded-full" />
@@ -216,9 +224,9 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
               <button
                 onClick={() => setDarkMode(v => !v)}
                 className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 text-white text-sm"
-                title="تغییر حالت تم"
+                title={t('commands.toggleTheme')}
               >
-                {darkMode ? '☀️ روشن' : '🌙 تاریک'}
+                {darkMode ? t('theme.light') : t('theme.dark')}
               </button>
               <SettingOutlined
                 onClick={() => onPageChange('settings')}
@@ -243,7 +251,7 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
         `}>
           <nav className="h-full overflow-y-auto py-6">
             <div className="px-4 space-y-2">
-              {[...navigationItems, { id: 'settings' as any, label: 'تنظیمات', icon: SettingOutlined }, { id: 'help' as any, label: 'راهنما', icon: AlertOutlined }].map((item) => {
+              {[...navItems, { id: 'settings' as any, label: t('nav.settings'), icon: SettingOutlined }, { id: 'help' as any, label: t('nav.help'), icon: AlertOutlined }].map((item) => {
                 const Icon = item.icon;
                 const isActive = currentPage === item.id;
 
@@ -290,7 +298,7 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
         open={isPaletteOpen}
         onOpenChange={setIsPaletteOpen}
         items={commands}
-        placeholder={language === 'fa' ? 'دستور یا صفحه موردنظر را بنویسید...' : 'Type a command or search...'}
+        placeholder={i18n.t('app.searchPlaceholder')}
       />
     </div>
   );

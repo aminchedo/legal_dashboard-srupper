@@ -1,11 +1,11 @@
-// Charts temporarily disabled for build stability
-// import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from '../../utils/iconRegistry';
 import { RiseOutlined, TrophyOutlined, BookOutlined, GlobalOutlined } from '@ant-design/icons';
+import { BookOpen, Award, TrendingUp, Globe } from '../../utils/iconRegistry';
 import { useDocuments, useStatistics } from '../../hooks/useDatabase';
 import { format, subDays, eachDayOfInterval } from 'date-fns';
 import { faIR } from 'date-fns/locale';
-import MetricCard from '../../components/ui/Card';
-import ScoreIndicator from '../../components/common/ScoreIndicator';
+import { MetricCard } from '../../components/ui/Card';
+import ScoreIndicator from '../../components/ScoreIndicator';
 
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#F97316', '#06B6D4', '#84CC16'];
 
@@ -127,33 +127,29 @@ export default function AnalyticsPage() {
 
       {/* Key Insights Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <MetricCard
-          title="دسته‌بندی پربازدید"
-          value={topCategory.name}
-          icon={Award}
-          color="blue"
-        />
+                  <MetricCard
+            label="دسته‌بندی پربازدید"
+            value={topCategory.name}
+            icon={<Award />}
+          />
 
-        <MetricCard
-          title="میانگین کلمات"
-          value={avgWordsPerItem}
-          icon={BookOpen}
-          color="green"
-        />
+                  <MetricCard
+            label="میانگین کلمات"
+            value={avgWordsPerItem}
+            icon={<BookOpen />}
+          />
 
-        <MetricCard
-          title="محتوای با کیفیت"
-          value={`${highQualityPercentage}%`}
-          icon={TrendingUp}
-          color="yellow"
-        />
+                  <MetricCard
+            label="محتوای با کیفیت"
+            value={`${highQualityPercentage}%`}
+            icon={<TrendingUp />}
+          />
 
-        <MetricCard
-          title="منابع فعال"
-          value={Object.keys(stats.topDomains).length}
-          icon={Globe}
-          color="purple"
-        />
+                  <MetricCard
+            label="منابع فعال"
+            value={Object.keys(stats.topDomains).length}
+            icon={<Globe />}
+          />
       </div>
 
       {/* Time Series Chart */}

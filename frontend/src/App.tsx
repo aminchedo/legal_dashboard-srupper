@@ -1,45 +1,29 @@
-import React, { useEffect, useState } from 'react'
-import { Bar } from 'react-chartjs-2'
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Tooltip,
-  Legend,
-} from 'chart.js'
-import { Loader2 } from 'lucide-react'
+import React, { useEffect } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import AppRoutes from './routes/AppRoutes';
+import DashboardPage from './pages/Dashboard/DashboardPage';
+import JobsListPage from './pages/Jobs/JobsListPage';
+import DocumentsListPage from './pages/Documents/DocumentsListPage';
+import SystemHealthPage from './pages/System/SystemHealthPage';
+import ProxiesPage from './pages/Proxies/ProxiesPage';
+import SettingsPage from './pages/Settings/SettingsPage';
+import HelpPage from './pages/Help/HelpPage';
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend)
+// Create QueryClient properly - NO try-catch needed
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+      staleTime: 1000 * 60 * 5, // 5 minutes
+    },
+  },
+});
 
-interface StatsData {
-  totalItems: number
-  recentItems: number
-  categories: Record<string, number>
-  avgRating: number
-  todayStats: { success_rate: number }
-  weeklyTrend: { day: string; success: number }[]
-  monthlyGrowth: number
-}
-
-interface ActivityItem {
-  id: string
-  title: string
-  domain: string
-  status: string
-}
-
-interface ActivityData {
-  items: ActivityItem[]
-}
-
-const App: React.FC = () => {
-  const [stats, setStats] = useState<StatsData | null>(null)
-  const [activity, setActivity] = useState<ActivityData | null>(null)
-  const [error, setError] = useState<string | null>(null)
-
+function App() {
   useEffect(() => {
-    const fetchData = async () => {
+     const fetchData = async () => {
       try {
         const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
         const [statsRes, activityRes] = await Promise.all([
@@ -55,96 +39,49 @@ const App: React.FC = () => {
         setActivity(await activityRes.json())
       } catch (err) {
         setError((err as Error).message)
-      }
-    }
+     // Hide loading screen when React app loads
+    const hideLoadingScreen = () => {
+      const loadingScreen = document.getElementById('loading-screen');
+      if (loadingScreen) {
+        loadingScreen.classList.add('fade-out');
+        setTimeout(() => {
+          if (loadingScreen.parentNode) {
+            loadingScreen.parentNode.removeChild(loadingScreen);
+          }
+        }, 600);
+       }
+    };
 
-    fetchData()
-  }, [])
-
-  if (error) {
-    return (
-      <div className="flex items-center justify-center h-screen text-red-600">
-        Error loading data: {error}
-      </div>
-    )
-  }
-
-  if (!stats || !activity) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <Loader2 className="w-10 h-10 animate-spin text-indigo-600" />
-      </div>
-    )
-  }
-
-  const barData = {
-    labels: stats.weeklyTrend.map((d) => d.day),
-    datasets: [
-      {
-        label: 'Successful Items',
-        data: stats.weeklyTrend.map((d) => d.success),
-        backgroundColor: '#4f46e5',
-      },
-    ],
-  }
+    const timer = setTimeout(hideLoadingScreen, 500);
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
-    <div className="p-6 space-y-8 max-w-5xl mx-auto">
-      <h1 className="text-3xl font-bold text-center">Dashboard</h1>
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Total Items" value={stats.totalItems.toLocaleString()} />
-        <StatCard title="Recent Items" value={stats.recentItems.toLocaleString()} />
-        <StatCard title="Avg. Rating" value={stats.avgRating.toFixed(2)} />
-        <StatCard title="Monthly Growth (%)" value={stats.monthlyGrowth.toFixed(1)} />
-      </div>
-
-      <div>
-        <h2 className="text-xl font-semibold mb-2">Weekly Success Trend</h2>
-        <Bar data={barData} />
-      </div>
-
-      <div>
-        <h2 className="text-xl font-semibold mb-2">Recent Activity</h2>
-        <ul className="space-y-2">
-          {activity.items.map((item) => (
-            <li
-              key={item.id}
-              className="p-4 bg-white rounded shadow flex justify-between items-center"
-            >
-              <div>
-                <p className="font-medium">{item.title}</p>
-                <p className="text-sm text-gray-500">{item.domain}</p>
-              </div>
-              <StatusBadge status={item.status} />
-            </li>
-          ))}
-        </ul>
-      </div>
-    </div>
-  )
+    <QueryClientProvider client={queryClient}>
+      <Router>
+        <AppRoutes>
+          <Routes>
+            {/* Main application routes */}
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/jobs" element={<JobsListPage />} />
+            <Route path="/documents" element={<DocumentsListPage />} />
+            <Route path="/system" element={<SystemHealthPage />} />
+            <Route path="/proxies" element={<ProxiesPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/help" element={<HelpPage />} />
+            
+            {/* Legacy routes - redirect to new structure */}
+            <Route path="/data" element={<Navigate to="/documents" replace />} />
+            <Route path="/analytics" element={<Navigate to="/dashboard" replace />} />
+            
+            {/* Fallback */}
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+        </AppRoutes>
+      </Router>
+    </QueryClientProvider>
+  );
 }
 
-const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
-  const color =
-    status === 'completed'
-      ? 'bg-emerald-500'
-      : status === 'processing'
-      ? 'bg-amber-500'
-      : 'bg-rose-500'
-  return (
-    <span
-      className={`${color} text-white text-xs font-medium px-2 py-1 rounded-full capitalize`}
-    >
-      {status}
-    </span>
-  )
-}
-
-const StatCard: React.FC<{ title: string; value: string }> = ({ title, value }) => (
-  <div className="p-4 bg-white rounded shadow">
-    <p className="text-sm text-gray-500">{title}</p>
-    <p className="mt-1 text-2xl font-semibold">{value}</p>
-  </div>
-)
-
-export default App
+export default App;
