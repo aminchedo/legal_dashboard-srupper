@@ -4,12 +4,17 @@
 set -e
 
 # Configuration
-DOCKER_USERNAME="24498743"
-DOCKER_TOKEN="dckr_pat_11XAFYII0Y7K9QGZD0X5A11Z18"
+DOCKER_USERNAME="${DOCKER_USERNAME:-}"
+DOCKER_TOKEN="${DOCKER_TOKEN:-}"
 IMAGE_NAME="legal-dashboard"
 BASE_CONTAINER_NAME="legal-dashboard"
 DEPLOYMENT_MODE=${1:-production}
 PULL_LATEST=${2:-"--pull-latest"}
+
+if [ -z "$DOCKER_USERNAME" ] || [ -z "$DOCKER_TOKEN" ]; then
+  echo "❌ Missing Docker credentials. Set DOCKER_USERNAME and DOCKER_TOKEN environment variables."
+  exit 1
+fi
 
 # Colors for output
 RED='\033[0;31m'
@@ -201,90 +206,19 @@ if container_running "$CONTAINER_NAME"; then
         if [ "$health_status" = "healthy" ]; then
             print_status "Health check passed!"
             break
-        elif [ "$health_status" = "unhealthy" ]; then
-            print_error "Health check failed!"
-            break
+        else
+            echo "Waiting for health check... ($timeout seconds remaining)"
+            sleep 5
+            timeout=$((timeout-5))
         fi
-        sleep 2
-        timeout=$((timeout-2))
     done
-    
-    # Show container logs (last 15 lines)
-    echo ""
-    print_info "Recent Logs:"
-    docker logs --tail 15 "$CONTAINER_NAME"
-    
-    # Test application endpoint
-    echo ""
-    print_info "Testing Application Endpoint:"
-    sleep 3
-    if curl -f -s "http://localhost:$APP_PORT/health" >/dev/null 2>&1; then
-        print_status "Health endpoint responding correctly"
-    elif curl -f -s "http://localhost:$APP_PORT/" >/dev/null 2>&1; then
-        print_status "Application responding (health endpoint may not exist)"
-    else
-        print_warning "Application endpoint not responding yet (may need more time)"
-    fi
-    
 else
-    print_error "Container failed to start!"
-    echo ""
-    print_info "Container logs:"
-    docker logs "$CONTAINER_NAME" 2>/dev/null || echo "No logs available"
+    print_error "Container failed to start. Check logs with: docker logs $CONTAINER_NAME"
     exit 1
 fi
 
-# Cleanup old images
-print_info "Cleaning up old Docker images..."
-docker image prune -f >/dev/null 2>&1 || true
+# Display logs tail
+print_info "Recent container logs:"
+docker logs --tail 50 "$CONTAINER_NAME" || true
 
-echo ""
-print_status "🎉 Deployment completed successfully!"
-echo ""
-print_info "📋 Deployment Summary:"
-echo "   Mode:           $DEPLOYMENT_MODE"
-echo "   Container:      $CONTAINER_NAME"
-echo "   Port:           $APP_PORT"
-echo "   Data Directory: $DATA_DIR"
-echo "   Network:        $NETWORK_NAME"
-
-if [ "$DEPLOYMENT_MODE" = "production" ]; then
-    echo "   Application:    http://localhost"
-    echo "   Health Check:   http://localhost/health"
-else
-    echo "   Application:    http://localhost:8000"
-    echo "   Health Check:   http://localhost:8000/health"
-fi
-
-echo ""
-print_info "📋 Useful commands:"
-echo "   View logs:       docker logs -f $CONTAINER_NAME"
-echo "   Stop container:  docker stop $CONTAINER_NAME"
-echo "   Restart:         docker restart $CONTAINER_NAME"
-echo "   Remove:          docker rm -f $CONTAINER_NAME"
-echo "   Shell access:    docker exec -it $CONTAINER_NAME sh"
-echo "   Health status:   docker inspect --format='{{.State.Health.Status}}' $CONTAINER_NAME"
-
-# Create systemd service file for production
-if [ "$DEPLOYMENT_MODE" = "production" ]; then
-    SERVICE_FILE="/tmp/legal-dashboard.service"
-    cat > "$SERVICE_FILE" << EOF
-[Unit]
-Description=Legal Dashboard Container
-Requires=docker.service
-After=docker.service
-
-[Service]
-Type=oneshot
-RemainAfterExit=yes
-ExecStart=/usr/bin/docker start $CONTAINER_NAME
-ExecStop=/usr/bin/docker stop $CONTAINER_NAME
-TimeoutStartSec=0
-
-[Install]
-WantedBy=multi-user.target
-EOF
-    
-    print_info "Systemd service file created at: $SERVICE_FILE"
-    print_info "To enable auto-start: sudo cp $SERVICE_FILE /etc/systemd/system/ && sudo systemctl enable legal-dashboard"
-fi
+print_status "Deployment completed successfully!"

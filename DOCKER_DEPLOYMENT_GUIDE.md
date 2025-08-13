@@ -6,13 +6,13 @@ This guide provides complete instructions for deploying your Legal Dashboard Fas
 
 - Docker installed on your server
 - Docker Compose installed
-- Your Docker Hub credentials: `24498743` / `Ll12345678@`
+- Your Docker Hub credentials: `<your_dockerhub_username>` / `<your_dockerhub_access_token>`
 
 ## 🔥 Quick Start (Execute These Commands)
 
 ### 1. Login to Docker Hub
 ```bash
-echo "Ll12345678@" | docker login -u 24498743 --password-stdin
+echo "$DOCKER_TOKEN" | docker login -u "$DOCKER_USERNAME" --password-stdin
 ```
 
 ### 2. Build and Push Image
@@ -21,17 +21,17 @@ echo "Ll12345678@" | docker login -u 24498743 --password-stdin
 docker build -t legal-dashboard .
 
 # Tag for Docker Hub
-docker tag legal-dashboard 24498743/legal-dashboard:latest
+docker tag legal-dashboard ${DOCKER_USERNAME}/legal-dashboard:latest
 
 # Push to Docker Hub
-docker push 24498743/legal-dashboard:latest
+docker push ${DOCKER_USERNAME}/legal-dashboard:latest
 ```
 
 ### 3. Deploy Immediately
 
 #### Option A: Simple Local Deployment
 ```bash
-docker run -d -p 8000:8000 --name legal-dashboard 24498743/legal-dashboard:latest
+docker run -d -p 8000:8000 --name legal-dashboard ${DOCKER_USERNAME}/legal-dashboard:latest
 ```
 
 #### Option B: Production Deployment
@@ -267,7 +267,7 @@ The repository includes a GitHub Actions workflow that automatically:
 
 **Setup:**
 1. Add `DOCKER_PASSWORD` secret to your GitHub repository
-2. Set the value to: `Ll12345678@`
+2. Set the value to your Docker Hub access token (PAT)
 3. Push to main branch to trigger automatic deployment
 
 ## 📞 Support Commands
@@ -302,7 +302,7 @@ docker system prune -a
 
 Your Legal Dashboard is now ready for deployment! Use these commands:
 
-1. **Quick Test**: `docker run -d -p 8000:8000 --name legal-dashboard 24498743/legal-dashboard:latest`
+1. **Quick Test**: `docker run -d -p 8000:8000 --name legal-dashboard ${DOCKER_USERNAME}/legal-dashboard:latest`
 2. **Production**: `./docker-deploy.sh production`
 3. **Full Stack**: `docker-compose -f docker-compose.production.yml up -d`
 

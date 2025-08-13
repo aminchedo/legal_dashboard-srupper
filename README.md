@@ -7,10 +7,10 @@ A modern legal analytics dashboard with a React + Vite frontend and an Express +
 ### Quick Docker Start
 ```bash
 # Pull and run the latest Docker image
-docker pull 24498743/legal-dashboard:latest
+docker pull ${DOCKER_USERNAME}/legal-dashboard:latest
 docker run -d -p 8000:8000 --name legal-dashboard \
   --restart unless-stopped \
-  24498743/legal-dashboard:latest
+  ${DOCKER_USERNAME}/legal-dashboard:latest
 
 # Access the application
 curl http://localhost:8000/health
@@ -34,12 +34,12 @@ docker-compose -f docker-compose.production.yml up -d
 - ✅ **Code Scanning**: Security results automatically uploaded to GitHub Security tab
 
 ### Docker Hub Repository
-🐳 **Image:** [`24498743/legal-dashboard`](https://hub.docker.com/r/24498743/legal-dashboard)
+🐳 **Image:** `[${DOCKER_USERNAME}/legal-dashboard](https://hub.docker.com/r/${DOCKER_USERNAME}/legal-dashboard)`
 
 ### GitHub Secrets Setup (Optional - for enhanced security)
 Add these secrets to [Repository Settings → Secrets and Variables → Actions](../../settings/secrets/actions):
-- `DOCKER_USERNAME`: `24498743`
-- `DOCKER_PASSWORD`: Your Docker Hub Personal Access Token
+- `DOCKER_USERNAME`: your Docker Hub username
+- `DOCKER_TOKEN`: your Docker Hub Personal Access Token
 
 ## Prerequisites
 - Node.js: >= 18 (recommended LTS)

@@ -37,8 +37,8 @@ Add these required secrets:
 
 ```bash
 # Core Docker Secrets
-DOCKER_USERNAME=24498743
-DOCKER_TOKEN=dckr_pat_11XAFYII0Y7K9QGZD0X5A11Z18
+DOCKER_USERNAME=<your_dockerhub_username>
+DOCKER_TOKEN=<your_dockerhub_access_token>
 
 # Platform-specific secrets (choose your platform)
 DIGITALOCEAN_ACCESS_TOKEN=your_do_token
@@ -66,8 +66,8 @@ git push origin v1.0.0
 #### Option B: Manual Deployment (Local)
 ```bash
 # Set environment variables
-export DOCKER_TOKEN="dckr_pat_11XAFYII0Y7K9QGZD0X5A11Z18"
-export DOCKER_USERNAME="24498743"
+export DOCKER_TOKEN="<your_dockerhub_access_token>"
+export DOCKER_USERNAME="<your_dockerhub_username>"
 
 # Deploy to specific platform
 ./scripts/secure-deploy.sh docker-hub
@@ -177,7 +177,7 @@ docker build --no-cache -t legal-dashboard:test .
 ### Debug Commands
 ```bash
 # Test container locally
-docker run -p 8000:8000 24498743/legal-dashboard:latest
+docker run -p 8000:8000 ${DOCKER_USERNAME:-your-username}/legal-dashboard:latest
 
 # Check container logs
 docker logs <container_id>
@@ -186,7 +186,7 @@ docker logs <container_id>
 curl http://localhost:8000/health
 
 # Verify image exists
-docker pull 24498743/legal-dashboard:latest
+docker pull ${DOCKER_USERNAME}/legal-dashboard:latest
 ```
 
 ## 🔄 Continuous Deployment

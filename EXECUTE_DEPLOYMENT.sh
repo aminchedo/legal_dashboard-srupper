@@ -10,7 +10,8 @@ set -e
 
 # Configuration
 DOCKER_USERNAME="24498743"
-DOCKER_PASSWORD="Ll12345678@"
+# Expect DOCKER_TOKEN to be set in the environment
+: "${DOCKER_TOKEN:?Set DOCKER_TOKEN (Docker Hub PAT) in your environment before running this script}"
 IMAGE_NAME="legal-dashboard"
 CONTAINER_NAME="legal-dashboard"
 
@@ -20,7 +21,7 @@ echo ""
 
 # Step 1: Login to Docker Hub
 echo "🔐 Step 1: Logging into Docker Hub..."
-echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+echo "$DOCKER_TOKEN" | docker login -u "$DOCKER_USERNAME" --password-stdin
 if [ $? -eq 0 ]; then
     echo "✅ Successfully logged into Docker Hub"
 else

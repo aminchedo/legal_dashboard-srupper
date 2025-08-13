@@ -10,6 +10,11 @@ on:
       - main
       - master
 
+permissions:
+  contents: read
+  packages: write
+  security-events: write
+
 env:
   DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
   DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
@@ -77,7 +82,7 @@ jobs:
 
     - name: Upload Security Results
       uses: github/codeql-action/upload-sarif@v3
-      if: always()
+      if: ${{ always() && hashFiles('trivy-results.sarif') != '' }}
       with:
         sarif_file: 'trivy-results.sarif'
 
@@ -92,8 +97,12 @@ jobs:
         echo "- **Branch**: \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### 🔒 Security:" >> $GITHUB_STEP_SUMMARY
-        echo "- Trivy security scan completed" >> $GITHUB_STEP_SUMMARY
-        echo "- Results uploaded to GitHub Security tab" >> $GITHUB_STEP_SUMMARY
+        if [ -f trivy-results.sarif ]; then
+          echo "- Trivy security scan completed" >> $GITHUB_STEP_SUMMARY
+          echo "- Results uploaded to GitHub Security tab" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "- Trivy SARIF not generated" >> $GITHUB_STEP_SUMMARY
+        fi
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### 🐳 Quick Run Commands:" >> $GITHUB_STEP_SUMMARY
         echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY

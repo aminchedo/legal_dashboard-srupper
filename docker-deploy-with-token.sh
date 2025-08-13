@@ -3,11 +3,11 @@
 # Docker deployment script with token authentication
 # Usage: ./docker-deploy-with-token.sh
 
-set -e
+set -euo pipefail
 
 # Configuration
-DOCKER_TOKEN="dckr_pat_11XAFYII0Y7K9QGZD0X5A11Z18"
-DOCKER_USERNAME="24498743"
+: "${DOCKER_TOKEN:?Set DOCKER_TOKEN to your Docker Hub access token (PAT)}"
+: "${DOCKER_USERNAME:?Set DOCKER_USERNAME to your Docker Hub username}"
 IMAGE_NAME="legal-dashboard"
 TAG="latest"
 REGISTRY="registry-1.docker.io"

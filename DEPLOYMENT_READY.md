@@ -27,15 +27,15 @@ Your Legal Dashboard FastAPI application is now fully prepared for Docker deploy
 ### Option 2: Manual Commands
 ```bash
 # Login to Docker Hub
-echo "Ll12345678@" | docker login -u 24498743 --password-stdin
+echo "$DOCKER_TOKEN" | docker login -u "$DOCKER_USERNAME" --password-stdin
 
 # Build and push
 docker build -t legal-dashboard .
-docker tag legal-dashboard 24498743/legal-dashboard:latest
-docker push 24498743/legal-dashboard:latest
+docker tag legal-dashboard ${DOCKER_USERNAME}/legal-dashboard:latest
+docker push ${DOCKER_USERNAME}/legal-dashboard:latest
 
 # Deploy locally
-docker run -d -p 8000:8000 --name legal-dashboard 24498743/legal-dashboard:latest
+docker run -d -p 8000:8000 --name legal-dashboard ${DOCKER_USERNAME}/legal-dashboard:latest
 ```
 
 ### Option 3: Production Deployment Script
@@ -60,9 +60,9 @@ docker-compose -f docker-compose.production.yml up -d
 
 ## 📊 Your Docker Hub Image
 
-- **Repository**: `24498743/legal-dashboard:latest`
-- **Username**: `24498743`
-- **Password**: `Ll12345678@`
+- **Repository**: `${DOCKER_USERNAME}/legal-dashboard:latest`
+- **Username**: `${DOCKER_USERNAME}`
+- **Password**: `<your_dockerhub_access_token>`
 
 ## 🔍 Verification Commands
 
@@ -81,7 +81,9 @@ curl http://localhost:8000/
 ## 🛠️ GitHub Actions Setup
 
 1. Go to your GitHub repository settings
-2. Add repository secret: `DOCKER_PASSWORD` = `Ll12345678@`
+2. Add repository secrets:
+   - `DOCKER_USERNAME` = your Docker Hub username
+   - `DOCKER_TOKEN` = your Docker Hub access token (PAT)
 3. Push to main branch to trigger auto-deployment
 
 ## 📋 What Each File Does
@@ -140,11 +142,11 @@ curl http://localhost:8000/
 ./EXECUTE_DEPLOYMENT.sh
 
 # OR STEP BY STEP
-echo "Ll12345678@" | docker login -u 24498743 --password-stdin
+echo "$DOCKER_TOKEN" | docker login -u "$DOCKER_USERNAME" --password-stdin
 docker build -t legal-dashboard .
-docker tag legal-dashboard 24498743/legal-dashboard:latest  
-docker push 24498743/legal-dashboard:latest
-docker run -d -p 8000:8000 --name legal-dashboard 24498743/legal-dashboard:latest
+docker tag legal-dashboard ${DOCKER_USERNAME}/legal-dashboard:latest  
+docker push ${DOCKER_USERNAME}/legal-dashboard:latest
+docker run -d -p 8000:8000 --name legal-dashboard ${DOCKER_USERNAME}/legal-dashboard:latest
 
 # VERIFY DEPLOYMENT
 curl http://localhost:8000/health

@@ -20,13 +20,13 @@ All deployment files have been successfully created and configured for your Lega
 ## 🐳 DOCKER CONFIGURATION
 
 ### Docker Hub Repository
-- **Username**: `24498743`
-- **Password**: `Ll12345678@`
-- **Repository**: `24498743/legal-dashboard`
+- **Username**: `${DOCKER_USERNAME}`
+- **Password**: `<your_dockerhub_access_token>`
+- **Repository**: `${DOCKER_USERNAME}/legal-dashboard`
 
 ### Image Tags
-- `24498743/legal-dashboard:latest` (production)
-- `24498743/legal-dashboard:YYYYMMDD_HHMMSS` (timestamped)
+- `${DOCKER_USERNAME}/legal-dashboard:latest` (production)
+- `${DOCKER_USERNAME}/legal-dashboard:YYYYMMDD_HHMMSS` (timestamped)
 
 ## 🔧 AZURE WEB APP CONFIGURATION
 
@@ -35,14 +35,14 @@ All deployment files have been successfully created and configured for your Lega
 Container Type: Single Container
 Image Source: Docker Hub
 Access Type: Public
-Image and tag: 24498743/legal-dashboard:latest
+Image and tag: ${DOCKER_USERNAME}/legal-dashboard:latest
 ```
 
 ### Application Settings (Environment Variables)
 ```
 DOCKER_REGISTRY_SERVER_URL = https://index.docker.io
-DOCKER_REGISTRY_SERVER_USERNAME = 24498743
-DOCKER_REGISTRY_SERVER_PASSWORD = Ll12345678@
+DOCKER_REGISTRY_SERVER_USERNAME = ${DOCKER_USERNAME}
+DOCKER_REGISTRY_SERVER_PASSWORD = <your_dockerhub_access_token>
 WEBSITES_ENABLE_APP_SERVICE_STORAGE = false
 WEBSITES_PORT = 8000
 ```

@@ -22,7 +22,7 @@ rm -rf test_env
 
 # 2. Login to Docker Hub
 echo "🐳 Logging into Docker Hub..."
-echo "Ll12345678@" | docker login -u 24498743 --password-stdin
+echo "$DOCKER_TOKEN" | docker login -u "$DOCKER_USERNAME" --password-stdin
 
 # 3. Build Docker image
 echo "🔨 Building Docker image..."
@@ -53,11 +53,11 @@ docker rm legal-test
 echo "🚀 Pushing to Docker Hub..."
 TAG_TS=$(date +%Y%m%d_%H%M%S)
 
-docker tag legal-dashboard 24498743/legal-dashboard:latest
-docker tag legal-dashboard 24498743/legal-dashboard:${TAG_TS}
+docker tag legal-dashboard ${DOCKER_USERNAME}/legal-dashboard:latest
+docker tag legal-dashboard ${DOCKER_USERNAME}/legal-dashboard:${TAG_TS}
 
-docker push 24498743/legal-dashboard:latest
-docker push 24498743/legal-dashboard:${TAG_TS}
+docker push ${DOCKER_USERNAME}/legal-dashboard:latest
+docker push ${DOCKER_USERNAME}/legal-dashboard:${TAG_TS}
 
 echo "✅ Deployment test completed!"
 echo "🌐 Image: 24498743/legal-dashboard:latest"
@@ -102,23 +102,23 @@ docker rm legal-test
 ### 4. Test Docker Hub Push
 ```bash
 # Login
-echo "Ll12345678@" | docker login -u 24498743 --password-stdin
+echo "$DOCKER_TOKEN" | docker login -u "$DOCKER_USERNAME" --password-stdin
 
 # Tag
-docker tag legal-dashboard 24498743/legal-dashboard:latest
+docker tag legal-dashboard ${DOCKER_USERNAME}/legal-dashboard:latest
 
 # Push
-docker push 24498743/legal-dashboard:latest
+docker push ${DOCKER_USERNAME}/legal-dashboard:latest
 
 # Verify
-docker pull 24498743/legal-dashboard:latest
+docker pull ${DOCKER_USERNAME}/legal-dashboard:latest
 ```
 
 ### 5. Test Production Image
 ```bash
 # Pull from Docker Hub and test
-docker pull 24498743/legal-dashboard:latest
-docker run -d -p 8000:8000 --name prod-test 24498743/legal-dashboard:latest
+docker pull ${DOCKER_USERNAME}/legal-dashboard:latest
+docker run -d -p 8000:8000 --name prod-test ${DOCKER_USERNAME}/legal-dashboard:latest
 
 sleep 5
 curl http://localhost:8000
