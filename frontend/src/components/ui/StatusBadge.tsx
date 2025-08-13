@@ -122,4 +122,5 @@ const StatusBadge = React.forwardRef<HTMLSpanElement, StatusBadgeProps>(
 
 StatusBadge.displayName = 'StatusBadge';
 
+export default StatusBadge;
 export { StatusBadge };

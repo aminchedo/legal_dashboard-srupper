@@ -1,407 +1,154 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
-  FileText, Upload, Search, Filter, Download, Trash2, 
-  Eye, Edit, Star, StarOff, FolderOpen, Calendar,
-  ChevronDown, MoreVertical, File, FileImage, 
-  FilePdf, FileSpreadsheet, Grid, List, SortAsc, SortDesc
+  Search, 
+  Filter, 
+  Upload, 
+  FileText, 
+  Calendar, 
+  User, 
+  Download, 
+  Eye, 
+  Edit3, 
+  Trash2, 
+  Grid, 
+  List, 
+  SortAsc, 
+  SortDesc, 
+  MoreVertical,
+  Tag,
+  Clock,
+  FileCheck,
+  AlertTriangle
 } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, StatusBadge } from '../../components/ui';
+import { 
+  Card, 
+  CardHeader, 
+  CardTitle, 
+  CardContent, 
+  Button, 
+  Input, 
+  Select, 
+  FileUpload, 
+  StatusBadge 
+} from '../../components/ui';
 import { LEGAL_TERMINOLOGY } from '../../lib/terminology';
-import { cn, formatPersianNumber, formatBytes, formatRelativeTime } from '../../lib/utils';
+import { cn, formatBytes, formatDate, formatRelativeTime } from '../../lib/utils';
 
-// Types
+// Mock data for documents
 interface Document {
   id: string;
   title: string;
-  description: string;
+  description?: string;
   category: string;
-  type: 'pdf' | 'docx' | 'txt' | 'image' | 'excel' | 'other';
+  type: 'contract' | 'legal_opinion' | 'court_ruling' | 'legislation' | 'correspondence' | 'other';
+  status: 'active' | 'archived' | 'pending_review' | 'under_revision';
+  priority: 'high' | 'medium' | 'low';
   size: number;
+  format: string;
   createdAt: Date;
   updatedAt: Date;
+  createdBy: string;
   tags: string[];
-  isStarred: boolean;
-  status: 'processed' | 'processing' | 'error' | 'pending';
-  extractedText?: string;
-  metadata?: Record<string, any>;
-  thumbnail?: string;
+  version: number;
+  isConfidential: boolean;
 }
 
-type ViewMode = 'grid' | 'list';
-type SortField = 'title' | 'createdAt' | 'size' | 'category';
-type SortDirection = 'asc' | 'desc';
-
-// Mock data
 const mockDocuments: Document[] = [
   {
     id: '1',
-    title: 'قرارداد خرید املاک تجاری',
-    description: 'قرارداد خرید یک واحد تجاری در منطقه ۱ تهران',
-    category: 'املاک',
-    type: 'pdf',
-    size: 2456789,
+    title: 'قرارداد خدمات حقوقی شرکت آلفا',
+    description: 'قرارداد ارائه خدمات مشاوره حقوقی به مدت یک سال',
+    category: 'قراردادها',
+    type: 'contract',
+    status: 'active',
+    priority: 'high',
+    size: 2048576,
+    format: 'PDF',
     createdAt: new Date('2024-01-15'),
-    updatedAt: new Date('2024-01-15'),
-    tags: ['قرارداد', 'املاک', 'تجاری'],
-    isStarred: true,
-    status: 'processed'
+    updatedAt: new Date('2024-01-20'),
+    createdBy: 'احمد محمدی',
+    tags: ['قرارداد', 'خدمات', 'حقوقی'],
+    version: 2,
+    isConfidential: true
   },
   {
     id: '2',
-    title: 'دادنامه دیوان عدالت اداری',
-    description: 'رای شماره ۱۲۳۴ دیوان عدالت اداری در خصوص تخلف اداری',
-    category: 'آرا قضایی',
-    type: 'pdf',
-    size: 1876543,
-    createdAt: new Date('2024-01-14'),
-    updatedAt: new Date('2024-01-14'),
-    tags: ['دادنامه', 'دیوان عدالت', 'اداری'],
-    isStarred: false,
-    status: 'processed'
+    title: 'نظریه حقوقی در خصوص مالکیت فکری',
+    description: 'بررسی جنبه‌های حقوقی حمایت از مالکیت فکری در قوانین ایران',
+    category: 'نظریات حقوقی',
+    type: 'legal_opinion',
+    status: 'pending_review',
+    priority: 'medium',
+    size: 1536000,
+    format: 'DOCX',
+    createdAt: new Date('2024-01-10'),
+    updatedAt: new Date('2024-01-18'),
+    createdBy: 'مریم احمدی',
+    tags: ['مالکیت فکری', 'نظریه', 'حقوق'],
+    version: 1,
+    isConfidential: false
   },
   {
     id: '3',
-    title: 'لایحه قانونی مالیات بر ارزش افزوده',
-    description: 'متن کامل لایحه اصلاح قانون مالیات بر ارزش افزوده',
-    category: 'قوانین',
-    type: 'docx',
-    size: 987654,
-    createdAt: new Date('2024-01-13'),
-    updatedAt: new Date('2024-01-13'),
-    tags: ['قانون', 'مالیات', 'ارزش افزوده'],
-    isStarred: true,
-    status: 'processing'
-  },
-  {
-    id: '4',
-    title: 'گزارش تحلیل آرای حقوقی',
-    description: 'تحلیل جامع آرای صادره در حوزه حقوق تجارت',
-    category: 'گزارشات',
-    type: 'excel',
-    size: 3456789,
-    createdAt: new Date('2024-01-12'),
-    updatedAt: new Date('2024-01-12'),
-    tags: ['گزارش', 'تحلیل', 'حقوق تجارت'],
-    isStarred: false,
-    status: 'processed'
-  },
-  {
-    id: '5',
-    title: 'مدارک شناسایی متهم',
-    description: 'تصاویر و مدارک شناسایی در پرونده کیفری',
-    category: 'مدارک',
-    type: 'image',
-    size: 1234567,
-    createdAt: new Date('2024-01-11'),
-    updatedAt: new Date('2024-01-11'),
-    tags: ['مدارک', 'شناسایی', 'کیفری'],
-    isStarred: false,
-    status: 'error'
+    title: 'رای دیوان عدالت اداری - پرونده ۱۴۰۳۰۱۲۳۴',
+    description: 'رای دیوان در خصوص ابطال تصمیم اداری شهرداری',
+    category: 'آراء قضایی',
+    type: 'court_ruling',
+    status: 'archived',
+    priority: 'low',
+    size: 892416,
+    format: 'PDF',
+    createdAt: new Date('2024-01-05'),
+    updatedAt: new Date('2024-01-05'),
+    createdBy: 'سعید رضایی',
+    tags: ['دیوان', 'عدالت اداری', 'رای'],
+    version: 1,
+    isConfidential: false
   }
 ];
 
-const categories = ['همه', 'املاک', 'آرا قضایی', 'قوانین', 'گزارشات', 'مدارک'];
-
-const getFileIcon = (type: Document['type']) => {
-  switch (type) {
-    case 'pdf': return FilePdf;
-    case 'image': return FileImage;
-    case 'excel': return FileSpreadsheet;
-    case 'docx': return FileText;
-    default: return File;
-  }
-};
-
-const getFileTypeColor = (type: Document['type']) => {
-  switch (type) {
-    case 'pdf': return 'text-red-600 bg-red-50';
-    case 'image': return 'text-green-600 bg-green-50';
-    case 'excel': return 'text-emerald-600 bg-emerald-50';
-    case 'docx': return 'text-blue-600 bg-blue-50';
-    default: return 'text-neutral-600 bg-neutral-50';
-  }
-};
-
-const DocumentCard: React.FC<{
-  document: Document;
-  onToggleStar: (id: string) => void;
-  onView: (id: string) => void;
-  onEdit: (id: string) => void;
-  onDelete: (id: string) => void;
-  onDownload: (id: string) => void;
-}> = ({ document, onToggleStar, onView, onEdit, onDelete, onDownload }) => {
-  const FileIcon = getFileIcon(document.type);
-  const fileColorClass = getFileTypeColor(document.type);
-
-  return (
-    <Card className="group hover:shadow-lg transition-all duration-200 hover:-translate-y-1">
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between mb-3">
-          <div className={cn("p-2 rounded-lg", fileColorClass)}>
-            <FileIcon className="w-6 h-6" />
-          </div>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onToggleStar(document.id)}
-              className="opacity-0 group-hover:opacity-100 transition-opacity"
-            >
-              {document.isStarred ? (
-                <Star className="w-4 h-4 text-yellow-500 fill-current" />
-              ) : (
-                <StarOff className="w-4 h-4" />
-              )}
-            </Button>
-            <div className="relative">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                <MoreVertical className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        <div className="mb-3">
-          <h3 className="font-semibold text-neutral-900 line-clamp-2 mb-1">
-            {document.title}
-          </h3>
-          <p className="text-sm text-neutral-600 line-clamp-2">
-            {document.description}
-          </p>
-        </div>
-
-        <div className="flex items-center justify-between mb-3">
-          <StatusBadge variant={
-            document.status === 'processed' ? 'success' :
-            document.status === 'processing' ? 'warning' :
-            document.status === 'error' ? 'error' : 'secondary'
-          }>
-            {document.status === 'processed' && 'پردازش شده'}
-            {document.status === 'processing' && 'در حال پردازش'}
-            {document.status === 'error' && 'خطا'}
-            {document.status === 'pending' && 'در انتظار'}
-          </StatusBadge>
-          <span className="text-xs text-neutral-500">
-            {formatBytes(document.size)}
-          </span>
-        </div>
-
-        <div className="flex flex-wrap gap-1 mb-3">
-          {document.tags.slice(0, 3).map((tag, index) => (
-            <span
-              key={index}
-              className="px-2 py-1 text-xs bg-neutral-100 text-neutral-700 rounded-full"
-            >
-              {tag}
-            </span>
-          ))}
-          {document.tags.length > 3 && (
-            <span className="px-2 py-1 text-xs bg-neutral-100 text-neutral-700 rounded-full">
-              +{formatPersianNumber(document.tags.length - 3)}
-            </span>
-          )}
-        </div>
-
-        <div className="flex items-center justify-between text-xs text-neutral-500 mb-3">
-          <span>{document.category}</span>
-          <span>{formatRelativeTime(document.createdAt)}</span>
-        </div>
-
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onView(document.id)}
-            className="flex-1"
-          >
-            <Eye className="w-4 h-4 ml-1" />
-            مشاهده
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onDownload(document.id)}
-          >
-            <Download className="w-4 h-4" />
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
-
-const DocumentRow: React.FC<{
-  document: Document;
-  onToggleStar: (id: string) => void;
-  onView: (id: string) => void;
-  onEdit: (id: string) => void;
-  onDelete: (id: string) => void;
-  onDownload: (id: string) => void;
-}> = ({ document, onToggleStar, onView, onEdit, onDelete, onDownload }) => {
-  const FileIcon = getFileIcon(document.type);
-  const fileColorClass = getFileTypeColor(document.type);
-
-  return (
-    <div className="flex items-center p-4 hover:bg-neutral-50 border-b border-neutral-200 last:border-b-0">
-      <div className="flex items-center flex-1 min-w-0">
-        <div className={cn("p-2 rounded-lg mr-3", fileColorClass)}>
-          <FileIcon className="w-5 h-5" />
-        </div>
-        
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <h3 className="font-medium text-neutral-900 truncate">
-              {document.title}
-            </h3>
-            {document.isStarred && (
-              <Star className="w-4 h-4 text-yellow-500 fill-current flex-shrink-0" />
-            )}
-          </div>
-          <p className="text-sm text-neutral-600 truncate">
-            {document.description}
-          </p>
-        </div>
-      </div>
-
-      <div className="flex items-center gap-4 text-sm text-neutral-600">
-        <span className="hidden md:block">{document.category}</span>
-        <span className="hidden lg:block">{formatBytes(document.size)}</span>
-        <span className="hidden xl:block">{formatRelativeTime(document.createdAt)}</span>
-        
-        <StatusBadge
-          variant={
-            document.status === 'processed' ? 'success' :
-            document.status === 'processing' ? 'warning' :
-            document.status === 'error' ? 'error' : 'secondary'
-          }
-          size="sm"
-        >
-          {document.status === 'processed' && 'پردازش شده'}
-          {document.status === 'processing' && 'در حال پردازش'}
-          {document.status === 'error' && 'خطا'}
-          {document.status === 'pending' && 'در انتظار'}
-        </StatusBadge>
-
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onToggleStar(document.id)}
-          >
-            {document.isStarred ? (
-              <Star className="w-4 h-4 text-yellow-500 fill-current" />
-            ) : (
-              <StarOff className="w-4 h-4" />
-            )}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onView(document.id)}
-          >
-            <Eye className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onDownload(document.id)}
-          >
-            <Download className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onDelete(document.id)}
-          >
-            <Trash2 className="w-4 h-4" />
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 const DocumentsListPage: React.FC = () => {
-  const [documents, setDocuments] = useState<Document[]>(mockDocuments);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('همه');
-  const [viewMode, setViewMode] = useState<ViewMode>('grid');
-  const [sortField, setSortField] = useState<SortField>('createdAt');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedType, setSelectedType] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState('');
+  const [sortBy, setSortBy] = useState<'title' | 'createdAt' | 'updatedAt' | 'size'>('updatedAt');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [showUpload, setShowUpload] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
 
-  // Handlers
-  const handleToggleStar = useCallback((id: string) => {
-    setDocuments(prev => 
-      prev.map(doc => 
-        doc.id === id ? { ...doc, isStarred: !doc.isStarred } : doc
-      )
-    );
-  }, []);
+  // Filter and sort documents
+  const filteredAndSortedDocuments = useMemo(() => {
+    let filtered = mockDocuments.filter(doc => {
+      const matchesSearch = searchTerm === '' || 
+        doc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        doc.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        doc.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
+      
+      const matchesCategory = selectedCategory === '' || doc.category === selectedCategory;
+      const matchesType = selectedType === '' || doc.type === selectedType;
+      const matchesStatus = selectedStatus === '' || doc.status === selectedStatus;
+      
+      return matchesSearch && matchesCategory && matchesType && matchesStatus;
+    });
 
-  const handleView = useCallback((id: string) => {
-    console.log('View document:', id);
-  }, []);
-
-  const handleEdit = useCallback((id: string) => {
-    console.log('Edit document:', id);
-  }, []);
-
-  const handleDelete = useCallback((id: string) => {
-    setDocuments(prev => prev.filter(doc => doc.id !== id));
-  }, []);
-
-  const handleDownload = useCallback((id: string) => {
-    console.log('Download document:', id);
-  }, []);
-
-  const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortDirection('asc');
-    }
-  };
-
-  // Filtered and sorted documents
-  const filteredDocuments = useMemo(() => {
-    let filtered = documents;
-
-    // Filter by search query
-    if (searchQuery) {
-      filtered = filtered.filter(doc =>
-        doc.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        doc.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        doc.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
-      );
-    }
-
-    // Filter by category
-    if (selectedCategory !== 'همه') {
-      filtered = filtered.filter(doc => doc.category === selectedCategory);
-    }
-
-    // Sort
+    // Sort documents
     filtered.sort((a, b) => {
-      let aValue: any = a[sortField];
-      let bValue: any = b[sortField];
-
-      if (sortField === 'createdAt') {
+      let aValue: any = a[sortBy];
+      let bValue: any = b[sortBy];
+      
+      if (sortBy === 'createdAt' || sortBy === 'updatedAt') {
         aValue = new Date(aValue).getTime();
         bValue = new Date(bValue).getTime();
       }
-
-      if (typeof aValue === 'string') {
+      
+      if (sortBy === 'title') {
         aValue = aValue.toLowerCase();
         bValue = bValue.toLowerCase();
       }
-
-      if (sortDirection === 'asc') {
+      
+      if (sortOrder === 'asc') {
         return aValue > bValue ? 1 : -1;
       } else {
         return aValue < bValue ? 1 : -1;
@@ -409,225 +156,375 @@ const DocumentsListPage: React.FC = () => {
     });
 
     return filtered;
-  }, [documents, searchQuery, selectedCategory, sortField, sortDirection]);
+  }, [searchTerm, selectedCategory, selectedType, selectedStatus, sortBy, sortOrder]);
 
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-neutral-900">
-            {LEGAL_TERMINOLOGY.documents.title}
-          </h1>
-          <p className="text-neutral-600 mt-1">
-            مدیریت و سازماندهی اسناد حقوقی
-          </p>
-        </div>
-        <Button icon={Upload} variant="primary">
-          بارگذاری سند جدید
-        </Button>
-      </div>
+  const handleFileUpload = async (files: File[]) => {
+    // Simulate upload process
+    console.log('Uploading files:', files);
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    setShowUpload(false);
+  };
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card>
+  const getStatusBadge = (status: Document['status']) => {
+    const statusMap = {
+      active: { variant: 'success' as const, label: LEGAL_TERMINOLOGY.status.active },
+      archived: { variant: 'secondary' as const, label: LEGAL_TERMINOLOGY.status.archived },
+      pending_review: { variant: 'warning' as const, label: LEGAL_TERMINOLOGY.status.pending_review },
+      under_revision: { variant: 'error' as const, label: LEGAL_TERMINOLOGY.status.under_revision }
+    };
+    return statusMap[status];
+  };
+
+  const getPriorityBadge = (priority: Document['priority']) => {
+    const priorityMap = {
+      high: { variant: 'error' as const, label: LEGAL_TERMINOLOGY.priority.high },
+      medium: { variant: 'warning' as const, label: LEGAL_TERMINOLOGY.priority.medium },
+      low: { variant: 'secondary' as const, label: LEGAL_TERMINOLOGY.priority.low }
+    };
+    return priorityMap[priority];
+  };
+
+  const getTypeIcon = (type: Document['type']) => {
+    const iconMap = {
+      contract: FileCheck,
+      legal_opinion: FileText,
+      court_ruling: AlertTriangle,
+      legislation: FileText,
+      correspondence: FileText,
+      other: FileText
+    };
+    return iconMap[type] || FileText;
+  };
+
+  const DocumentCard: React.FC<{ document: Document }> = ({ document }) => {
+    const TypeIcon = getTypeIcon(document.type);
+    const statusBadge = getStatusBadge(document.status);
+    const priorityBadge = getPriorityBadge(document.priority);
+    
+    if (viewMode === 'list') {
+      return (
+        <Card className="hover:shadow-md transition-shadow duration-200">
           <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-neutral-600">کل اسناد</p>
-                <p className="text-2xl font-bold text-neutral-900">
-                  {formatPersianNumber(documents.length)}
-                </p>
+            <div className="flex items-center gap-4">
+              {/* Icon and Title */}
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <TypeIcon className="w-8 h-8 text-primary-500 flex-shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-medium text-neutral-900 dark:text-neutral-100 truncate">
+                    {document.title}
+                  </h3>
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400 truncate mt-1">
+                    {document.description}
+                  </p>
+                </div>
               </div>
-              <FileText className="w-8 h-8 text-primary-600" />
+
+              {/* Metadata */}
+              <div className="hidden md:flex items-center gap-4 text-sm text-neutral-500 dark:text-neutral-400">
+                <span>{document.category}</span>
+                <span>{formatBytes(document.size)}</span>
+                <span>{formatRelativeTime(document.updatedAt)}</span>
+              </div>
+
+              {/* Status and Actions */}
+              <div className="flex items-center gap-3">
+                <StatusBadge variant={statusBadge.variant} size="sm">
+                  {statusBadge.label}
+                </StatusBadge>
+                
+                <Button variant="ghost" size="sm" icon={MoreVertical} />
+              </div>
             </div>
           </CardContent>
         </Card>
+      );
+    }
 
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-neutral-600">پردازش شده</p>
-                <p className="text-2xl font-bold text-success-600">
-                  {formatPersianNumber(documents.filter(d => d.status === 'processed').length)}
-                </p>
-              </div>
-              <Eye className="w-8 h-8 text-success-600" />
+    return (
+      <Card className="hover:shadow-md transition-shadow duration-200 group">
+        <CardContent className="p-4 space-y-3">
+          {/* Header */}
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <TypeIcon className="w-5 h-5 text-primary-500" />
+              {document.isConfidential && (
+                <StatusBadge variant="error" size="sm">محرمانه</StatusBadge>
+              )}
             </div>
-          </CardContent>
-        </Card>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              icon={MoreVertical}
+              className="opacity-0 group-hover:opacity-100 transition-opacity"
+            />
+          </div>
 
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-neutral-600">در حال پردازش</p>
-                <p className="text-2xl font-bold text-warning-600">
-                  {formatPersianNumber(documents.filter(d => d.status === 'processing').length)}
-                </p>
-              </div>
-              <Calendar className="w-8 h-8 text-warning-600" />
+          {/* Title and Description */}
+          <div>
+            <h3 className="font-medium text-neutral-900 dark:text-neutral-100 line-clamp-2 mb-1">
+              {document.title}
+            </h3>
+            {document.description && (
+              <p className="text-sm text-neutral-600 dark:text-neutral-400 line-clamp-2">
+                {document.description}
+              </p>
+            )}
+          </div>
+
+          {/* Tags */}
+          {document.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {document.tags.slice(0, 3).map((tag, index) => (
+                <span 
+                  key={index}
+                  className="px-2 py-1 text-xs bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 rounded"
+                >
+                  {tag}
+                </span>
+              ))}
+              {document.tags.length > 3 && (
+                <span className="px-2 py-1 text-xs text-neutral-500 dark:text-neutral-400">
+                  +{document.tags.length - 3}
+                </span>
+              )}
             </div>
-          </CardContent>
-        </Card>
+          )}
 
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-neutral-600">ستاره‌دار</p>
-                <p className="text-2xl font-bold text-yellow-600">
-                  {formatPersianNumber(documents.filter(d => d.isStarred).length)}
-                </p>
-              </div>
-              <Star className="w-8 h-8 text-yellow-600" />
+          {/* Footer */}
+          <div className="flex items-center justify-between pt-2 border-t border-neutral-100 dark:border-neutral-800">
+            <div className="flex items-center gap-2">
+              <StatusBadge variant={statusBadge.variant} size="sm">
+                {statusBadge.label}
+              </StatusBadge>
+              <StatusBadge variant={priorityBadge.variant} size="sm">
+                {priorityBadge.label}
+              </StatusBadge>
             </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Search and Filters */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-col lg:flex-row gap-4">
-            {/* Search */}
-            <div className="relative flex-1">
-              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-neutral-400 w-5 h-5" />
-              <input
-                type="text"
-                placeholder="جستجو در اسناد..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-4 pr-10 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              />
+            
+            <div className="text-xs text-neutral-500 dark:text-neutral-400">
+              {formatBytes(document.size)} • {document.format}
             </div>
+          </div>
 
-            {/* Category Filter */}
-            <div className="relative">
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="appearance-none bg-white border border-neutral-300 rounded-lg px-4 py-2 pr-8 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              >
-                {categories.map(category => (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="absolute left-2 top-1/2 transform -translate-y-1/2 text-neutral-400 w-4 h-4 pointer-events-none" />
+          {/* Actions */}
+          <div className="flex items-center justify-between pt-2">
+            <div className="flex items-center gap-1 text-xs text-neutral-500 dark:text-neutral-400">
+              <User className="w-3 h-3" />
+              <span>{document.createdBy}</span>
             </div>
-
-            {/* View Mode Toggle */}
-            <div className="flex border border-neutral-300 rounded-lg overflow-hidden">
-              <Button
-                variant={viewMode === 'grid' ? 'primary' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('grid')}
-                className="rounded-none"
-              >
-                <Grid className="w-4 h-4" />
-              </Button>
-              <Button
-                variant={viewMode === 'list' ? 'primary' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('list')}
-                className="rounded-none"
-              >
-                <List className="w-4 h-4" />
-              </Button>
-            </div>
-
-            {/* Sort */}
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleSort('title')}
-                className="whitespace-nowrap"
-              >
-                نام
-                {sortField === 'title' && (
-                  sortDirection === 'asc' ? 
-                    <SortAsc className="w-4 h-4 mr-1" /> : 
-                    <SortDesc className="w-4 h-4 mr-1" />
-                )}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleSort('createdAt')}
-                className="whitespace-nowrap"
-              >
-                تاریخ
-                {sortField === 'createdAt' && (
-                  sortDirection === 'asc' ? 
-                    <SortAsc className="w-4 h-4 mr-1" /> : 
-                    <SortDesc className="w-4 h-4 mr-1" />
-                )}
-              </Button>
+            
+            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <Button variant="ghost" size="sm" icon={Eye} />
+              <Button variant="ghost" size="sm" icon={Download} />
+              <Button variant="ghost" size="sm" icon={Edit3} />
             </div>
           </div>
         </CardContent>
       </Card>
+    );
+  };
 
-      {/* Results */}
-      <div className="flex items-center justify-between">
-        <p className="text-neutral-600">
-          {formatPersianNumber(filteredDocuments.length)} سند یافت شد
-        </p>
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+            {LEGAL_TERMINOLOGY.pages.documents}
+          </h1>
+          <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
+            مدیریت و سازماندهی اسناد و مدارک حقوقی
+          </p>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            icon={showFilters ? Filter : Filter}
+            onClick={() => setShowFilters(!showFilters)}
+            className={showFilters ? 'bg-primary-50 text-primary-600' : ''}
+          >
+            فیلترها
+          </Button>
+          <Button
+            variant="primary"
+            icon={Upload}
+            onClick={() => setShowUpload(true)}
+          >
+            آپلود سند
+          </Button>
+        </div>
+      </div>
+
+      {/* Search and Controls */}
+      <Card>
+        <CardContent className="p-4 space-y-4">
+          {/* Search Bar */}
+          <div className="flex flex-col gap-4 sm:flex-row">
+            <Input
+              placeholder="جستجو در عنوان، توضیحات و برچسب‌ها..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              icon={Search}
+              className="flex-1"
+            />
+            
+            <div className="flex items-center gap-2">
+              {/* View Mode Toggle */}
+              <div className="flex rounded-lg border border-neutral-200 dark:border-neutral-700 p-1">
+                <Button
+                  variant={viewMode === 'grid' ? 'primary' : 'ghost'}
+                  size="sm"
+                                     icon={Grid}
+                  onClick={() => setViewMode('grid')}
+                  className="h-8 w-8 p-0"
+                />
+                <Button
+                  variant={viewMode === 'list' ? 'primary' : 'ghost'}
+                  size="sm"
+                  icon={List}
+                  onClick={() => setViewMode('list')}
+                  className="h-8 w-8 p-0"
+                />
+              </div>
+
+              {/* Sort Controls */}
+              <Select
+                options={[
+                  { value: 'updatedAt', label: 'تاریخ به‌روزرسانی' },
+                  { value: 'createdAt', label: 'تاریخ ایجاد' },
+                  { value: 'title', label: 'عنوان' },
+                  { value: 'size', label: 'حجم فایل' }
+                ]}
+                value={sortBy}
+                onChange={(value) => setSortBy(value as any)}
+                size="sm"
+              />
+              
+              <Button
+                variant="outline"
+                size="sm"
+                icon={sortOrder === 'asc' ? SortAsc : SortDesc}
+                onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                className="h-10 w-10 p-0"
+              />
+            </div>
+          </div>
+
+          {/* Filters */}
+          {showFilters && (
+            <div className="flex flex-wrap gap-4 pt-4 border-t border-neutral-100 dark:border-neutral-800">
+              <Select
+                label="دسته‌بندی"
+                options={[
+                  { value: '', label: 'همه دسته‌ها' },
+                  { value: 'قراردادها', label: 'قراردادها' },
+                  { value: 'نظریات حقوقی', label: 'نظریات حقوقی' },
+                  { value: 'آراء قضایی', label: 'آراء قضایی' }
+                ]}
+                value={selectedCategory}
+                onChange={setSelectedCategory}
+                size="sm"
+                className="w-48"
+              />
+              
+              <Select
+                label="نوع سند"
+                options={[
+                  { value: '', label: 'همه انواع' },
+                  { value: 'contract', label: LEGAL_TERMINOLOGY.documentTypes.contract },
+                  { value: 'legal_opinion', label: LEGAL_TERMINOLOGY.documentTypes.legal_opinion },
+                  { value: 'court_ruling', label: LEGAL_TERMINOLOGY.documentTypes.court_ruling },
+                  { value: 'legislation', label: LEGAL_TERMINOLOGY.documentTypes.legislation }
+                ]}
+                value={selectedType}
+                onChange={setSelectedType}
+                size="sm"
+                className="w-48"
+              />
+              
+              <Select
+                label="وضعیت"
+                options={[
+                  { value: '', label: 'همه وضعیت‌ها' },
+                  { value: 'active', label: LEGAL_TERMINOLOGY.status.active },
+                  { value: 'archived', label: LEGAL_TERMINOLOGY.status.archived },
+                  { value: 'pending_review', label: LEGAL_TERMINOLOGY.status.pending_review },
+                  { value: 'under_revision', label: LEGAL_TERMINOLOGY.status.under_revision }
+                ]}
+                value={selectedStatus}
+                onChange={setSelectedStatus}
+                size="sm"
+                className="w-48"
+              />
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Results Summary */}
+      <div className="flex items-center justify-between text-sm text-neutral-600 dark:text-neutral-400">
+        <span>
+          {filteredAndSortedDocuments.length} سند از {mockDocuments.length} سند
+        </span>
+        <div className="flex items-center gap-4">
+          <span>مرتب‌سازی بر اساس {sortBy === 'updatedAt' ? 'تاریخ به‌روزرسانی' : sortBy === 'createdAt' ? 'تاریخ ایجاد' : sortBy === 'title' ? 'عنوان' : 'حجم فایل'}</span>
+        </div>
       </div>
 
       {/* Documents Grid/List */}
-      {viewMode === 'grid' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredDocuments.map(document => (
-            <DocumentCard
-              key={document.id}
-              document={document}
-              onToggleStar={handleToggleStar}
-              onView={handleView}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onDownload={handleDownload}
-            />
-          ))}
-        </div>
-      ) : (
+      {filteredAndSortedDocuments.length === 0 ? (
         <Card>
-          <div className="divide-y divide-neutral-200">
-            {filteredDocuments.map(document => (
-              <DocumentRow
-                key={document.id}
-                document={document}
-                onToggleStar={handleToggleStar}
-                onView={handleView}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                onDownload={handleDownload}
-              />
-            ))}
-          </div>
-        </Card>
-      )}
-
-      {/* Empty State */}
-      {filteredDocuments.length === 0 && (
-        <Card>
-          <CardContent className="text-center py-12">
-            <FolderOpen className="w-12 h-12 text-neutral-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-neutral-900 mb-2">
+          <CardContent className="p-12 text-center">
+            <FileText className="w-16 h-16 text-neutral-300 dark:text-neutral-600 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-neutral-700 dark:text-neutral-300 mb-2">
               هیچ سندی یافت نشد
             </h3>
-            <p className="text-neutral-600 mb-4">
-              برای شروع، اسناد خود را بارگذاری کنید
+            <p className="text-neutral-500 dark:text-neutral-400 mb-4">
+              با تغییر فیلترها یا جستجوی جدید دوباره تلاش کنید
             </p>
-            <Button icon={Upload} variant="primary">
-              بارگذاری اولین سند
+            <Button variant="primary" icon={Upload} onClick={() => setShowUpload(true)}>
+              آپلود اولین سند
             </Button>
           </CardContent>
         </Card>
+      ) : (
+        <div className={cn(
+          viewMode === 'grid' 
+            ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'
+            : 'space-y-3'
+        )}>
+          {filteredAndSortedDocuments.map((document) => (
+            <DocumentCard key={document.id} document={document} />
+          ))}
+        </div>
+      )}
+
+      {/* Upload Modal */}
+      {showUpload && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <Card className="w-full max-w-2xl max-h-[90vh] overflow-auto">
+            <CardHeader>
+              <CardTitle>آپلود سند جدید</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <FileUpload
+                accept=".pdf,.doc,.docx,.txt"
+                multiple
+                maxSize={10 * 1024 * 1024}
+                maxFiles={5}
+                onUpload={handleFileUpload}
+                hint="فرمت‌های مجاز: PDF, DOC, DOCX, TXT - حداکثر حجم: ۱۰ مگابایت"
+              />
+              
+              <div className="flex justify-end gap-2 pt-4 border-t border-neutral-100 dark:border-neutral-800">
+                <Button variant="outline" onClick={() => setShowUpload(false)}>
+                  انصراف
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
     </div>
   );
