@@ -127,33 +127,29 @@ export default function AnalyticsPage() {
 
       {/* Key Insights Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <MetricCard
-          title="دسته‌بندی پربازدید"
-          value={topCategory.name}
-          icon={Award}
-          color="blue"
-        />
+                  <MetricCard
+            label="دسته‌بندی پربازدید"
+            value={topCategory.name}
+            icon={<Award />}
+          />
 
-        <MetricCard
-          title="میانگین کلمات"
-          value={avgWordsPerItem}
-          icon={BookOpen}
-          color="green"
-        />
+                  <MetricCard
+            label="میانگین کلمات"
+            value={avgWordsPerItem}
+            icon={<BookOpen />}
+          />
 
-        <MetricCard
-          title="محتوای با کیفیت"
-          value={`${highQualityPercentage}%`}
-          icon={TrendingUp}
-          color="yellow"
-        />
+                  <MetricCard
+            label="محتوای با کیفیت"
+            value={`${highQualityPercentage}%`}
+            icon={<TrendingUp />}
+          />
 
-        <MetricCard
-          title="منابع فعال"
-          value={Object.keys(stats.topDomains).length}
-          icon={Globe}
-          color="purple"
-        />
+                  <MetricCard
+            label="منابع فعال"
+            value={Object.keys(stats.topDomains).length}
+            icon={<Globe />}
+          />
       </div>
 
       {/* Time Series Chart */}

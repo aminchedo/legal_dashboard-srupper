@@ -29,7 +29,7 @@ export default function QuickActions({ onStartScraping, onTestProxy, onEmergency
                 <Settings size={16} className="ml-2" /> تنظیمات سیستم
             </Button>
             <Button className="w-full" variant="destructive" onClick={onEmergencyStop}>
-                <OctagonAlert size={16} className="ml-2" /> توقف اضطراری همه
+                <Octagon size={16} className="ml-2" /> توقف اضطراری همه
             </Button>
         </div>
     );

@@ -30,7 +30,7 @@ export const Icons = {
   Cloud, HardDrive, Cpu, Wifi, WifiOff, Zap, TestTube, Settings2,
   // Additional missing icons
   BookOpen, Award, TrendingUp, Square, AlertCircle, PlugZap, CloudLightning,
-  MemoryStick, RotateCw, Loader2, OctagonX
+  MemoryStick, RotateCw, Loader2, Octagon
 };
 
 export default Icons;
@@ -54,5 +54,5 @@ export {
   Cloud, HardDrive, Cpu, Wifi, WifiOff, Zap, TestTube, Settings2,
   // Additional missing icons
   BookOpen, Award, TrendingUp, Square, AlertCircle, PlugZap, CloudLightning,
-  MemoryStick, RotateCw, Loader2, OctagonX
+  MemoryStick, RotateCw, Loader2, Octagon
 };
