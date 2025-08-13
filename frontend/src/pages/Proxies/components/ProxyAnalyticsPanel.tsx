@@ -1,8 +1,9 @@
-import React, { useMemo } from 'react';
-import { ProxyRecord } from '../../../types';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ProxyRecord, ProxyTestResult } from '../../../types';
 import Card from '../../../components/ui/Card';
 import { MetricCard } from '../../../components/ui/Card';
 import ScoreIndicator from '../../../components/ScoreIndicator';
+import { databaseService } from '../../../services/database';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, LineChart, Line, AreaChart, Area
@@ -15,19 +16,67 @@ import {
   TrendingDown, 
   Clock,
   Shield,
-  Target
+  Target,
+  BarChart3
 } from 'lucide-react';
 
 interface Props {
   proxies: ProxyRecord[];
+  mode?: 'simple' | 'comprehensive';
+  showCharts?: boolean;
+  showTopPerformers?: boolean;
+  className?: string;
+}
+
+interface AnalyticsSummary {
+  total: number;
+  successRate: number;
+  avgLatency: number;
+  lastTests: ProxyTestResult[];
 }
 
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#F97316'];
 
 /**
- * Comprehensive proxy analytics panel with performance metrics and visualizations
+ * Enhanced proxy analytics panel with both simple and comprehensive modes
+ * Combines functionality from both the simple and advanced analytics components
  */
-export default function ProxyAnalyticsPanel({ proxies }: Props): JSX.Element {
+export default function ProxyAnalyticsPanel({ 
+  proxies, 
+  mode = 'comprehensive',
+  showCharts = true,
+  showTopPerformers = true,
+  className = ''
+}: Props): JSX.Element {
+  const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  // Simple mode: Load test results from database
+  useEffect(() => {
+    if (mode === 'simple') {
+      let alive = true;
+      const load = async () => {
+        setLoading(true);
+        try {
+          const tests = await databaseService.listProxyTestResults(100);
+          if (!alive) return;
+          const total = tests.length;
+          const successes = tests.filter(t => t.success).length;
+          const successRate = total ? Math.round((successes / total) * 100) : 0;
+          const latencies = tests.filter(t => t.success).map(t => t.latencyMs);
+          const avgLatency = latencies.length ? Math.round(latencies.reduce((a, b) => a + b, 0) / latencies.length) : 0;
+          setSummary({ total, successRate, avgLatency, lastTests: tests.slice(0, 5) });
+        } finally {
+          if (alive) setLoading(false);
+        }
+      };
+      load();
+      const t = setInterval(load, 5000);
+      return () => { alive = false; clearInterval(t); };
+    }
+  }, [mode]);
+
+  // Comprehensive analytics calculations
   const analytics = useMemo(() => {
     if (!proxies.length) {
       return {
@@ -165,9 +214,69 @@ export default function ProxyAnalyticsPanel({ proxies }: Props): JSX.Element {
     };
   }, [proxies]);
 
+  // Simple mode rendering
+  if (mode === 'simple') {
+    if (loading && !summary) {
+      return (
+        <div className={`bg-white rounded-xl shadow-sm border border-gray-200 p-4 text-sm text-gray-500 ${className}`}>
+          در حال بارگذاری تحلیل...
+        </div>
+      );
+    }
+
+    if (!summary) {
+      return (
+        <div className={`bg-white rounded-xl shadow-sm border border-gray-200 p-4 text-sm text-gray-500 ${className}`}>
+          داده‌ای برای تحلیل وجود ندارد
+        </div>
+      );
+    }
+
+    return (
+      <div className={`bg-white rounded-xl shadow-sm border border-gray-200 p-4 ${className}`}>
+        <h3 className="text-sm font-semibold text-gray-900 mb-3 inline-flex items-center gap-2">
+          <BarChart3 size={16} /> تحلیل عملکرد پروکسی
+        </h3>
+        <div className="grid grid-cols-3 gap-3 mb-4">
+          <div className="rounded-lg border p-3">
+            <div className="text-xs text-gray-500 mb-1">کل تست‌ها</div>
+            <div className="text-lg font-semibold">{summary.total.toLocaleString('fa-IR')}</div>
+          </div>
+          <div className="rounded-lg border p-3">
+            <div className="text-xs text-gray-500 mb-1">نرخ موفقیت</div>
+            <div className="text-lg font-semibold">{summary.successRate}%</div>
+          </div>
+          <div className="rounded-lg border p-3">
+            <div className="text-xs text-gray-500 mb-1">میانگین تاخیر</div>
+            <div className="text-lg font-semibold">{summary.avgLatency} ms</div>
+          </div>
+        </div>
+
+        <div>
+          <div className="text-xs text-gray-600 mb-2">آخرین نتایج</div>
+          <div className="space-y-2">
+            {summary.lastTests.map(t => (
+              <div key={t.id} className="flex items-center justify-between text-sm">
+                <div className="truncate max-w-[50%] text-gray-700">{t.proxyId}</div>
+                <div className={t.success ? 'text-green-700' : 'text-red-700'}>
+                  {t.success ? 'موفق' : 'ناموفق'}
+                </div>
+                <div className="text-gray-600">{t.latencyMs} ms</div>
+                <div className="text-gray-500 truncate max-w-[30%]">
+                  {t.statusCode || t.errorMessage || ''}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Comprehensive mode rendering
   if (proxies.length === 0) {
     return (
-      <Card title="Proxy Analytics" className="h-96 flex items-center justify-center">
+      <Card title="Proxy Analytics" className={`h-96 flex items-center justify-center ${className}`}>
         <div className="text-center text-gray-500">
           <Activity size={48} className="mx-auto mb-4 text-gray-300" />
           <div className="text-lg font-medium mb-2">No Data Available</div>
@@ -178,7 +287,7 @@ export default function ProxyAnalyticsPanel({ proxies }: Props): JSX.Element {
   }
 
   return (
-    <div className="space-y-6">
+    <div className={`space-y-6 ${className}`}>
       {/* Overview Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard
@@ -210,47 +319,49 @@ export default function ProxyAnalyticsPanel({ proxies }: Props): JSX.Element {
       </div>
 
       {/* Performance Overview */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Status Distribution */}
-        <Card title="Status Distribution" padding="md">
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={analytics.statusDistribution}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percentage }) => `${name}: ${percentage}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {analytics.statusDistribution.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </Card>
+      {showCharts && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Status Distribution */}
+          <Card title="Status Distribution" padding="md">
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={analytics.statusDistribution}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percentage }) => `${name}: ${percentage}%`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {analytics.statusDistribution.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </Card>
 
-        {/* Latency Distribution */}
-        <Card title="Latency Distribution" padding="md">
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={analytics.latencyDistribution}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="value" fill="#3B82F6" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </Card>
-      </div>
+          {/* Latency Distribution */}
+          <Card title="Latency Distribution" padding="md">
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={analytics.latencyDistribution}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="value" fill="#3B82F6" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </Card>
+        </div>
+      )}
 
       {/* Protocol Types and Countries */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -320,41 +431,43 @@ export default function ProxyAnalyticsPanel({ proxies }: Props): JSX.Element {
         </Card>
 
         {/* Top Performers */}
-        <Card title="Top Performers" padding="md">
-          <div className="space-y-3">
-            {analytics.topPerformers.length > 0 ? (
-              analytics.topPerformers.map((proxy, index) => (
-                <div key={proxy.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div>
-                    <div className="font-mono text-sm font-medium">
-                      {proxy.ip}:{proxy.port}
+        {showTopPerformers && (
+          <Card title="Top Performers" padding="md">
+            <div className="space-y-3">
+              {analytics.topPerformers.length > 0 ? (
+                analytics.topPerformers.map((proxy, index) => (
+                  <div key={proxy.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <div className="font-mono text-sm font-medium">
+                        {proxy.ip}:{proxy.port}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {proxy.type} • {proxy.country || 'Unknown'}
+                      </div>
                     </div>
-                    <div className="text-xs text-gray-500">
-                      {proxy.type} • {proxy.country || 'Unknown'}
+                    <div className="text-right">
+                      <div className="text-sm font-medium text-green-600">
+                        {proxy.latency}ms
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        #{index + 1}
+                      </div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-sm font-medium text-green-600">
-                      {proxy.latency}ms
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      #{index + 1}
-                    </div>
-                  </div>
+                ))
+              ) : (
+                <div className="text-center text-gray-500 py-8">
+                  <Shield size={32} className="mx-auto mb-2 text-gray-300" />
+                  <div className="text-sm">No online proxies available</div>
                 </div>
-              ))
-            ) : (
-              <div className="text-center text-gray-500 py-8">
-                <Shield size={32} className="mx-auto mb-2 text-gray-300" />
-                <div className="text-sm">No online proxies available</div>
-              </div>
-            )}
-          </div>
-        </Card>
+              )}
+            </div>
+          </Card>
+        )}
       </div>
 
       {/* Test Activity Timeline */}
-      {analytics.recentTests.length > 0 && (
+      {showCharts && analytics.recentTests.length > 0 && (
         <Card title="Recent Test Activity (24h)" padding="md">
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
