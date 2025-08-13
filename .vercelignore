@@ -3,6 +3,10 @@
 .env
 .git/**
 .venv/**
+node_modules/**
+coverage/**
+dist/**
+.build/**
 tests/**
 *.md
 .gitignore

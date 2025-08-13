@@ -5,7 +5,11 @@
   "outputDirectory": "frontend/dist",
   "functions": {
     "api/**/*.py": {
-      "runtime": "python3.11"
+      "runtime": "python3.11",
+      "includeFiles": [
+        "requirements.txt",
+        "python/resilient_proxy/**"
+      ]
     }
   },
   "rewrites": [
