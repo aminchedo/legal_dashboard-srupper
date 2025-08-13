@@ -1,7 +1,8 @@
 import { Request, Response } from 'express';
-import { documentService } from '@services/document.service';
-import { logger } from '@utils/logger';
-import { emitDocumentEvent } from '@controllers/websocket.controller';
+import { documentService } from '../services/document.service';
+import { AuthPayload } from '../middleware/auth.middleware';
+import { logger } from '../utils/logger';
+import { emitDocumentEvent } from './websocket.controller';
 
 /**
  * List documents with filtering and pagination
@@ -72,7 +73,7 @@ export async function getById(req: Request, res: Response) {
  */
 export async function create(req: Request, res: Response) {
   try {
-    const userId = req.user?.id || 'system';
+    const userId = (req as any).user?.id || 'system';
     const documentData = req.body;
 
     const document = await documentService.createDocument(documentData, userId);
@@ -93,7 +94,7 @@ export async function create(req: Request, res: Response) {
 export async function update(req: Request, res: Response) {
   try {
     const { id } = req.params;
-    const userId = req.user?.id || 'system';
+    const userId = (req as any).user?.id || 'system';
     const documentData = req.body;
 
     const document = await documentService.updateDocument(id, documentData, userId);
@@ -236,7 +237,7 @@ export async function getVersion(req: Request, res: Response) {
 export async function revertToVersion(req: Request, res: Response) {
   try {
     const { id, version } = req.params;
-    const userId = req.user?.id || 'system';
+    const userId = (req as any).user?.id || 'system';
 
     const document = await documentService.revertToVersion(
       id,

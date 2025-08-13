@@ -4,10 +4,10 @@ import { databaseService } from './database.service';
 import {
     DocumentRecord,
     DocumentVersion
-} from '@models/document.model';
-import { logger } from '@utils/logger';
-import { emitDocumentEvent } from '@controllers/websocket.controller';
-import { DocumentRecordRaw, DocumentVersionRaw } from '../types/database.types';
+} from '../models/document.model';
+import { logger } from '../utils/logger';
+import { emitDocumentEvent } from '../controllers/websocket.controller';
+import { DocumentRecordRaw, DocumentVersionRaw, DatabaseTransaction } from '../types/database.types';
 
 class DocumentService {
     private db = databaseService.getClient();
@@ -43,7 +43,7 @@ class DocumentService {
             updated_by: null,
         };
 
-        const transaction = this.db.transaction();
+        const transaction = this.db.transaction() as DatabaseTransaction;
         try {
             transaction.begin();
 
@@ -169,7 +169,7 @@ class DocumentService {
                     now : currentDocument.archived_at,
             };
 
-            const transaction = this.db.transaction();
+            const transaction = this.db.transaction() as DatabaseTransaction;
             try {
                 transaction.begin();
 
@@ -237,7 +237,7 @@ class DocumentService {
                 return false;
             }
 
-            const transaction = this.db.transaction();
+            const transaction = this.db.transaction() as DatabaseTransaction;
             try {
                 transaction.begin();
 
