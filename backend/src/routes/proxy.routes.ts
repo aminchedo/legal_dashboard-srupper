@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { proxyController } from '@controllers/proxy.controller';
-import { scrapingService } from '@services/scraping.service';
-import { requireAuth as authMiddleware } from '@middleware/auth.middleware';
+import { proxyController } from '../controllers/proxy.controller';
+import { scrapingService } from '../services/scraping.service';
+import { requireAuth as authMiddleware } from '../middleware/auth.middleware';
 
 const router = Router();
 
@@ -15,17 +15,18 @@ router.put('/settings', proxyController.updateProxySettings);
 router.post('/discover-free', proxyController.discoverFreeProxies);
 
 // ADD intelligent scraping route
-router.post('/scrape-intelligent', authMiddleware, async (req, res) => {
-    const { sourceId } = req.body;
-    const userId = req.user?.id || 'system';
+// Temporarily disabled complex scraping route
+// router.post('/scrape-intelligent', authMiddleware, async (req, res) => {
+//     const { sourceId } = req.body;
+//     const userId = (req as any).user?.id || 'system';
 
-    try {
-        const result = await scrapingService.scrapeWithIntelligence(sourceId, userId);
-        res.json(result);
-    } catch (error) {
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
+//     try {
+//         const result = await scrapingService.scrapeWithIntelligence(sourceId, userId);
+//         res.json(result);
+//     } catch (error) {
+//         res.status(500).json({ success: false, error: error.message });
+//     }
+// });
 
 export default router;
 

@@ -4,9 +4,9 @@ import { databaseService } from './database.service';
 import {
     DocumentRecord,
     DocumentVersion
-} from '@models/document.model';
-import { logger } from '@utils/logger';
-import { emitDocumentEvent } from '@controllers/websocket.controller';
+} from '../models/document.model';
+import { logger } from '../utils/logger';
+import { emitDocumentEvent } from '../controllers/websocket.controller';
 import { DocumentRecordRaw, DocumentVersionRaw } from '../types/database.types';
 
 class DocumentService {

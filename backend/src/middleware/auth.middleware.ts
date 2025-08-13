@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
-import { config } from '@utils/config';
+import { config } from '../utils/config';
 import { HttpError } from './error.middleware';
 
 export interface AuthPayload {
@@ -18,7 +18,7 @@ export function requireAuth(req: Request, _res: Response, next: NextFunction): v
     if (!token) throw new HttpError(401, 'Unauthorized');
     try {
         const payload = jwt.verify(token, config.JWT_SECRET) as AuthPayload;
-        req.user = payload;
+        (req as any).user = payload;
         next();
     } catch {
         throw new HttpError(401, 'Invalid token');
@@ -26,7 +26,7 @@ export function requireAuth(req: Request, _res: Response, next: NextFunction): v
 }
 
 export function requireAdmin(req: Request, _res: Response, next: NextFunction): void {
-    const user = req.user;
+    const user = (req as any).user;
     if (!user) throw new HttpError(401, 'Unauthorized');
     if (user.role !== 'admin') throw new HttpError(403, 'Forbidden');
     next();
