@@ -7,7 +7,9 @@ import DashboardPage from './pages/Dashboard/DashboardPage';
 const JobsListPage = React.lazy(() => import('./pages/Jobs/JobsListPage').catch(() => ({ default: () => <div>Jobs page temporarily unavailable</div> })));
 const DocumentsListPage = React.lazy(() => import('./pages/Documents/DocumentsListPage').catch(() => ({ default: () => <div>Documents page temporarily unavailable</div> })));
 const SystemHealthPage = React.lazy(() => import('./pages/System/SystemHealthPage').catch(() => ({ default: () => <div>System page temporarily unavailable</div> })));
-const ProxiesPage = React.lazy(() => import('./pages/Proxies/ProxiesPage').catch(() => ({ default: () => <div>Proxies page temporarily unavailable</div> })));
+const ProxyPage = React.lazy(() => import('./components/Proxies/ProxyPage').catch(() => ({ default: () => <div>Proxies page temporarily unavailable</div> })));
+const DataPage = React.lazy(() => import('./components/Data/DataPage').catch(() => ({ default: () => <div>Data page temporarily unavailable</div> })));
+const AnalyticsPage = React.lazy(() => import('./components/Analytics/AnalyticsPage').catch(() => ({ default: () => <div>Analytics page temporarily unavailable</div> })));
 const SettingsPage = React.lazy(() => import('./pages/Settings/SettingsPage').catch(() => ({ default: () => <div>Settings page temporarily unavailable</div> })));
 const HelpPage = React.lazy(() => import('./pages/Help/HelpPage').catch(() => ({ default: () => <div>Help page temporarily unavailable</div> })));
 
@@ -67,7 +69,9 @@ const App: React.FC = () => {
               <Route path="/jobs" element={<JobsListPage />} />
               <Route path="/documents" element={<DocumentsListPage />} />
               <Route path="/system" element={<SystemHealthPage />} />
-              <Route path="/proxies" element={<ProxiesPage />} />
+              <Route path="/proxies" element={<ProxyPage />} />
+              <Route path="/data" element={<DataPage />} />
+              <Route path="/analytics" element={<AnalyticsPage />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/help" element={<HelpPage />} />
               <Route path="*" element={<Navigate to="/dashboard" replace />} />

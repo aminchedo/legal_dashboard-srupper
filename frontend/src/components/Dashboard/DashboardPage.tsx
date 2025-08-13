@@ -1,8 +1,9 @@
-import StatisticsOverview from '../../components/Dashboard/StatisticsOverview';
-import ChartsSection from '../../components/Dashboard/ChartsSection';
-import RecentActivity from '../../components/Dashboard/RecentActivity';
-import QuickActions from '../../components/Dashboard/QuickActions';
-import SystemHealth from '../../components/Dashboard/SystemHealth';
+import StatisticsOverview from './StatisticsOverview';
+import ChartsSection from './ChartsSection';
+import RecentActivity from './RecentActivity';
+import QuickActions from './QuickActions';
+import SystemHealth from './SystemHealth';
+import { apiClient } from '../../services/apiClient';
 
 export default function DashboardPage() {
   return (
