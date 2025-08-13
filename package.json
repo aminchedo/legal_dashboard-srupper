@@ -10,6 +10,9 @@
     "@vitejs/plugin-react": "^4.7.0",
     "concurrently": "^8.2.2"
   },
+  "engines": {
+    "node": "20.x"
+  },
   "description": "A modern legal analytics dashboard with a React + Vite frontend and an Express + TypeScript backend. It provides document management, analytics, scraping utilities, OCR hooks, and real‑time updates via WebSockets.",
   "main": "index.js",
   "directories": {
