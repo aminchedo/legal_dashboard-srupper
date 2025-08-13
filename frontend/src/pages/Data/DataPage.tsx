@@ -169,7 +169,7 @@ export default function DataPage() {
           // Loading skeleton
           <div className="space-y-4">
             {[...Array(filters.limit)].map((_, i) => (
-              <div key={i} className="bg-white rounded-xl border border-gray-200 p-6 animate-pulse">
+              <div key={i} className="bg-white rounded-xl border border-gray-200 p-6 card-hover">
                 <div className="h-4 bg-gray-200 rounded w-3/4 mb-3"></div>
                 <div className="h-3 bg-gray-200 rounded w-1/2 mb-2"></div>
                 <div className="h-3 bg-gray-200 rounded w-1/4"></div>

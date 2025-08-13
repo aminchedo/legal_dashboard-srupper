@@ -9,8 +9,12 @@ export default function ChartsSection() {
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 h-96 animate-pulse"></div>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 h-96 animate-pulse"></div>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 h-96 card-hover">
+          <div className="h-full flex items-center justify-center text-gray-500">نمودار در حال بارگذاری...</div>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 h-96 card-hover">
+          <div className="h-full flex items-center justify-center text-gray-500">نمودار در حال بارگذاری...</div>
+        </div>
       </div>
     );
   }

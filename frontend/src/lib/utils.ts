@@ -18,10 +18,37 @@ export function formatPersianNumber(num: number | string): string {
 }
 
 /**
- * Format numbers with Persian locale
+ * Format numbers with Persian locale and abbreviations for large numbers
  */
 export function formatNumber(num: number, locale: string = 'fa-IR'): string {
+  if (isNaN(num)) return '0';
+  
+  // For large numbers, use abbreviations
+  if (num >= 1000000000) {
+    return formatPersianNumber((num / 1000000000).toFixed(1)) + 'B';
+  }
+  if (num >= 1000000) {
+    return formatPersianNumber((num / 1000000).toFixed(1)) + 'M';
+  }
+  if (num >= 1000) {
+    return formatPersianNumber((num / 1000).toFixed(1)) + 'K';
+  }
+  
   return new Intl.NumberFormat(locale).format(num);
+}
+
+/**
+ * Format large numbers with compact notation
+ */
+export function formatCompactNumber(num: number): string {
+  if (isNaN(num)) return '0';
+  
+  const formatter = new Intl.NumberFormat('fa-IR', {
+    notation: 'compact',
+    maximumFractionDigits: 1
+  });
+  
+  return formatter.format(num);
 }
 
 /**

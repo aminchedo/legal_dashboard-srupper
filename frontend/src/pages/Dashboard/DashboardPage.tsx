@@ -493,7 +493,7 @@ const DashboardPage: React.FC = () => {
         <MetricCard
           icon={Activity}
           title="پروژه‌های فعال"
-          value={formatPersianNumber(12)}
+          value={formatNumber(12450)}
           description="در حال پردازش"
           trend={1}
           onClick={() => navigate('/jobs')}
@@ -501,7 +501,7 @@ const DashboardPage: React.FC = () => {
         <MetricCard
           icon={Server}
           title="پروکسی‌های فعال"
-          value={formatPersianNumber(128)}
+          value={formatNumber(2847583)}
           description="آماده برای استفاده"
           trend={-3}
           onClick={() => navigate('/proxies')}
