@@ -17,7 +17,7 @@ export async function rateDocument(req: Request, res: Response) {
     }
     
 
-    const userId = req.user?.id || 'system';
+    const userId = (req as any).user?.id || 'system';
     
     const rating = await ratingService.rateDocument(
       id,
@@ -44,7 +44,7 @@ export async function getUserRating(req: Request, res: Response) {
     const { id } = req.params;
     
 
-    const userId = req.user?.id || 'system';
+    const userId = (req as any).user?.id || 'system';
     
     const rating = await ratingService.getUserRating(id, userId);
     
@@ -100,7 +100,7 @@ export async function deleteRating(req: Request, res: Response) {
     const { id } = req.params;
     
 
-    const userId = req.user?.id || 'system';
+    const userId = (req as any).user?.id || 'system';
     
     const success = await ratingService.deleteRating(id, userId);
     

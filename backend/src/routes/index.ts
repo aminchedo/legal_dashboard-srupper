@@ -21,8 +21,8 @@ export function registerRoutes(app: Express): void {
     // app.use('/api/ocr', ocrRoutes);
     // app.use('/api/reports', reportsRoutes);
     // app.use('/api/scraping', scrapingRoutes);
-    // app.use('/api/ws', websocketRoutes);
-    // app.use('/api/ratings', ratingRoutes);
+    app.use('/api/ws', websocketRoutes);
+    app.use('/api/ratings', ratingRoutes);
     app.use('/api/proxy', proxyRoutes);
 }
 

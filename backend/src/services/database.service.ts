@@ -47,16 +47,22 @@ class BetterSqliteClient implements DatabaseClient {
         const result = this.db.prepare(sql).run(params);
         return { changes: result.changes, lastInsertRowid: Number(result.lastInsertRowid) };
     }
-    transaction<T>(callback: (tx: DatabaseTransaction) => T): T {
-        const tx = new BetterSqliteTransaction(this.db);
-        tx.begin();
-        try {
-            const result = callback(tx);
-            tx.commit();
-            return result;
-        } catch (error) {
-            tx.rollback();
-            throw error;
+    transaction<T>(callback?: (tx: DatabaseTransaction) => T): T | DatabaseTransaction {
+        if (callback) {
+            // Callback-style transaction
+            const tx = new BetterSqliteTransaction(this.db);
+            tx.begin();
+            try {
+                const result = callback(tx);
+                tx.commit();
+                return result;
+            } catch (error) {
+                tx.rollback();
+                throw error;
+            }
+        } else {
+            // Return transaction object for imperative style
+            return new BetterSqliteTransaction(this.db);
         }
     }
     close(): void {

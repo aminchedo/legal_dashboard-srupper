@@ -40,6 +40,6 @@ export interface DatabaseTransaction {
 export interface DatabaseClient {
   query<T = unknown>(sql: string, params?: unknown[]): T[];
   run(sql: string, params?: unknown[]): { changes: number; lastInsertRowid: number };
-  transaction<T>(callback: (tx: DatabaseTransaction) => T): T;
+  transaction<T>(callback?: (tx: DatabaseTransaction) => T): T | DatabaseTransaction;
   close(): void;
 }
