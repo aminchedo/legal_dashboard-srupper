@@ -27,18 +27,5 @@
   "env": {
     "PYTHONPATH": "./",
     "PYTHON_SETUP_REQUIRES": "setuptools>=68.0.0 wheel>=0.41.0"
-  },
-  "excludeFiles": [
-    "**/*.pyc",
-    "**/__pycache__/**",
-    ".env",
-    ".git/**",
-    ".venv/**",
-    "tests/**",
-    "*.md",
-    ".gitignore",
-    "frontend/node_modules/**",
-    "frontend/.vite/**",
-    "frontend/src/**/*.test.*"
-  ]
+  }
 }
