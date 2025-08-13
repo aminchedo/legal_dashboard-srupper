@@ -13,3 +13,13 @@ yarn-error.log*
 .DS_Store
 *.tgz
 *.tar.gz
+*.pyc
+__pycache__/
+.env
+.venv/
+tests/
+*.md
+.gitignore
+frontend/node_modules/
+frontend/.vite/
+frontend/src/**/*.test.*
