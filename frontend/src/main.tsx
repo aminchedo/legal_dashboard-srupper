@@ -9,3 +9,9 @@ createRoot(document.getElementById('root')!).render(
     <App />
   </React.StrictMode>
 )
+
+const loadingEl = document.getElementById('loading-screen')
+if (loadingEl) {
+  loadingEl.classList.add('fade-out')
+  setTimeout(() => loadingEl.remove(), 600)
+}
