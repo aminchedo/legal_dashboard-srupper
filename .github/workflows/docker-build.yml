@@ -11,8 +11,8 @@ on:
       - master
 
 env:
-  DOCKER_USERNAME: 24498743
-  DOCKER_TOKEN: dckr_pat_11XAFYII0Y7K9QGZD0X5A11Z18
+  DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+  DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
   IMAGE_NAME: legal-dashboard
 
 jobs:
