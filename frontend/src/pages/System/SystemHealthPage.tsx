@@ -1,294 +1,584 @@
-import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from '../../utils/iconRegistry';
-import { RiseOutlined, TrophyOutlined, BookOutlined, GlobalOutlined } from '@ant-design/icons';
-import { BookOpen, Award, TrendingUp, Globe } from '../../utils/iconRegistry';
-import { useDocuments, useStatistics } from '../../hooks/useDatabase';
-import { format, subDays, eachDayOfInterval } from 'date-fns';
-import { faIR } from 'date-fns/locale';
-import { MetricCard } from '../../components/ui/Card';
-import ScoreIndicator from '../../components/ScoreIndicator';
+import React, { useState, useEffect } from 'react';
+import {
+  Cpu,
+  HardDrive,
+  MemoryStick,
+  Wifi,
+  Server,
+  Database,
+  Shield,
+  Activity,
+  Zap,
+  AlertTriangle,
+  CheckCircle2,
+  Clock,
+  RefreshCw,
+  Settings,
+  Download,
+  Eye,
+  TrendingUp,
+  TrendingDown,
+  Globe
+} from 'lucide-react';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  Button,
+  StatusBadge,
+  Select
+} from '../../components/ui';
+import { LEGAL_TERMINOLOGY } from '../../lib/terminology';
+import { cn, formatPersianNumber, formatBytes, formatRelativeTime } from '../../lib/utils';
 
-const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#F97316', '#06B6D4', '#84CC16'];
+// Types for system monitoring
+interface SystemMetric {
+  id: string;
+  label: string;
+  value: number;
+  unit: string;
+  status: 'healthy' | 'warning' | 'critical';
+  icon: React.ElementType;
+  color: string;
+  limit?: number;
+  trend: number; // percentage change
+}
 
-export default function AnalyticsPage() {
-  const { data: documentsData, isLoading: documentsLoading } = useDocuments({ limit: 1000 });
-  const { data: stats, isLoading: statsLoading } = useStatistics();
+interface ServiceStatus {
+  id: string;
+  name: string;
+  status: 'online' | 'offline' | 'maintenance' | 'degraded';
+  uptime: number; // in hours
+  responseTime: number; // in ms
+  lastCheck: Date;
+  version?: string;
+  description: string;
+}
 
-  const isLoading = documentsLoading || statsLoading;
-  const items = documentsData?.items || [];
+interface LogEntry {
+  id: string;
+  timestamp: Date;
+  level: 'info' | 'warning' | 'error' | 'debug';
+  service: string;
+  message: string;
+  details?: string;
+}
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">در حال بارگذاری تحلیل‌ها...</p>
-        </div>
-      </div>
-    );
-  }
+const SystemHealthPage: React.FC = () => {
+  const [refreshInterval, setRefreshInterval] = useState('30s');
+  const [isAutoRefresh, setIsAutoRefresh] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState(new Date());
 
-  if (!items.length || !stats) {
-    return (
-      <div className="space-y-6">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">تحلیل و گزارش</h1>
-          <p className="text-gray-600">آنالیز جامع داده‌های جمع‌آوری شده</p>
-        </div>
+  // Mock system metrics
+  const [systemMetrics, setSystemMetrics] = useState<SystemMetric[]>([
+    {
+      id: 'cpu',
+      label: 'پردازنده',
+      value: 24.6,
+      unit: '%',
+      status: 'healthy',
+      icon: Cpu,
+      color: 'text-blue-600',
+      limit: 80,
+      trend: -2.3
+    },
+    {
+      id: 'memory',
+      label: 'حافظه RAM',
+      value: 8.2,
+      unit: 'GB',
+      status: 'healthy',
+      icon: MemoryStick,
+      color: 'text-green-600',
+      limit: 16,
+      trend: 1.8
+    },
+    {
+      id: 'disk',
+      label: 'فضای دیسک',
+      value: 45.8,
+      unit: 'GB',
+      status: 'warning',
+      icon: HardDrive,
+      color: 'text-yellow-600',
+      limit: 100,
+      trend: 3.2
+    },
+    {
+      id: 'network',
+      label: 'ترافیک شبکه',
+      value: 125.4,
+      unit: 'Mbps',
+      status: 'healthy',
+      icon: Wifi,
+      color: 'text-purple-600',
+      limit: 1000,
+      trend: -5.7
+    },
+    {
+      id: 'database',
+      label: 'اتصالات دیتابیس',
+      value: 47,
+      unit: 'اتصال',
+      status: 'healthy',
+      icon: Database,
+      color: 'text-indigo-600',
+      limit: 100,
+      trend: 0.9
+    },
+    {
+      id: 'requests',
+      label: 'درخواست‌ها در دقیقه',
+      value: 1847,
+      unit: 'req/min',
+      status: 'healthy',
+      icon: Activity,
+      color: 'text-emerald-600',
+      limit: 5000,
+      trend: 12.4
+    }
+  ]);
 
-        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-12 text-center">
-          <BookOpen size={48} className="text-yellow-500 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-yellow-800 mb-2">هنوز داده‌ای برای تحلیل وجود ندارد</h3>
-          <p className="text-yellow-600">ابتدا از بخش وب اسکرپینگ داده‌هایی را جمع‌آوری کنید</p>
-        </div>
-      </div>
-    );
-  }
+  // Mock service statuses
+  const [services, setServices] = useState<ServiceStatus[]>([
+    {
+      id: 'web',
+      name: 'سرور وب',
+      status: 'online',
+      uptime: 720.5,
+      responseTime: 45,
+      lastCheck: new Date(),
+      version: '2.4.1',
+      description: 'سرور اصلی وب اپلیکیشن'
+    },
+    {
+      id: 'api',
+      name: 'API Gateway',
+      status: 'online',
+      uptime: 720.5,
+      responseTime: 23,
+      lastCheck: new Date(),
+      version: '1.8.3',
+      description: 'درگاه API اصلی سیستم'
+    },
+    {
+      id: 'database',
+      name: 'پایگاه داده',
+      status: 'online',
+      uptime: 1440.2,
+      responseTime: 12,
+      lastCheck: new Date(),
+      version: 'PostgreSQL 14.2',
+      description: 'پایگاه داده اصلی'
+    },
+    {
+      id: 'auth',
+      name: 'سرویس احراز هویت',
+      status: 'degraded',
+      uptime: 715.8,
+      responseTime: 156,
+      lastCheck: new Date(),
+      version: '3.1.0',
+      description: 'سیستم احراز هویت و مجوزها'
+    },
+    {
+      id: 'storage',
+      name: 'ذخیره‌سازی فایل',
+      status: 'online',
+      uptime: 720.5,
+      responseTime: 67,
+      lastCheck: new Date(),
+      version: '2.0.1',
+      description: 'سیستم ذخیره‌سازی اسناد'
+    },
+    {
+      id: 'backup',
+      name: 'پشتیبان‌گیری',
+      status: 'maintenance',
+      uptime: 0,
+      responseTime: 0,
+      lastCheck: new Date(Date.now() - 3600000), // 1 hour ago
+      version: '1.5.2',
+      description: 'سیستم پشتیبان‌گیری خودکار'
+    }
+  ]);
 
-  // Prepare time series data
-  const last30Days = eachDayOfInterval({
-    start: subDays(new Date(), 29),
-    end: new Date()
-  });
+  // Mock recent logs
+  const [recentLogs, setRecentLogs] = useState<LogEntry[]>([
+    {
+      id: '1',
+      timestamp: new Date(Date.now() - 300000), // 5 minutes ago
+      level: 'warning',
+      service: 'Auth Service',
+      message: 'زمان پاسخ‌دهی بالا تر از حد طبیعی',
+      details: 'Average response time: 156ms (threshold: 100ms)'
+    },
+    {
+      id: '2',
+      timestamp: new Date(Date.now() - 600000), // 10 minutes ago
+      level: 'info',
+      service: 'Backup Service',
+      message: 'شروع پشتیبان‌گیری روزانه',
+      details: 'Daily backup started at 02:00 AM'
+    },
+    {
+      id: '3',
+      timestamp: new Date(Date.now() - 900000), // 15 minutes ago
+      level: 'info',
+      service: 'Web Server',
+      message: 'پیک ترافیک شناسایی شد',
+      details: '1847 requests/minute detected'
+    },
+    {
+      id: '4',
+      timestamp: new Date(Date.now() - 1200000), // 20 minutes ago
+      level: 'error',
+      service: 'Database',
+      message: 'خطا در اتصال موقت',
+      details: 'Connection timeout resolved after 2.3 seconds'
+    }
+  ]);
 
-  const timeSeriesData = last30Days.map((date) => {
-    const dateStr = format(date, 'yyyy-MM-dd');
-    const dayItems = items.filter((item: any) =>
-      format(new Date(item.createdAt), 'yyyy-MM-dd') === dateStr
-    );
+  // Auto-refresh logic
+  useEffect(() => {
+    if (!isAutoRefresh) return;
 
-    return {
-      date: format(date, 'MM/dd', { locale: faIR }),
-      fullDate: dateStr,
-      count: dayItems.length,
-      avgRating: dayItems.length > 0 ? dayItems.reduce((acc: number, item: any) => acc + item.ratingScore, 0) / dayItems.length : 0
+    const interval = parseInt(refreshInterval.replace('s', '')) * 1000;
+    const timer = setInterval(() => {
+      handleRefresh();
+    }, interval);
+
+    return () => clearInterval(timer);
+  }, [isAutoRefresh, refreshInterval]);
+
+  const handleRefresh = async () => {
+    setIsLoading(true);
+    // Simulate data refresh
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Update metrics with slight variations
+    setSystemMetrics(prev => prev.map(metric => ({
+      ...metric,
+      value: metric.value + (Math.random() - 0.5) * 2,
+      trend: (Math.random() - 0.5) * 10
+    })));
+
+    setLastUpdated(new Date());
+    setIsLoading(false);
+  };
+
+  const getStatusBadge = (status: ServiceStatus['status']) => {
+    const statusMap = {
+      online: { variant: 'success' as const, label: 'فعال' },
+      offline: { variant: 'error' as const, label: 'غیرفعال' },
+      maintenance: { variant: 'warning' as const, label: 'تعمیرات' },
+      degraded: { variant: 'warning' as const, label: 'کاهش عملکرد' }
     };
-  });
+    return statusMap[status];
+  };
 
-  // Category analysis
-  const categoryData = Object.entries(stats.categories).map(([name, value]) => ({
-    name,
-    value,
-    percentage: ((value / stats.totalItems) * 100).toFixed(1)
-  }));
+  const getMetricStatus = (metric: SystemMetric) => {
+    if (metric.limit) {
+      const percentage = (metric.value / metric.limit) * 100;
+      if (percentage >= 90) return 'critical';
+      if (percentage >= 70) return 'warning';
+    }
+    return 'healthy';
+  };
 
-  // Domain analysis with additional metrics
-  const domainAnalysis = Object.entries(stats.topDomains).slice(0, 8).map(([domain, count]) => {
-    const domainItems = items.filter((item: any) => item.domain === domain);
-    const avgRating = domainItems.length > 0 ? domainItems.reduce((acc: number, item: any) => acc + item.ratingScore, 0) / domainItems.length : 0;
-    const avgWordCount = domainItems.length > 0 ? domainItems.reduce((acc: number, item: any) => acc + item.wordCount, 0) / domainItems.length : 0;
-
-    return {
-      domain: domain.replace('www.', ''),
-      count,
-      avgRating: avgRating * 100,
-      avgWordCount: Math.round(avgWordCount)
+  const getLogLevelBadge = (level: LogEntry['level']) => {
+    const levelMap = {
+      info: { variant: 'secondary' as const, label: 'اطلاعات' },
+      warning: { variant: 'warning' as const, label: 'هشدار' },
+      error: { variant: 'error' as const, label: 'خطا' },
+      debug: { variant: 'secondary' as const, label: 'دیباگ' }
     };
-  });
+    return levelMap[level];
+  };
 
-  const contentLengthRanges = [
-    { range: '0-100', min: 0, max: 100 },
-    { range: '101-500', min: 101, max: 500 },
-    { range: '501-1000', min: 501, max: 1000 },
-    { range: '1001-2000', min: 1001, max: 2000 },
-    { range: '2000+', min: 2001, max: Infinity }
-  ];
+  const formatUptime = (hours: number) => {
+    const days = Math.floor(hours / 24);
+    const remainingHours = Math.floor(hours % 24);
+    const minutes = Math.floor((hours % 1) * 60);
+    
+    if (days > 0) {
+      return `${formatPersianNumber(days)} روز ${formatPersianNumber(remainingHours)} ساعت`;
+    } else if (remainingHours > 0) {
+      return `${formatPersianNumber(remainingHours)} ساعت ${formatPersianNumber(minutes)} دقیقه`;
+    } else {
+      return `${formatPersianNumber(minutes)} دقیقه`;
+    }
+  };
 
-  const contentLengthData = contentLengthRanges.map(range => ({
-    range: range.range,
-    count: items.filter((item: any) => item.wordCount >= range.min && item.wordCount <= range.max).length
-  }));
+  const MetricCard: React.FC<{ metric: SystemMetric }> = ({ metric }) => {
+    const IconComponent = metric.icon;
+    const currentStatus = getMetricStatus(metric);
+    const percentage = metric.limit ? (metric.value / metric.limit) * 100 : 0;
+    
+    return (
+      <Card className="hover:shadow-md transition-shadow duration-200">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className={cn("p-3 rounded-lg bg-opacity-10", metric.color.replace('text-', 'bg-'))}>
+                <IconComponent className={cn("w-6 h-6", metric.color)} />
+              </div>
+              <div>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  {metric.label}
+                </p>
+                <div className="flex items-center gap-2">
+                  <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                    {formatPersianNumber(metric.value.toFixed(1))}
+                  </p>
+                  <span className="text-sm text-neutral-500 dark:text-neutral-400">
+                    {metric.unit}
+                  </span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="text-left rtl:text-right">
+              <StatusBadge 
+                variant={currentStatus === 'healthy' ? 'success' : currentStatus === 'warning' ? 'warning' : 'error'}
+                size="sm"
+              >
+                {currentStatus === 'healthy' ? 'سالم' : currentStatus === 'warning' ? 'هشدار' : 'بحرانی'}
+              </StatusBadge>
+              <div className="flex items-center gap-1 mt-2">
+                {metric.trend > 0 ? (
+                  <TrendingUp className="w-4 h-4 text-success-600" />
+                ) : (
+                  <TrendingDown className="w-4 h-4 text-error-600" />
+                )}
+                <span className={cn(
+                  "text-sm font-medium",
+                  metric.trend > 0 ? 'text-success-600' : 'text-error-600'
+                )}>
+                  {formatPersianNumber(Math.abs(metric.trend).toFixed(1))}%
+                </span>
+              </div>
+            </div>
+          </div>
+          
+          {/* Progress Bar */}
+          {metric.limit && (
+            <div className="space-y-2">
+              <div className="flex justify-between text-xs text-neutral-500 dark:text-neutral-400">
+                <span>استفاده شده</span>
+                <span>{formatPersianNumber(percentage.toFixed(1))}%</span>
+              </div>
+              <div className="w-full bg-neutral-200 dark:bg-neutral-700 rounded-full h-2">
+                <div
+                  className={cn(
+                    "h-2 rounded-full transition-all duration-300",
+                    currentStatus === 'healthy' && 'bg-success-500',
+                    currentStatus === 'warning' && 'bg-warning-500',
+                    currentStatus === 'critical' && 'bg-error-500'
+                  )}
+                  style={{ width: `${Math.min(percentage, 100)}%` }}
+                />
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    );
+  };
 
-  const qualityRanges = [
-    { label: 'ضعیف (0-20%)', min: 0, max: 0.2 },
-    { label: 'متوسط (21-40%)', min: 0.21, max: 0.4 },
-    { label: 'خوب (41-60%)', min: 0.41, max: 0.6 },
-    { label: 'عالی (61-80%)', min: 0.61, max: 0.8 },
-    { label: 'فوق‌العاده (81-100%)', min: 0.81, max: 1 }
-  ];
-
-  const qualityData = qualityRanges.map(range => ({
-    label: range.label,
-    count: items.filter((item: any) => item.ratingScore >= range.min && item.ratingScore <= range.max).length
-  }));
-
-  // Insights calculations
-  const topCategory = categoryData.length > 0 ? categoryData.reduce((prev, current) => prev.value > current.value ? prev : current) : { name: 'N/A' };
-  const avgWordsPerItem = items.length > 0 ? Math.round(items.reduce((acc: any, item: any) => acc + item.wordCount, 0) / items.length) : 0;
-  const highQualityCount = items.filter((item: any) => item.ratingScore >= 0.7).length;
-  const highQualityPercentage = items.length > 0 ? (highQualityCount / items.length * 100).toFixed(1) : "0";
+  const ServiceCard: React.FC<{ service: ServiceStatus }> = ({ service }) => {
+    const statusBadge = getStatusBadge(service.status);
+    
+    return (
+      <Card className="hover:shadow-md transition-shadow duration-200">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="font-medium text-neutral-900 dark:text-neutral-100 mb-1">
+                {service.name}
+              </h3>
+              <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                {service.description}
+              </p>
+            </div>
+            <StatusBadge variant={statusBadge.variant} size="sm">
+              {statusBadge.label}
+            </StatusBadge>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <span className="text-neutral-500 dark:text-neutral-400">زمان فعالیت:</span>
+              <p className="font-medium text-neutral-900 dark:text-neutral-100">
+                {formatUptime(service.uptime)}
+              </p>
+            </div>
+            <div>
+              <span className="text-neutral-500 dark:text-neutral-400">زمان پاسخ:</span>
+              <p className="font-medium text-neutral-900 dark:text-neutral-100">
+                {formatPersianNumber(service.responseTime)}ms
+              </p>
+            </div>
+            <div>
+              <span className="text-neutral-500 dark:text-neutral-400">نسخه:</span>
+              <p className="font-medium text-neutral-900 dark:text-neutral-100">
+                {service.version}
+              </p>
+            </div>
+            <div>
+              <span className="text-neutral-500 dark:text-neutral-400">آخرین بررسی:</span>
+              <p className="font-medium text-neutral-900 dark:text-neutral-100">
+                {formatRelativeTime(service.lastCheck)}
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">تحلیل و گزارش</h1>
-        <p className="text-gray-600">آنالیز جامع داده‌های جمع‌آوری شده و بینش‌های کلیدی</p>
+      {/* Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+            {LEGAL_TERMINOLOGY.pages.system}
+          </h1>
+          <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
+            نظارت بر سلامت و عملکرد سیستم
+          </p>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <Select
+            options={[
+              { value: '10s', label: '۱۰ ثانیه' },
+              { value: '30s', label: '۳۰ ثانیه' },
+              { value: '60s', label: '۱ دقیقه' },
+              { value: '300s', label: '۵ دقیقه' }
+            ]}
+            value={refreshInterval}
+            onChange={setRefreshInterval}
+            size="sm"
+          />
+          <Button
+            variant={isAutoRefresh ? 'primary' : 'outline'}
+            icon={RefreshCw}
+            size="sm"
+            onClick={() => setIsAutoRefresh(!isAutoRefresh)}
+          >
+            {isAutoRefresh ? 'خودکار' : 'دستی'}
+          </Button>
+          <Button
+            variant="outline"
+            icon={RefreshCw}
+            size="sm"
+            loading={isLoading}
+            onClick={handleRefresh}
+          >
+            به‌روزرسانی
+          </Button>
+          <Button
+            variant="outline"
+            icon={Download}
+            size="sm"
+          >
+            گزارش
+          </Button>
+        </div>
       </div>
 
-      {/* Key Insights Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                  <MetricCard
-            label="دسته‌بندی پربازدید"
-            value={topCategory.name}
-            icon={<Award />}
-          />
-
-                  <MetricCard
-            label="میانگین کلمات"
-            value={avgWordsPerItem}
-            icon={<BookOpen />}
-          />
-
-                  <MetricCard
-            label="محتوای با کیفیت"
-            value={`${highQualityPercentage}%`}
-            icon={<TrendingUp />}
-          />
-
-                  <MetricCard
-            label="منابع فعال"
-            value={Object.keys(stats.topDomains).length}
-            icon={<Globe />}
-          />
+      {/* Last Updated */}
+      <div className="flex items-center gap-2 text-sm text-neutral-500 dark:text-neutral-400">
+        <Clock className="w-4 h-4" />
+        <span>آخرین به‌روزرسانی: {formatRelativeTime(lastUpdated)}</span>
       </div>
 
-      {/* Time Series Chart */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">روند زمانی جمع‌آوری (30 روز گذشته)</h3>
-        <ResponsiveContainer width="100%" height={300}>
-          <AreaChart data={timeSeriesData}>
-            <defs>
-              <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-            <XAxis dataKey="date" stroke="#6B7280" fontSize={12} />
-            <YAxis stroke="#6B7280" />
-            <Tooltip
-              formatter={(value: any) => [`${value} آیتم`, 'تعداد']}
-              labelStyle={{ color: '#374151' }}
-            />
-            <Area
-              type="monotone"
-              dataKey="count"
-              stroke="#3B82F6"
-              strokeWidth={2}
-              fill="url(#colorCount)"
-            />
-          </AreaChart>
-        </ResponsiveContainer>
+      {/* System Metrics */}
+      <div>
+        <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-4">
+          منابع سیستم
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {systemMetrics.map((metric) => (
+            <MetricCard key={metric.id} metric={metric} />
+          ))}
+        </div>
       </div>
 
-      {/* Charts Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        {/* Category Distribution */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">توزیع دسته‌بندی‌ها</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={categoryData}
-                cx="50%"
-                cy="50%"
-                innerRadius={60}
-                outerRadius={120}
-                paddingAngle={2}
-                dataKey="value"
-              >
-                {categoryData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip
-                formatter={(value: any, name: any) => [`${value} مورد (${categoryData.find(d => d.name === name)?.percentage}%)`, name]}
-              />
-            </PieChart>
-          </ResponsiveContainer>
+      {/* Services Status */}
+      <div>
+        <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-4">
+          وضعیت سرویس‌ها
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {services.map((service) => (
+            <ServiceCard key={service.id} service={service} />
+          ))}
+        </div>
+      </div>
 
-          <div className="flex flex-wrap gap-2 mt-4">
-            {categoryData.map((entry, index) => (
-              <div key={entry.name} className="flex items-center gap-2 text-sm">
-                <div
-                  className="w-3 h-3 rounded-full"
-                  style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                />
-                <span className="text-gray-600">{entry.name} ({entry.percentage}%)</span>
-              </div>
-            ))}
+      {/* Recent Logs */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>گزارش‌های اخیر</CardTitle>
+            <Button variant="outline" size="sm" icon={Eye}>
+              مشاهده همه
+            </Button>
           </div>
-        </div>
-
-        {/* Quality Distribution */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">توزیع کیفیت محتوا</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={qualityData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-              <XAxis
-                dataKey="label"
-                stroke="#6B7280"
-                fontSize={10}
-                angle={-45}
-                textAnchor="end"
-                height={80}
-              />
-              <YAxis stroke="#6B7280" />
-              <Tooltip formatter={(value: any) => [`${value} مورد`, 'تعداد']} />
-              <Bar dataKey="count" fill="#10B981" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* Domain Analysis */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">تحلیل عملکرد منابع</h3>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-200">
-                <th className="text-right py-3 px-4 font-semibold text-gray-900">منبع</th>
-                <th className="text-right py-3 px-4 font-semibold text-gray-900">تعداد آیتم‌ها</th>
-                <th className="text-right py-3 px-4 font-semibold text-gray-900">میانگین کیفیت</th>
-                <th className="text-right py-3 px-4 font-semibold text-gray-900">میانگین طول</th>
-              </tr>
-            </thead>
-            <tbody>
-              {domainAnalysis.map((domain, index) => (
-                <tr key={domain.domain} className={index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
-                  <td className="py-3 px-4 font-medium text-gray-900">{domain.domain}</td>
-                  <td className="py-3 px-4 text-gray-700">{domain.count.toLocaleString('fa-IR')}</td>
-                  <td className="py-3 px-4">
-                    <div className="flex items-center gap-3">
-                      <ScoreIndicator score={domain.avgRating} maxScore={100} variant="bar" size="sm" color="primary" animated />
-                      <span className="text-sm font-medium text-gray-700">{domain.avgRating.toFixed(0)}%</span>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {recentLogs.map((log) => {
+              const levelBadge = getLogLevelBadge(log.level);
+              return (
+                <div key={log.id} className="flex items-start gap-4 p-4 bg-neutral-50 dark:bg-neutral-800 rounded-lg">
+                  <div className={cn(
+                    "p-2 rounded-lg",
+                    log.level === 'error' && 'bg-red-100 dark:bg-red-900/30',
+                    log.level === 'warning' && 'bg-yellow-100 dark:bg-yellow-900/30',
+                    log.level === 'info' && 'bg-blue-100 dark:bg-blue-900/30',
+                    log.level === 'debug' && 'bg-gray-100 dark:bg-gray-900/30'
+                  )}>
+                    {log.level === 'error' && <AlertTriangle className="w-4 h-4 text-red-600" />}
+                    {log.level === 'warning' && <AlertTriangle className="w-4 h-4 text-yellow-600" />}
+                    {log.level === 'info' && <CheckCircle2 className="w-4 h-4 text-blue-600" />}
+                    {log.level === 'debug' && <Settings className="w-4 h-4 text-gray-600" />}
+                  </div>
+                  
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h4 className="font-medium text-neutral-900 dark:text-neutral-100">
+                        {log.message}
+                      </h4>
+                      <StatusBadge variant={levelBadge.variant} size="sm">
+                        {levelBadge.label}
+                      </StatusBadge>
                     </div>
-                  </td>
-                  <td className="py-3 px-4 text-gray-700">
-                    {domain.avgWordCount.toLocaleString('fa-IR')} کلمه
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Content Length Distribution */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">توزیع طول محتوا (بر اساس تعداد کلمات)</h3>
-        <ResponsiveContainer width="100%" height={250}>
-          <BarChart data={contentLengthData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-            <XAxis dataKey="range" stroke="#6B7280" />
-            <YAxis stroke="#6B7280" />
-            <Tooltip formatter={(value: any) => [`${value} مورد`, 'تعداد']} />
-            <Bar dataKey="count" fill="#F59E0B" radius={[4, 4, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                      {log.service}
+                    </p>
+                    {log.details && (
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1 font-mono">
+                        {log.details}
+                      </p>
+                    )}
+                    <div className="flex items-center gap-2 mt-2 text-xs text-neutral-500 dark:text-neutral-400">
+                      <span>{formatRelativeTime(log.timestamp)}</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
-}
+};
+
+export default SystemHealthPage;

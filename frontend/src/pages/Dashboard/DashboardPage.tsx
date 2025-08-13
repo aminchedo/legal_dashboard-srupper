@@ -1,719 +1,530 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, Legend, LineChart, Line } from 'recharts';
-import {
-  Activity, BarChart3, Bell, Briefcase, Calendar, CheckCircle, ChevronDown, ChevronRight,
-  CloudLightning, Code, Database, Download, Edit, ExternalLink, FileText, Filter, Folder,
-  HardDrive, Home, Info, Layers, LogIn, Maximize2, Menu, MessageSquare, Minimize2, Moon,
-  MoreVertical, Pause, Play, Plus, PowerOff, RefreshCw, Search, Settings, Server, Shield,
-  Sun, Tag, Terminal, Trash2, TrendingUp, Upload, Users, X, XCircle, Zap, AlertTriangle, 
-  Cpu, Wifi, Clock, Eye, AlertCircle, CheckSquare, MemoryStick, Power, Globe
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { 
+  FileText, 
+  Activity, 
+  Server, 
+  TrendingUp, 
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  BarChart3,
+  Database,
+  Globe,
+  Cpu,
+  HardDrive,
+  Wifi,
+  Users,
+  Download,
+  Upload,
+  Search,
+  ExternalLink,
+  Calendar
 } from 'lucide-react';
+import { PieChart, Pie, Cell, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 
-// Enhanced types for better TypeScript support
-interface MetricCardProps {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  value: number;
-  change: number;
-  colorClass: string;
-}
+import { 
+  Card, 
+  CardHeader, 
+  CardTitle, 
+  CardDescription, 
+  CardContent,
+  Button, 
+  StatusBadge,
+  cn
+} from '../../components/ui';
+import LEGAL_TERMINOLOGY from '../../lib/terminology';
+import { formatPersianNumber, formatNumber, formatRelativeTime } from '../../lib/utils';
 
-interface NavigationCardProps {
-  title: string;
-  icon: React.ComponentType<{ className?: string }>;
-  description: string;
-  count?: number;
-  status?: string;
-  onClick: () => void;
-}
-
+// Types for better TypeScript support
 interface SystemMetric {
   name: string;
   value: number;
-  color: string;
+  unit: string;
+  status: 'success' | 'warning' | 'error';
+  trend?: number;
 }
 
-// Enhanced date formatting functions
-const formatDate = (date: Date) => {
-  return new Intl.DateTimeFormat('fa-IR', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit'
-  }).format(date);
-};
+interface DocumentStats {
+  totalDocuments: number;
+  newToday: number;
+  processing: number;
+  categories: Array<{
+    name: string;
+    count: number;
+    color: string;
+  }>;
+}
 
-const formatDateTime = (date: Date) => {
-  return new Intl.DateTimeFormat('fa-IR', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    weekday: 'long'
-  }).format(date);
-};
+interface RecentDocument {
+  id: string;
+  title: string;
+  category: string;
+  source: string;
+  createdAt: Date;
+  status: 'published' | 'draft' | 'processing';
+  wordCount: number;
+  url: string;
+}
 
-const formatTime = (date: Date) => {
-  return new Intl.DateTimeFormat('fa-IR', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit'
-  }).format(date);
-};
+interface SystemStatus {
+  cpu: number;
+  memory: number;
+  storage: number;
+  network: {
+    upload: number;
+    download: number;
+  };
+  services: Array<{
+    name: string;
+    status: 'operational' | 'degraded' | 'down';
+    responseTime: string;
+  }>;
+}
 
-const formatDistanceToNow = (date: Date) => {
-  const now = new Date();
-  const diff = now.getTime() - date.getTime();
-  const minutes = Math.floor(diff / 60000);
-  const hours = Math.floor(diff / 3600000);
-  const days = Math.floor(diff / 86400000);
-
-  if (minutes < 60) return `${minutes} دقیقه پیش`;
-  if (hours < 24) return `${hours} ساعت پیش`;
-  return `${days} روز پیش`;
-};
-
-// Enhanced mock data with real-time updates
-const useDashboardData = () => {
-  const [mockStats, setMockStats] = useState({
-    totalItems: 12450,
-    dailyChange: 152,
-    activeJobs: 12,
-    activeProxies: 128,
-    errors24h: 7,
-    categories: { 
-      'حقوق مدنی': 4500, 
-      'حقوق تجارت': 3200, 
-      'حقوق جزا': 2100, 
-      'آیین دادرسی': 1850, 
-      'سایر': 800 
-    },
-    topDomains: { 
-      'dadgostary.ir': 5200, 
-      'majlis.ir': 3100, 
-      'tccim.ir': 1500, 
-      'intamedia.ir': 950, 
-      'rrk.ir': 700, 
-      'adliran.ir': 500 
-    },
-    dailyScraped: [
-      { name: 'شنبه', count: 300 }, 
-      { name: 'یکشنبه', count: 450 }, 
-      { name: 'دوشنبه', count: 600 },
-      { name: 'سه‌شنبه', count: 520 }, 
-      { name: 'چهارشنبه', count: 780 }, 
-      { name: 'پنجشنبه', count: 900 },
-      { name: 'جمعه', count: 400 },
-    ],
-    systemHealth: {
-      cpu: [...Array(30)].map((_, i) => ({ x: i, y: Math.random() * 60 + 20 })),
-      memory: [...Array(30)].map((_, i) => ({ x: i, y: Math.random() * 40 + 50 })),
-      disk: 73,
-      network: { up: 1.2, down: 15.8 },
-      services: [
-        { name: 'API Gateway', status: 'Operational', responseTime: '120ms' },
-        { name: 'Database Service', status: 'Operational', responseTime: '45ms' },
-        { name: 'Scraping Workers', status: 'Operational', responseTime: 'N/A' },
-        { name: 'Proxy Manager', status: 'Degraded Performance', responseTime: '350ms' },
-        { name: 'Authentication', status: 'Operational', responseTime: '80ms' },
-      ]
-    },
-    analytics: {
-      documentGrowth: [...Array(12)].map((_, i) => ({ 
-        month: `${i+1} ماه`, 
-        total: 1000 * (i+1) + Math.random() * 1000 
-      })),
-      sourceComparison: { 'dadgostary.ir': 45, 'majlis.ir': 30, 'tccim.ir': 15, 'other': 10 },
-      keywordTrends: {
-        'مالیات': [...Array(12)].map(() => Math.floor(Math.random() * 100)),
-        'قاچاق': [...Array(12)].map(() => Math.floor(Math.random() * 80)),
-        'خانواده': [...Array(12)].map(() => Math.floor(Math.random() * 60)),
-      }
-    }
+const DashboardPage: React.FC = () => {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [systemStatus, setSystemStatus] = useState<SystemStatus>({
+    cpu: 68,
+    memory: 84,
+    storage: 73,
+    network: { upload: 1.2, download: 15.8 },
+    services: [
+      { name: 'Gateway API', status: 'operational', responseTime: '120ms' },
+      { name: 'پایگاه داده', status: 'operational', responseTime: '45ms' },
+      { name: 'واحد استخراج', status: 'operational', responseTime: 'N/A' },
+      { name: 'مدیریت پروکسی', status: 'degraded', responseTime: '350ms' },
+      { name: 'احراز هویت', status: 'operational', responseTime: '80ms' },
+    ]
   });
 
-  const [recentDocuments] = useState([
-    { 
-      id: 'doc-001', 
-      title: 'رای وحدت رویه شماره ۸۲۰ هیات عمومی دیوان عالی کشور', 
-      source: 'rrk.ir', 
-      category: 'آیین دادرسی', 
-      createdAt: new Date(2023, 10, 5), 
-      wordCount: 1250, 
-      status: 'Published',
-      url: 'https://rrk.ir/Laws/ShowLaw.aspx?Code=820',
-      ratingScore: 0.95,
-      domain: 'rrk.ir'
+  const [documentStats] = useState<DocumentStats>({
+    totalDocuments: 12450,
+    newToday: 152,
+    processing: 12,
+    categories: [
+      { name: 'حقوق مدنی', count: 4500, color: '#3B82F6' },
+      { name: 'حقوق تجاری', count: 3200, color: '#10B981' },
+      { name: 'حقوق کیفری', count: 2100, color: '#F59E0B' },
+      { name: 'آیین دادرسی', count: 1850, color: '#EF4444' },
+      { name: 'سایر', count: 800, color: '#8B5CF6' },
+    ]
+  });
+
+  const [recentDocuments] = useState<RecentDocument[]>([
+    {
+      id: 'doc-001',
+      title: 'رای وحدت رویه شماره ۸۲۰ هیات عمومی دیوان عالی کشور',
+      category: 'آیین دادرسی',
+      source: 'rrk.ir',
+      createdAt: new Date(2024, 0, 15),
+      status: 'published',
+      wordCount: 1250,
+      url: 'https://rrk.ir/Laws/ShowLaw.aspx?Code=820'
     },
-    { 
-      id: 'doc-002', 
-      title: 'قانون اصلاح قانون مبارزه با قاچاق کالا و ارز', 
-      source: 'majlis.ir', 
-      category: 'حقوق جزا', 
-      createdAt: new Date(2023, 10, 2), 
-      wordCount: 8500, 
-      status: 'Published',
-      url: 'https://majlis.ir/fa/law/show/1024867',
-      ratingScore: 0.89,
-      domain: 'majlis.ir'
+    {
+      id: 'doc-002',
+      title: 'قانون اصلاح قانون مبارزه با قاچاق کالا و ارز',
+      category: 'حقوق کیفری',
+      source: 'majlis.ir',
+      createdAt: new Date(2024, 0, 12),
+      status: 'published',
+      wordCount: 8500,
+      url: 'https://majlis.ir/fa/law/show/1024867'
     },
-    { 
-      id: 'doc-003', 
-      title: 'بخشنامه جدید مالیات بر ارزش افزوده برای سال ۱۴۰۲', 
-      source: 'intamedia.ir', 
-      category: 'مالیاتی', 
-      createdAt: new Date(2023, 9, 28), 
-      wordCount: 2100, 
-      status: 'Archived',
-      url: 'https://intamedia.ir/circular/2023/28',
-      ratingScore: 0.78,
-      domain: 'intamedia.ir'
+    {
+      id: 'doc-003',
+      title: 'بخشنامه جدید مالیات بر ارزش افزوده برای سال ۱۴۰۳',
+      category: 'حقوق مالیاتی',
+      source: 'intamedia.ir',
+      createdAt: new Date(2024, 0, 10),
+      status: 'processing',
+      wordCount: 2100,
+      url: 'https://intamedia.ir/circular/2023/28'
     },
-    { 
-      id: 'doc-004', 
-      title: 'آیین‌نامه اجرایی قانون حمایت از خانواده و جوانی جمعیت', 
-      source: 'dotic.ir', 
-      category: 'حقوق مدنی', 
-      createdAt: new Date(2023, 9, 15), 
-      wordCount: 5400, 
-      status: 'Published',
-      url: 'https://dotic.ir/regulation/family-support',
-      ratingScore: 0.92,
-      domain: 'dotic.ir'
-    },
-    { 
-      id: 'doc-005', 
-      title: 'دستورالعمل نحوه شناسایی و توقیف اموال مدیونین', 
-      source: 'adliran.ir', 
-      category: 'آیین دادرسی', 
-      createdAt: new Date(2023, 9, 11), 
-      wordCount: 3300, 
-      status: 'Draft',
-      url: 'https://adliran.ir/instructions/asset-seizure',
-      ratingScore: 0.85,
-      domain: 'adliran.ir'
+    {
+      id: 'doc-004',
+      title: 'آیین‌نامه اجرایی قانون حمایت از خانواده و جوانی جمعیت',
+      category: 'حقوق مدنی',
+      source: 'dotic.ir',
+      createdAt: new Date(2024, 0, 8),
+      status: 'published',
+      wordCount: 5400,
+      url: 'https://dotic.ir/regulation/family-support'
     },
   ]);
 
-  // Real-time data update simulation
+  // Simulate real-time data updates
   useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 1000);
+    
     const interval = setInterval(() => {
-      setMockStats(prev => ({
+      setSystemStatus(prev => ({
         ...prev,
-        totalItems: prev.totalItems + Math.floor(Math.random() * 5),
-        activeJobs: prev.activeJobs + (Math.random() > 0.7 ? 1 : 0),
-        systemHealth: {
-          ...prev.systemHealth,
-          cpu: [...prev.systemHealth.cpu.slice(1), { 
-            x: prev.systemHealth.cpu.length, 
-            y: Math.random() * 60 + 20 
-          }],
-          memory: [...prev.systemHealth.memory.slice(1), { 
-            x: prev.systemHealth.memory.length, 
-            y: Math.random() * 40 + 50 
-          }]
-        }
+        cpu: Math.max(20, Math.min(90, prev.cpu + (Math.random() - 0.5) * 10)),
+        memory: Math.max(40, Math.min(95, prev.memory + (Math.random() - 0.5) * 5)),
       }));
     }, 5000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearTimeout(timer);
+      clearInterval(interval);
+    };
   }, []);
 
-  return { mockStats, recentDocuments };
-};
-
-// Helper Components with Enhanced Responsive Design
-const Card: React.FC<{ children: React.ReactNode; className?: string }> = ({ 
-  children, 
-  className = '', 
-  ...props 
-}) => (
-  <div className={`bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700/50 rounded-xl shadow-elegant hover:shadow-glass transition-all duration-300 ${className}`} {...props}>
-    {children}
-  </div>
-);
-
-const Button: React.FC<{
-  children: React.ReactNode;
-  variant?: 'primary' | 'secondary' | 'danger' | 'ghost' | 'outline' | 'destructive';
-  icon?: React.ComponentType<{ className?: string }>;
-  className?: string;
-  onClick?: () => void;
-  disabled?: boolean;
-}> = ({ children, variant = 'primary', icon: Icon, className = '', onClick, disabled, ...props }) => {
-  const baseClasses = "btn-responsive focus-ring transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed";
-  const variants = {
-    primary: 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500 dark:bg-blue-700 dark:hover:bg-blue-600',
-    secondary: 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 focus:ring-gray-400',
-    danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 dark:bg-red-700 dark:hover:bg-red-600',
-    ghost: 'bg-transparent text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800',
-    outline: 'bg-transparent border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800',
-    destructive: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 dark:bg-red-700 dark:hover:bg-red-600',
-  };
-  
-  return (
-    <button 
-      className={`${baseClasses} ${variants[variant]} ${className}`} 
+  const MetricCard: React.FC<{
+    icon: React.ComponentType<{ className?: string }>;
+    title: string;
+    value: string;
+    description: string;
+    trend?: number;
+    onClick?: () => void;
+  }> = ({ icon: Icon, title, value, description, trend, onClick }) => (
+    <Card 
+      variant="elevated" 
+      interactive={!!onClick}
       onClick={onClick}
-      disabled={disabled}
-      {...props}
+      className="hover:border-primary-300 transition-all duration-200"
     >
-      {Icon && <Icon style={{ width: 'var(--space-4)', height: 'var(--space-4)' }} />}
-      <span>{children}</span>
-    </button>
-  );
-};
-
-// Enhanced Dashboard Components with Full Responsive Design
-const StatisticsOverview: React.FC<{ stats: any }> = ({ stats }) => {
-  const MetricCard: React.FC<MetricCardProps> = ({ icon, label, value, change, colorClass }) => (
-    <Card className="p-4 hover:shadow-xl transition-all duration-300 hover:scale-105 touch-target">
-      <div className="flex justify-between items-start mb-3">
-        <div className={`p-3 rounded-lg ${colorClass} bg-opacity-10 dark:bg-opacity-20`}>
-          {React.createElement(icon, { style: { width: 'var(--text-lg)', height: 'var(--text-lg)' } })}
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="p-3 bg-primary-100 rounded-lg">
+            <Icon className="w-6 h-6 text-primary-600" />
+          </div>
+          {trend !== undefined && (
+            <div className={cn(
+              'flex items-center gap-1 text-sm font-medium',
+              trend >= 0 ? 'text-success-600' : 'text-error-600'
+            )}>
+              <TrendingUp className={cn('w-4 h-4', trend < 0 && 'rotate-180')} />
+              {trend >= 0 ? '+' : ''}{formatPersianNumber(trend)}
+            </div>
+          )}
         </div>
-        <div className={`px-2 py-1 rounded-full text-xs font-semibold flex items-center ${
-          change >= 0 ? 'bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-400'
-        }`}>
-          {change >= 0 ? `+${change}` : change}
+        <div className="space-y-2">
+          <h3 className="text-2xl font-bold text-neutral-900 persian-numbers">
+            {value}
+          </h3>
+          <p className="text-sm font-medium text-neutral-700">{title}</p>
+          <p className="text-xs text-neutral-500">{description}</p>
         </div>
-      </div>
-      <p className="font-bold text-gray-800 dark:text-white mb-2 persian-numbers" style={{ fontSize: 'var(--text-2xl)' }}>
-        {value.toLocaleString('fa-IR')}
-      </p>
-      <p className="text-gray-500 dark:text-gray-400" style={{ fontSize: 'var(--text-sm)' }}>{label}</p>
+      </CardContent>
     </Card>
   );
 
-  return (
-    <div className="responsive-grid responsive-grid-auto tablet:grid-cols-2 desktop:grid-cols-4 mb-6">
-      <MetricCard 
-        icon={FileText} 
-        label="کل اسناد" 
-        value={stats.totalItems} 
-        change={stats.dailyChange} 
-        colorClass="text-blue-500" 
-      />
-      <MetricCard 
-        icon={Briefcase} 
-        label="پروژه‌های فعال" 
-        value={stats.activeJobs} 
-        change={1} 
-        colorClass="text-green-500" 
-      />
-      <MetricCard 
-        icon={Server} 
-        label="پروکسی‌ها" 
-        value={stats.activeProxies} 
-        change={-3} 
-        colorClass="text-yellow-500" 
-      />
-      <MetricCard 
-        icon={AlertTriangle} 
-        label="خطاهای ۲۴ ساعت" 
-        value={stats.errors24h} 
-        change={2} 
-        colorClass="text-red-500" 
-      />
-    </div>
-  );
-};
-
-const QuickActions: React.FC<{ onEmergencyStop: () => Promise<void> }> = ({ onEmergencyStop }) => {
-  const [currentTab, setCurrentTab] = useState('dashboard');
-
-  return (
-    <div className="responsive-grid responsive-grid-2 tablet:grid-cols-3 desktop:grid-cols-6 mb-6">
-      <Button className="w-full touch-target" variant="primary" onClick={() => setCurrentTab('scraping')}>
-        <Play style={{ width: 'var(--space-4)', height: 'var(--space-4)' }} />
-        <span className="tablet-up:hidden">اسکرپ</span>
-        <span className="mobile-only:hidden">شروع اسکرپ جدید</span>
-      </Button>
-      <Button className="w-full touch-target" variant="secondary" onClick={() => setCurrentTab('proxies')}>
-        <Server style={{ width: 'var(--space-4)', height: 'var(--space-4)' }} />
-        <span className="tablet-up:hidden">پروکسی</span>
-        <span className="mobile-only:hidden">تست پروکسی‌ها</span>
-      </Button>
-      <Button className="w-full touch-target" variant="outline" onClick={() => setCurrentTab('documents')}>
-        <FileText style={{ width: 'var(--space-4)', height: 'var(--space-4)' }} />
-        <span className="tablet-up:hidden">اسناد</span>
-        <span className="mobile-only:hidden">مشاهده اسناد</span>
-      </Button>
-      <Button className="w-full touch-target" variant="ghost" onClick={() => setCurrentTab('analytics')}>
-        <BarChart3 style={{ width: 'var(--space-4)', height: 'var(--space-4)' }} />
-        <span className="tablet-up:hidden">تحلیل</span>
-        <span className="mobile-only:hidden">تحلیل‌ها</span>
-      </Button>
-      <Button className="w-full touch-target" variant="outline" onClick={() => setCurrentTab('settings')}>
-        <Settings style={{ width: 'var(--space-4)', height: 'var(--space-4)' }} />
-        <span className="tablet-up:hidden">تنظیمات</span>
-        <span className="mobile-only:hidden">تنظیمات</span>
-      </Button>
-      <Button className="w-full touch-target" variant="danger" onClick={onEmergencyStop}>
-        <PowerOff style={{ width: 'var(--space-4)', height: 'var(--space-4)' }} />
-        <span className="tablet-up:hidden">توقف</span>
-        <span className="mobile-only:hidden">توقف اضطراری</span>
-      </Button>
-    </div>
-  );
-};
-
-const NavigationHub: React.FC<{ stats: any }> = ({ stats }) => {
-  const [currentTab, setCurrentTab] = useState('dashboard');
-
-  const navigationCards: NavigationCardProps[] = [
-    {
-      title: 'مدیریت اسناد',
-      icon: FileText,
-      description: 'مدیریت و بررسی اسناد حقوقی',
-      count: stats.totalItems,
-      onClick: () => setCurrentTab('documents')
-    },
-    {
-      title: 'پردازش پرونده‌ها',
-      icon: Briefcase,
-      description: 'مدیریت پرونده‌ها و وضعیت پردازش',
-      count: stats.activeJobs,
-      onClick: () => setCurrentTab('jobs')
-    },
-    {
-      title: 'مدیریت پروکسی',
-      icon: Server,
-      description: 'تنظیمات و وضعیت پروکسی‌ها',
-      count: stats.activeProxies,
-      onClick: () => setCurrentTab('proxies')
-    },
-    {
-      title: 'سلامت سیستم',
-      icon: Activity,
-      description: 'نظارت بر عملکرد سیستم',
-      status: 'healthy',
-      onClick: () => setCurrentTab('system')
-    },
-    {
-      title: 'تحلیل و گزارش',
-      icon: BarChart3,
-      description: 'تحلیل‌های پیشرفته و گزارش‌ها',
-      onClick: () => setCurrentTab('analytics')
-    },
-    {
-      title: 'تنظیمات',
-      icon: Settings,
-      description: 'تنظیمات سیستم و کاربری',
-      onClick: () => setCurrentTab('settings')
-    },
-  ];
-
-  return (
-    <div className="mb-6">
-      <h2 className="font-bold mb-4 text-gray-900 dark:text-white" style={{ fontSize: 'var(--text-xl)' }}>
-        دسترسی سریع به بخش‌ها
-      </h2>
-      <div className="responsive-grid responsive-grid-auto tablet:grid-cols-2 desktop:grid-cols-3">
-        {navigationCards.map((item) => (
-          <div
-            key={item.title}
-            onClick={item.onClick}
-            className="bg-white dark:bg-gray-800 rounded-xl shadow-elegant hover:shadow-glass transition-all duration-300 cursor-pointer p-4 border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:-translate-y-1 group touch-target animate-fade-in"
+  const QuickActionsSection = () => (
+    <Card>
+      <CardHeader>
+        <CardTitle>دسترسی سریع</CardTitle>
+        <CardDescription>عملیات پرکاربرد سیستم</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <Button 
+            variant="primary" 
+            className="h-12"
+            onClick={() => navigate('/documents/upload')}
           >
-            <div className="flex items-center justify-between mb-3">
-              <div className="p-3 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg group-hover:scale-110 transition-transform duration-300">
-                <item.icon style={{ width: 'var(--text-lg)', height: 'var(--text-lg)' }} className="text-white" />
-              </div>
-              {typeof item.count === 'number' && (
-                <span className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-3 py-1 rounded-full font-medium persian-numbers" style={{ fontSize: 'var(--text-sm)' }}>
-                  {item.count.toLocaleString('fa-IR')}
-                </span>
-              )}
-              {item.status && (
-                <span className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-3 py-1 rounded-full font-medium" style={{ fontSize: 'var(--text-sm)' }}>
-                  سالم
-                </span>
-              )}
-            </div>
-            <h3 className="font-bold text-gray-900 dark:text-white mb-2" style={{ fontSize: 'var(--text-lg)' }}>{item.title}</h3>
-            <p className="text-gray-600 dark:text-gray-400" style={{ fontSize: 'var(--text-sm)' }}>{item.description}</p>
-          </div>
-        ))}
-      </div>
-    </div>
+            <Upload className="w-4 h-4" />
+            بارگذاری سند
+          </Button>
+          <Button 
+            variant="secondary" 
+            className="h-12"
+            onClick={() => navigate('/jobs/new')}
+          >
+            <Activity className="w-4 h-4" />
+            پروژه جدید
+          </Button>
+          <Button 
+            variant="outline" 
+            className="h-12"
+            onClick={() => navigate('/documents')}
+          >
+            <Search className="w-4 h-4" />
+            جستجو اسناد
+          </Button>
+          <Button 
+            variant="ghost" 
+            className="h-12"
+            onClick={() => navigate('/analytics')}
+          >
+            <BarChart3 className="w-4 h-4" />
+            گزارش‌ها
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
-};
 
-const ChartsSection: React.FC<{ stats: any }> = ({ stats }) => {
-  const categoryData = Object.entries(stats.categories).map(([name, value]) => ({ name, value }));
-  const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
+  const SystemHealthSection = () => {
+    const systemMetrics: SystemMetric[] = [
+      { name: 'CPU', value: systemStatus.cpu, unit: '%', status: systemStatus.cpu > 80 ? 'warning' : 'success' },
+      { name: 'حافظه', value: systemStatus.memory, unit: '%', status: systemStatus.memory > 90 ? 'error' : systemStatus.memory > 80 ? 'warning' : 'success' },
+      { name: 'ذخیره‌سازی', value: systemStatus.storage, unit: '%', status: systemStatus.storage > 85 ? 'warning' : 'success' },
+      { name: 'شبکه', value: systemStatus.network.download, unit: 'MB/s', status: 'success' },
+    ];
 
-  return (
-    <div className="responsive-grid responsive-grid-auto desktop:grid-cols-12 mb-6 space-y-4 desktop:space-y-0">
-      <div className="desktop:col-span-8">
-        <Card className="p-4">
-          <h3 className="font-semibold text-gray-900 dark:text-white mb-4" style={{ fontSize: 'var(--text-lg)' }}>
-            اسناد جمع‌آوری شده (هفته اخیر)
-          </h3>
-          <div className="h-64 tablet:h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={stats.dailyScraped} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-                <defs>
-                  <linearGradient id="colorUv" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.2} />
-                <XAxis 
-                  dataKey="name" 
-                  tick={{ fill: 'currentColor', fontSize: 12 }}
-                />
-                <YAxis 
-                  tick={{ fill: 'currentColor', fontSize: 12 }}
-                />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'rgba(255, 255, 255, 0.95)', 
-                    backdropFilter: 'blur(5px)', 
-                    border: '1px solid #e5e7eb', 
-                    borderRadius: '0.75rem',
-                    fontSize: '14px'
-                  }} 
-                />
-                <Area type="monotone" dataKey="count" stroke="#3B82F6" fill="url(#colorUv)" strokeWidth={2} name="تعداد اسناد" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </Card>
-      </div>
-
-      <div className="desktop:col-span-4">
-        <Card className="p-4 h-full flex flex-col">
-          <h3 className="font-semibold text-gray-900 dark:text-white mb-4" style={{ fontSize: 'var(--text-lg)' }}>
-            توزیع دسته‌بندی‌ها
-          </h3>
-          <div className="flex-grow min-h-[250px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie 
-                  data={categoryData} 
-                  cx="50%" 
-                  cy="50%" 
-                  innerRadius={50} 
-                  outerRadius={80} 
-                  paddingAngle={3} 
-                  dataKey="value" 
-                  labelLine={false}
-                >
-                  {categoryData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend 
-                  iconType="circle" 
-                  layout="vertical" 
-                  align="right" 
-                  verticalAlign="middle" 
-                  wrapperStyle={{ fontSize: '12px' }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </Card>
-      </div>
-    </div>
-  );
-};
-
-const SystemHealth: React.FC<{ stats: any }> = ({ stats }) => {
-  const systemMetrics: SystemMetric[] = [
-    { name: 'CPU', value: 68, color: 'bg-blue-500' },
-    { name: 'RAM', value: 84, color: 'bg-green-500' },
-    { name: 'Disk', value: 73, color: 'bg-yellow-500' },
-    { name: 'Network', value: 45, color: 'bg-purple-500' }
-  ];
-
-  return (
-    <div className="responsive-grid responsive-grid-auto desktop:grid-cols-4 mb-6 space-y-4 desktop:space-y-0">
-      <div className="desktop:col-span-3">
-        <Card className="p-4">
-          <h3 className="font-semibold text-gray-900 dark:text-white mb-4" style={{ fontSize: 'var(--text-lg)' }}>
-            مصرف منابع (لحظه‌ای)
-          </h3>
-          <div className="h-48 tablet:h-56">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={stats.systemHealth.cpu} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.2} />
-                <XAxis dataKey="x" hide />
-                <YAxis 
-                  domain={[0, 100]} 
-                  tick={{ fill: 'currentColor', fontSize: 12 }}
-                />
-                <Tooltip />
-                <Line type="monotone" dataKey="y" stroke="#3B82F6" strokeWidth={2} dot={false} name="CPU" />
-                <Line type="monotone" dataKey="y" data={stats.systemHealth.memory} stroke="#10B981" strokeWidth={2} dot={false} name="Memory" />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </Card>
-      </div>
-      
-      <div className="desktop:col-span-1">
-        <Card className="p-4 h-full">
-          <h3 className="font-semibold text-gray-900 dark:text-white mb-4" style={{ fontSize: 'var(--text-lg)' }}>
-            وضعیت سیستم
-          </h3>
-          <div className="space-y-4">
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Server className="w-5 h-5" />
+            وضعیت سلامت سیستم
+          </CardTitle>
+          <CardDescription>نظارت بر عملکرد و منابع سیستم</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             {systemMetrics.map((metric) => (
-              <div key={metric.name} className="flex items-center justify-between">
-                <span className="text-gray-600 dark:text-gray-400 min-w-0 flex-shrink-0" style={{ fontSize: 'var(--text-sm)' }}>
-                  {metric.name}
-                </span>
-                <div className="flex-1 mx-3">
-                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                    <div 
-                      className={`${metric.color} h-2 rounded-full transition-all duration-1000`}
-                      style={{ width: `${metric.value}%` }}
-                    />
-                  </div>
+              <div key={metric.name} className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-neutral-600">{metric.name}</span>
+                  <StatusBadge variant={metric.status} size="sm">
+                    {formatPersianNumber(metric.value)}{metric.unit}
+                  </StatusBadge>
                 </div>
-                <span className="text-gray-600 dark:text-gray-400 font-medium flex-shrink-0 persian-numbers" style={{ fontSize: 'var(--text-sm)' }}>
-                  {metric.value}%
+                <div className="w-full bg-neutral-200 rounded-full h-2">
+                  <div 
+                    className={cn(
+                      'h-2 rounded-full transition-all duration-1000',
+                      metric.status === 'success' && 'bg-success-500',
+                      metric.status === 'warning' && 'bg-warning-500',
+                      metric.status === 'error' && 'bg-error-500'
+                    )}
+                    style={{ width: `${Math.min(100, metric.value)}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="space-y-3">
+            <h4 className="font-medium text-neutral-900">وضعیت سرویس‌ها</h4>
+            {systemStatus.services.map((service) => (
+              <div key={service.name} className="flex items-center justify-between p-3 bg-neutral-50 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <StatusBadge 
+                    variant={
+                      service.status === 'operational' ? 'success' : 
+                      service.status === 'degraded' ? 'warning' : 'error'
+                    }
+                    size="sm"
+                  >
+                    {service.status === 'operational' ? 'عملیاتی' : 
+                     service.status === 'degraded' ? 'کاهش عملکرد' : 'خارج از سرویس'}
+                  </StatusBadge>
+                  <span className="font-medium text-neutral-900">{service.name}</span>
+                </div>
+                <span className="text-sm text-neutral-500 persian-numbers">
+                  {service.responseTime}
                 </span>
               </div>
             ))}
           </div>
-          
-          <div className="mt-6 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
-            <div className="flex items-center space-x-reverse space-x-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse flex-shrink-0" />
-              <span className="font-medium text-green-800 dark:text-green-300" style={{ fontSize: 'var(--text-sm)' }}>
-                سیستم فعال
-              </span>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  const DocumentStatsSection = () => (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="lg:col-span-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>توزیع دسته‌بندی اسناد</CardTitle>
+            <CardDescription>نمایش آماری اسناد بر اساس موضوع حقوقی</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={documentStats.categories}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={100}
+                    paddingAngle={2}
+                    dataKey="count"
+                  >
+                    {documentStats.categories.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    formatter={(value) => [formatNumber(value as number), 'تعداد']}
+                    labelFormatter={(label) => `${label}`}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
             </div>
-            <p className="text-green-600 dark:text-green-400 mt-1" style={{ fontSize: 'var(--text-xs)' }}>
-              تمام سرویس‌ها عملیاتی
-            </p>
-          </div>
+            <div className="grid grid-cols-2 gap-2 mt-4">
+              {documentStats.categories.map((category) => (
+                <div key={category.name} className="flex items-center gap-2">
+                  <div 
+                    className="w-3 h-3 rounded-full"
+                    style={{ backgroundColor: category.color }}
+                  />
+                  <span className="text-sm text-neutral-600">{category.name}</span>
+                  <span className="text-sm font-medium text-neutral-900 persian-numbers">
+                    {formatNumber(category.count)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div>
+        <Card>
+          <CardHeader>
+            <CardTitle>آخرین فعالیت‌ها</CardTitle>
+            <CardDescription>اسناد اخیراً پردازش شده</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {recentDocuments.map((doc) => (
+                <div key={doc.id} className="flex items-start gap-3 p-3 bg-neutral-50 rounded-lg">
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-medium text-neutral-900 text-sm line-clamp-2 mb-1">
+                      {doc.title}
+                    </h4>
+                    <div className="flex items-center gap-2 text-xs text-neutral-500 mb-2">
+                      <span>{doc.category}</span>
+                      <span>•</span>
+                      <span>{doc.source}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <StatusBadge 
+                        variant={
+                          doc.status === 'published' ? 'success' :
+                          doc.status === 'processing' ? 'warning' : 'info'
+                        }
+                        size="sm"
+                      >
+                        {doc.status === 'published' ? 'منتشر شده' :
+                         doc.status === 'processing' ? 'در حال پردازش' : 'پیش‌نویس'}
+                      </StatusBadge>
+                      <span className="text-xs text-neutral-400 persian-numbers">
+                        {formatRelativeTime(doc.createdAt)}
+                      </span>
+                    </div>
+                  </div>
+                  <Button variant="ghost" size="sm" asChild>
+                    <a href={doc.url} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="w-4 h-4" />
+                    </a>
+                  </Button>
+                </div>
+              ))}
+            </div>
+            <Button 
+              variant="outline" 
+              className="w-full mt-4"
+              onClick={() => navigate('/documents')}
+            >
+              مشاهده همه اسناد
+            </Button>
+          </CardContent>
         </Card>
       </div>
     </div>
   );
-};
 
-const RecentActivity: React.FC<{ documents: any[] }> = ({ documents }) => (
-  <Card className="p-4">
-    <h3 className="font-semibold text-gray-900 dark:text-white mb-6" style={{ fontSize: 'var(--text-lg)' }}>
-      آخرین فعالیت‌ها
-    </h3>
-    <div className="space-y-4">
-      {documents.slice(0, 5).map((item) => (
-        <div key={item.id} className="border-b border-gray-100 dark:border-gray-700 last:border-b-0 pb-4 last:pb-0">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1 min-w-0">
-              <h4 className="font-medium text-gray-900 dark:text-white truncate mb-1" style={{ fontSize: 'var(--text-md)' }}>
-                {item.title}
-              </h4>
-              <div className="flex flex-col tablet:flex-row tablet:items-center gap-2 text-gray-500 dark:text-gray-400 mb-2" style={{ fontSize: 'var(--text-sm)' }}>
-                <div className="flex items-center gap-1">
-                  <ExternalLink style={{ width: 'var(--space-3)', height: 'var(--space-3)' }} />
-                  <span>{item.source}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Calendar style={{ width: 'var(--space-3)', height: 'var(--space-3)' }} />
-                  <span>{formatDate(item.createdAt)}</span>
-                </div>
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full font-medium bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800" style={{ fontSize: 'var(--text-xs)' }}>
-                  <Tag style={{ width: 'var(--space-3)', height: 'var(--space-3)' }} />
-                  {item.category}
-                </span>
-                <span className="text-gray-500 dark:text-gray-400 persian-numbers" style={{ fontSize: 'var(--text-xs)' }}>
-                  {item.wordCount.toLocaleString('fa-IR')} کلمه
-                </span>
-              </div>
-            </div>
-            <a
-              href={item.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center touch-target text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors flex-shrink-0"
-            >
-              <ExternalLink style={{ width: 'var(--space-4)', height: 'var(--space-4)' }} />
-            </a>
-          </div>
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-96">
+        <div className="text-center space-y-4">
+          <div className="w-8 h-8 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin mx-auto" />
+          <p className="text-neutral-600">در حال بارگذاری داشبورد...</p>
         </div>
-      ))}
-    </div>
-  </Card>
-);
-
-// Main Dashboard Page Component with Enhanced Mobile Navigation
-export default function DashboardPage() {
-  const { mockStats, recentDocuments } = useDashboardData();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  const handleEmergencyStop = async () => {
-    try {
-      const base = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
-      await fetch(`${base}/scraping/stop`, { method: 'POST' });
-      alert('همه‌ی کارها متوقف شد');
-    } catch (e) {
-      alert('خطا در توقف اضطراری');
-    }
-  };
+      </div>
+    );
+  }
 
   return (
-    <div className="responsive-container prevent-horizontal-scroll safe-area-inset" dir="rtl">
-      <div className="space-y-6 min-h-screen bg-gray-50 dark:bg-gray-900">
-        <style>{`
-          @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;700;800&display=swap');
-          body, html { 
-            font-family: 'Vazirmatn', var(--font-family); 
-          }
-        `}</style>
-
-        {/* Enhanced Mobile-First Page Header */}
-        <div className="mb-6 bg-gradient-mobile rounded-xl shadow-glass p-4 text-white animate-fade-in">
-          <div className="flex-responsive-between">
-            <div className="min-w-0 flex-1">
-              <h1 className="font-bold mb-2 text-white" style={{ fontSize: 'var(--text-3xl)' }}>
-                نمای کلی سیستم
-              </h1>
-              <p className="text-blue-100" style={{ fontSize: 'var(--text-md)', lineHeight: 'var(--leading-relaxed)' }}>
-                سیستم جامع مدیریت اطلاعات حقوقی جمهوری اسلامی ایران
-              </p>
-              <p className="text-blue-200 mt-2" style={{ fontSize: 'var(--text-sm)' }}>
-                {`امروز ${formatDateTime(new Date())}`}
-              </p>
-            </div>
-            <div className="flex items-center gap-4 flex-shrink-0">
-              <div className="text-center tablet:text-left">
-                <div className="text-blue-100" style={{ fontSize: 'var(--text-sm)' }}>آخرین بروزرسانی</div>
-                <div className="font-bold persian-numbers" style={{ fontSize: 'var(--text-xl)' }}>
-                  {formatDate(new Date())}
-                </div>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="bg-gradient-to-l from-primary-600 to-primary-800 rounded-2xl text-white p-6 shadow-lg">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold mb-2">
+              {LEGAL_TERMINOLOGY.overview}
+            </h1>
+            <p className="text-primary-100 mb-4">
+              سیستم جامع مدیریت اطلاعات حقوقی جمهوری اسلامی ایران
+            </p>
+            <div className="flex items-center gap-4 text-sm">
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                <span>امروز {new Intl.DateTimeFormat('fa-IR', { 
+                  weekday: 'long', 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                }).format(new Date())}</span>
               </div>
-              <div className="w-4 h-4 bg-green-400 rounded-full animate-pulse shadow-lg flex-shrink-0" />
+              <StatusBadge variant="success" size="sm">
+                سیستم عملیاتی
+              </StatusBadge>
+            </div>
+          </div>
+          <div className="hidden lg:block">
+            <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
+              <Activity className="w-8 h-8 text-white" />
             </div>
           </div>
         </div>
-
-        {/* Quick Actions with Responsive Grid */}
-        <QuickActions onEmergencyStop={handleEmergencyStop} />
-
-        {/* Navigation Hub with Enhanced Cards */}
-        <NavigationHub stats={mockStats} />
-
-        {/* System Health with Real-time Updates */}
-        <SystemHealth stats={mockStats} />
-
-        {/* Statistics Cards with Hover Effects */}
-        <StatisticsOverview stats={mockStats} />
-
-        {/* Charts Section with Responsive Layout */}
-        <ChartsSection stats={mockStats} />
-
-        {/* Recent Activity with Mobile Optimization */}
-        <RecentActivity documents={recentDocuments} />
       </div>
+
+      {/* Key Metrics */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <MetricCard
+          icon={FileText}
+          title={LEGAL_TERMINOLOGY.allDocuments}
+          value={formatNumber(documentStats.totalDocuments)}
+          description="مجموع اسناد در سیستم"
+          trend={documentStats.newToday}
+          onClick={() => navigate('/documents')}
+        />
+        <MetricCard
+          icon={Activity}
+          title="پروژه‌های فعال"
+          value={formatPersianNumber(12)}
+          description="در حال پردازش"
+          trend={1}
+          onClick={() => navigate('/jobs')}
+        />
+        <MetricCard
+          icon={Server}
+          title="پروکسی‌های فعال"
+          value={formatPersianNumber(128)}
+          description="آماده برای استفاده"
+          trend={-3}
+          onClick={() => navigate('/proxies')}
+        />
+        <MetricCard
+          icon={AlertTriangle}
+          title="هشدارهای سیستم"
+          value={formatPersianNumber(2)}
+          description="نیاز به بررسی"
+          onClick={() => navigate('/system')}
+        />
+      </div>
+
+      {/* Quick Actions */}
+      <QuickActionsSection />
+
+      {/* System Health */}
+      <SystemHealthSection />
+
+      {/* Document Statistics */}
+      <DocumentStatsSection />
     </div>
   );
-}
+};
+
+export default DashboardPage;
