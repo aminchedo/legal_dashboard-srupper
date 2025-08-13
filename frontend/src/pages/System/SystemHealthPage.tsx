@@ -4,8 +4,8 @@ import { BookOpen, Award, TrendingUp, Globe } from '../../utils/iconRegistry';
 import { useDocuments, useStatistics } from '../../hooks/useDatabase';
 import { format, subDays, eachDayOfInterval } from 'date-fns';
 import { faIR } from 'date-fns/locale';
-import MetricCard from '../../components/ui/Card';
-import ScoreIndicator from '../../components/common/ScoreIndicator';
+import { MetricCard } from '../../components/ui/Card';
+import ScoreIndicator from '../../components/ScoreIndicator';
 
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#F97316', '#06B6D4', '#84CC16'];
 

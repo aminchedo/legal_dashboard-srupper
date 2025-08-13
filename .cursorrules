@@ -1,0 +1,308 @@
+# 🎯 LEGAL DASHBOARD - CURSOR RULES
+# Enterprise-grade React + TypeScript Legal Analytics Dashboard
+
+## 🏗️ ARCHITECTURE STANDARDS
+
+### TypeScript Configuration
+- Use functional components with explicit TypeScript interfaces
+- Implement strict TypeScript with explicit return types for all functions
+- Use Zod for runtime validation instead of type assertions
+- Define interfaces for all props, state, and API responses
+- Prefer `type` over `interface` for unions and computed types
+- Use `interface` for object shapes that might be extended
+
+### React Component Patterns
+```typescript
+// ✅ CORRECT: Functional component with explicit types
+interface ComponentProps {
+  title: string;
+  onSubmit: (data: FormData) => Promise<void>;
+  children?: React.ReactNode;
+}
+
+const Component: React.FC<ComponentProps> = ({ 
+  title, 
+  onSubmit, 
+  children 
+}): JSX.Element => {
+  // Component logic
+};
+
+export default Component;
+```
+
+### State Management
+- Use React Query for server state management
+- Use Zustand for client state management
+- Implement proper error boundaries
+- Use controlled components for forms with react-hook-form
+- Prefer useReducer for complex state logic
+
+## 🔧 CODE QUALITY RULES
+
+### Function Design
+- Maximum cyclomatic complexity: 10 per function
+- Use early returns and guard clauses
+- Place happy path logic last in functions
+- Extract complex logic into custom hooks
+- Use descriptive variable names with auxiliary verbs
+
+```typescript
+// ✅ CORRECT: Early returns, descriptive names
+const validateUserPermissions = (user: User, resource: Resource): boolean => {
+  if (!user.isAuthenticated) return false;
+  if (!user.permissions) return false;
+  if (user.role === 'admin') return true;
+  
+  return user.permissions.includes(resource.requiredPermission);
+};
+```
+
+### Error Handling
+- Implement comprehensive error boundaries
+- Use try-catch for async operations
+- Provide meaningful error messages
+- Log errors appropriately
+- Never silently catch errors
+
+### Performance Optimization
+- Use React.memo() for performance-critical components
+- Implement proper dependency arrays in hooks
+- Use useMemo and useCallback judiciously
+- Implement lazy loading for routes
+- Optimize bundle splitting
+
+## 🎨 UI/UX STANDARDS
+
+### Design System
+- Follow atomic design principles (atoms, molecules, organisms)
+- Implement consistent color palette and typography
+- Use Tailwind CSS for styling with custom design tokens
+- Create reusable component variants
+- Implement proper spacing and sizing scales
+
+### Responsive Design
+- Mobile-first approach
+- Use CSS Grid and Flexbox appropriately
+- Implement proper breakpoint management
+- Test on multiple screen sizes
+- Ensure touch-friendly interface elements
+
+### Accessibility (WCAG 2.1 AA)
+- Add proper ARIA attributes and landmarks
+- Implement keyboard navigation
+- Ensure proper contrast ratios (4.5:1 minimum)
+- Add screen reader support
+- Test with accessibility tools
+
+### Animation and Interactions
+- Use Framer Motion for complex animations
+- Implement micro-interactions for user feedback
+- Add loading states and skeleton screens
+- Use progressive enhancement
+- Ensure animations respect user preferences
+
+## 📝 COMPONENT ORGANIZATION
+
+### File Structure
+```
+src/
+├── components/
+│   ├── ui/          # Base UI components
+│   ├── forms/       # Form components
+│   ├── layout/      # Layout components
+│   └── domain/      # Business logic components
+├── pages/           # Page components
+├── hooks/           # Custom hooks
+├── services/        # API services
+├── types/           # TypeScript types
+├── utils/           # Utility functions
+└── constants/       # App constants
+```
+
+### Component Categories
+1. **Atoms**: Basic UI elements (Button, Input, Icon)
+2. **Molecules**: Simple component combinations (SearchBox, Card)
+3. **Organisms**: Complex component combinations (Header, ProxyTable)
+4. **Templates**: Page layouts
+5. **Pages**: Complete page implementations
+
+### Naming Conventions
+- Components: PascalCase (e.g., `UserProfileCard`)
+- Files: PascalCase for components, camelCase for utilities
+- Props: camelCase with descriptive names
+- Constants: SCREAMING_SNAKE_CASE
+- Types/Interfaces: PascalCase with descriptive suffixes
+
+## 🔄 DATA MANAGEMENT
+
+### API Integration
+- Use React Query for data fetching
+- Implement proper loading and error states
+- Use optimistic updates where appropriate
+- Implement retry logic for failed requests
+- Cache data appropriately
+
+### Form Handling
+- Use react-hook-form for complex forms
+- Implement proper validation with Zod schemas
+- Show real-time validation feedback
+- Handle form submission errors gracefully
+- Implement proper form accessibility
+
+## 🧪 TESTING STANDARDS
+
+### Testing Strategy
+- Write tests first (TDD approach)
+- Achieve 90%+ test coverage
+- Test user interactions, not implementation details
+- Use Testing Library best practices
+- Implement E2E tests for critical paths
+
+### Test Types
+1. **Unit Tests**: Individual functions and components
+2. **Integration Tests**: Component interactions and API calls
+3. **E2E Tests**: Complete user workflows
+4. **Accessibility Tests**: Screen reader and keyboard navigation
+5. **Performance Tests**: Loading times and bundle sizes
+
+## 🚀 PERFORMANCE STANDARDS
+
+### Metrics Targets
+- Lighthouse Performance Score: 90+
+- First Contentful Paint: < 1.5s
+- Largest Contentful Paint: < 2.5s
+- Cumulative Layout Shift: < 0.1
+- Bundle size: < 500KB gzipped
+
+### Optimization Techniques
+- Implement code splitting
+- Use lazy loading for routes and components
+- Optimize images and assets
+- Implement proper caching strategies
+- Monitor bundle size and dependencies
+
+## 🔒 SECURITY STANDARDS
+
+### Data Handling
+- Sanitize user inputs
+- Implement proper CSRF protection
+- Use HTTPS for all communications
+- Implement proper authentication
+- Validate data on both client and server
+
+### Code Security
+- No sensitive data in client code
+- Use environment variables for configuration
+- Implement proper error handling without exposing internals
+- Regular dependency updates
+- Use security linters
+
+## 📚 DOCUMENTATION STANDARDS
+
+### Code Documentation
+- Use JSDoc for complex functions
+- Write clear component prop documentation
+- Document custom hooks and utilities
+- Maintain API documentation
+- Keep README files updated
+
+### Component Documentation
+```typescript
+/**
+ * ProxyTable displays a list of proxy servers with filtering and sorting capabilities.
+ * 
+ * @param items - Array of proxy records to display
+ * @param onEdit - Callback fired when user wants to edit a proxy
+ * @param isLoading - Whether the table is in loading state
+ * 
+ * @example
+ * <ProxyTable 
+ *   items={proxies} 
+ *   onEdit={handleEdit}
+ *   isLoading={false}
+ * />
+ */
+```
+
+## ⚡ DEVELOPMENT WORKFLOW
+
+### Git Workflow
+- Use conventional commits
+- Create feature branches for all changes
+- Require code reviews for main branch
+- Use semantic versioning
+- Maintain clean commit history
+
+### Development Environment
+- Use TypeScript strict mode
+- Configure ESLint and Prettier
+- Use pre-commit hooks
+- Implement hot module replacement
+- Use proper development tools
+
+## 🎯 SPECIFIC PROJECT RULES
+
+### Legal Dashboard Context
+- Prioritize data security and privacy
+- Implement audit trails for user actions
+- Use professional UI suitable for legal professionals
+- Ensure compliance with legal industry standards
+- Implement proper user role management
+
+### Business Logic
+- Separate business logic from UI components
+- Use custom hooks for complex business logic
+- Implement proper validation for legal documents
+- Handle sensitive data appropriately
+- Ensure proper internationalization support
+
+## 🚫 ANTI-PATTERNS TO AVOID
+
+### React Anti-patterns
+- ❌ Don't use any type
+- ❌ Don't mutate props directly
+- ❌ Don't use index as key in lists
+- ❌ Don't call hooks conditionally
+- ❌ Don't use inline objects in JSX props
+
+### TypeScript Anti-patterns
+- ❌ Don't use `any` type
+- ❌ Don't use type assertions unless absolutely necessary
+- ❌ Don't ignore TypeScript errors
+- ❌ Don't use `Function` type
+- ❌ Don't use non-null assertion operator carelessly
+
+### Performance Anti-patterns
+- ❌ Don't create objects/functions in render
+- ❌ Don't use unnecessary re-renders
+- ❌ Don't ignore React DevTools warnings
+- ❌ Don't load all data at once
+- ❌ Don't ignore bundle size
+
+## 📋 CHECKLIST FOR EVERY COMPONENT
+
+### Before Creating Component
+- [ ] Is this component reusable?
+- [ ] Does it follow single responsibility principle?
+- [ ] Is the naming descriptive and consistent?
+- [ ] Are the props properly typed?
+
+### Before Committing Code
+- [ ] All TypeScript errors resolved
+- [ ] Tests written and passing
+- [ ] Component documented
+- [ ] Accessibility tested
+- [ ] Performance impact considered
+- [ ] Error handling implemented
+
+### Before Production
+- [ ] Performance metrics meet targets
+- [ ] Accessibility compliance verified
+- [ ] Security review completed
+- [ ] Documentation updated
+- [ ] Error monitoring configured
+
+---
+
+**🎯 GOAL: Build a production-ready, enterprise-grade Legal Dashboard that rivals commercial legal management systems with 100% functional UI, professional architecture, and comprehensive feature set.**
