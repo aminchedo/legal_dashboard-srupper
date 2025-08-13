@@ -1,309 +1,346 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  BarChartOutlined,
-  DatabaseOutlined,
-  GlobalOutlined,
-  HomeOutlined,
-  MenuOutlined,
-  SettingOutlined,
-  AlertOutlined,
-  BellOutlined,
-  SearchOutlined,
-  SwapOutlined,
-  LineChartOutlined,
-  VideoCameraOutlined
-} from '@ant-design/icons';
-import { PageType } from '../../types';
-import CommandPalette, { CommandItem } from '../common/CommandPalette';
-import { useTranslation } from 'react-i18next';
+import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { 
+  Home, 
+  FileText, 
+  BarChart3, 
+  Server, 
+  Settings, 
+  Menu, 
+  X,
+  Bell,
+  Search,
+  User,
+  ChevronDown,
+  Activity,
+  Database,
+  Globe,
+  Shield
+} from 'lucide-react';
+import { cn } from '../../lib/utils';
+import { Button, Card, StatusBadge } from '../ui';
+import LEGAL_TERMINOLOGY from '../../lib/terminology';
 
-interface LayoutProps {
-  children: React.ReactNode;
-  currentPage: PageType;
-  onPageChange: (page: PageType) => void;
+interface NavigationItem {
+  id: string;
+  label: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  description?: string;
+  badge?: {
+    text: string;
+    variant: 'success' | 'warning' | 'error' | 'info';
+  };
 }
 
-const navigationItems = (t: (key: string) => string) => ([
-  { id: 'dashboard' as PageType, label: t('nav.dashboard'), icon: HomeOutlined },
-  { id: 'analytics' as PageType, label: 'تحلیل‌ها', icon: LineChartOutlined },
-  { id: 'recording' as PageType, label: 'ضبط صفحه', icon: VideoCameraOutlined },
-  { id: 'jobs' as PageType, label: t('nav.jobs'), icon: GlobalOutlined },
-  { id: 'documents' as PageType, label: t('nav.documents'), icon: DatabaseOutlined },
-  { id: 'system' as PageType, label: t('nav.system'), icon: BarChartOutlined },
-  { id: 'proxies' as PageType, label: t('nav.proxies'), icon: SwapOutlined },
-]);
+interface AppLayoutProps {
+  children: React.ReactNode;
+}
 
-export default function Layout({ children, currentPage, onPageChange }: LayoutProps) {
-  const { t, i18n } = useTranslation();
+const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [darkMode, setDarkMode] = useState<boolean>(() => {
-    try {
-      const saved = localStorage.getItem('theme');
-      if (saved) return saved === 'dark';
-      return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    } catch {
-      return false;
-    }
-  });
-  const [language, setLanguage] = useState<'fa' | 'en'>(() => {
-    try {
-      const saved = localStorage.getItem('lang');
-      if (saved === 'en' || saved === 'fa') return saved;
-      return 'fa';
-    } catch {
-      return 'fa';
-    }
-  });
-  const [globalQuery, setGlobalQuery] = useState('');
-  const [isPaletteOpen, setIsPaletteOpen] = useState(false);
-  const searchInputRef = useRef<HTMLInputElement | null>(null);
+  const [darkMode, setDarkMode] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    const root = document.documentElement;
-    if (darkMode) {
-      root.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      root.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    }
-  }, [darkMode]);
+  // Navigation items with proper Persian terminology
+  const navigationItems: NavigationItem[] = [
+    {
+      id: 'dashboard',
+      label: LEGAL_TERMINOLOGY.dashboard,
+      href: '/dashboard',
+      icon: Home,
+      description: 'نمای کلی سیستم و آمار اصلی',
+    },
+    {
+      id: 'documents',
+      label: LEGAL_TERMINOLOGY.documents,
+      href: '/documents',
+      icon: FileText,
+      description: 'مدیریت و جستجو در اسناد حقوقی',
+      badge: {
+        text: '۱۲,۴۵۰',
+        variant: 'info' as const,
+      },
+    },
+    {
+      id: 'analytics',
+      label: LEGAL_TERMINOLOGY.analytics,
+      href: '/analytics',
+      icon: BarChart3,
+      description: 'تحلیل و گزارش‌سازی پیشرفته',
+    },
+    {
+      id: 'jobs',
+      label: 'مدیریت پروژه‌ها',
+      href: '/jobs',
+      icon: Activity,
+      description: 'پردازش و وضعیت پروژه‌ها',
+      badge: {
+        text: '۱۲',
+        variant: 'success' as const,
+      },
+    },
+    {
+      id: 'system',
+      label: LEGAL_TERMINOLOGY.systemHealth,
+      href: '/system',
+      icon: Server,
+      description: 'نظارت بر سلامت سیستم',
+      badge: {
+        text: 'فعال',
+        variant: 'success' as const,
+      },
+    },
+    {
+      id: 'proxies',
+      label: 'مدیریت پروکسی',
+      href: '/proxies',
+      icon: Globe,
+      description: 'تنظیمات و وضعیت پروکسی‌ها',
+    },
+    {
+      id: 'settings',
+      label: LEGAL_TERMINOLOGY.settings,
+      href: '/settings',
+      icon: Settings,
+      description: 'تنظیمات سیستم و کاربری',
+    },
+  ];
 
-  useEffect(() => {
-    const dir = language === 'fa' ? 'rtl' : 'ltr';
-    document.documentElement.setAttribute('dir', dir);
-    document.documentElement.setAttribute('lang', language);
-    localStorage.setItem('lang', language);
-    if (i18n.language !== language) {
-      i18n.changeLanguage(language);
-    }
-  }, [language, i18n]);
+  // Check if current path is active
+  const isActiveRoute = (href: string) => {
+    return location.pathname === href || location.pathname.startsWith(href + '/');
+  };
 
+  // Close sidebar on route change (mobile)
   useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      const isMod = navigator.platform.toUpperCase().includes('MAC') ? e.metaKey : e.ctrlKey;
-      if (isMod && (e.key === 'k' || e.key === 'K')) {
-        e.preventDefault();
-        setIsPaletteOpen((prev) => !prev);
+    setSidebarOpen(false);
+  }, [location.pathname]);
+
+  // Handle keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        switch (e.key) {
+          case 'k':
+            e.preventDefault();
+            // Open search
+            break;
+          case 'b':
+            e.preventDefault();
+            setSidebarOpen(!sidebarOpen);
+            break;
+        }
+      }
+      
+      if (e.key === 'Escape') {
+        setSidebarOpen(false);
       }
     };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, []);
 
-  const commands: CommandItem[] = useMemo(() => [
-    {
-      id: 'nav-dashboard',
-      label: t('commands.goDashboard'),
-      hint: t('app.subtitle'),
-      action: () => onPageChange('dashboard'),
-      keywords: ['home', 'overview', 'dashboard'],
-    },
-    {
-      id: 'nav-scraping',
-      label: t('commands.goJobs'),
-      hint: t('nav.jobs'),
-      action: () => onPageChange('jobs'),
-      keywords: ['crawl', 'scrape'],
-    },
-    {
-      id: 'nav-data',
-      label: t('commands.goDocuments'),
-      hint: t('nav.documents'),
-      action: () => onPageChange('documents'),
-      keywords: ['documents', 'items'],
-    },
-    {
-      id: 'nav-analytics',
-      label: t('commands.goSystem'),
-      hint: t('nav.system'),
-      action: () => onPageChange('system'),
-      keywords: ['charts', 'reports', 'analytics'],
-    },
-    {
-      id: 'nav-proxies',
-      label: t('commands.goProxies'),
-      hint: t('nav.proxies'),
-      action: () => onPageChange('proxies'),
-      keywords: ['proxy', 'proxies', 'rotation', 'network'],
-    },
-    {
-      id: 'toggle-theme',
-      label: darkMode ? t('theme.light') : t('theme.dark'),
-      hint: 'Theme',
-      action: () => setDarkMode((v) => !v),
-      keywords: ['theme', 'dark', 'light'],
-    },
-    {
-      id: 'toggle-lang',
-      label: t('commands.toggleLang'),
-      hint: 'FA / EN',
-      action: () => setLanguage((prev) => (prev === 'fa' ? 'en' : 'fa')),
-      keywords: ['language', 'rtl', 'ltr'],
-    },
-    {
-      id: 'focus-search',
-      label: t('commands.focusSearch'),
-      hint: t('app.subtitle'),
-      action: () => searchInputRef.current?.focus(),
-      keywords: ['search', 'find'],
-    },
-    {
-      id: 'nav-settings',
-      label: t('commands.settings'),
-      hint: t('nav.settings'),
-      action: () => onPageChange('settings'),
-      keywords: ['settings', 'config'],
-    },
-    {
-      id: 'nav-help',
-      label: t('commands.help'),
-      hint: t('nav.help'),
-      action: () => onPageChange('help'),
-      keywords: ['help', 'docs'],
-    },
-  ], [darkMode, t, onPageChange]);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [sidebarOpen]);
 
-  const navItems = navigationItems(t);
+  const Sidebar = () => (
+    <aside
+      className={cn(
+        'fixed inset-y-0 right-0 z-50 w-72 bg-white border-l border-neutral-200 shadow-xl',
+        'transform transition-transform duration-300 ease-in-out',
+        'lg:relative lg:translate-x-0 lg:w-64 lg:shadow-none',
+        'dark:bg-neutral-900 dark:border-neutral-700',
+        sidebarOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'
+      )}
+    >
+      {/* Header */}
+      <div className="p-4 border-b border-neutral-200 dark:border-neutral-700">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-primary-700 rounded-lg flex items-center justify-center">
+              <Shield className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h1 className="font-bold text-neutral-900 dark:text-white text-sm">
+                سیستم مدیریت حقوقی
+              </h1>
+              <p className="text-xs text-neutral-600 dark:text-neutral-400">
+                جمهوری اسلامی ایران
+              </p>
+            </div>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+          >
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
+      </div>
+
+      {/* Navigation */}
+      <nav className="p-3 flex-1 overflow-y-auto">
+        <ul className="space-y-1">
+          {navigationItems.map((item) => {
+            const isActive = isActiveRoute(item.href);
+            
+            return (
+              <li key={item.id}>
+                <Link
+                  to={item.href}
+                  className={cn(
+                    'group flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200',
+                    'hover:bg-neutral-100 dark:hover:bg-neutral-800',
+                    'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
+                    isActive && [
+                      'bg-primary-50 text-primary-700 border border-primary-200',
+                      'dark:bg-primary-900/20 dark:text-primary-400 dark:border-primary-800'
+                    ]
+                  )}
+                >
+                  <item.icon 
+                    className={cn(
+                      'w-5 h-5 flex-shrink-0 transition-colors',
+                      isActive ? 'text-primary-600 dark:text-primary-400' : 'text-neutral-500 dark:text-neutral-400'
+                    )} 
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <span className={cn(
+                        'font-medium text-sm truncate',
+                        isActive ? 'text-primary-700 dark:text-primary-400' : 'text-neutral-700 dark:text-neutral-200'
+                      )}>
+                        {item.label}
+                      </span>
+                      {item.badge && (
+                        <StatusBadge 
+                          variant={item.badge.variant} 
+                          size="sm"
+                          icon={false}
+                        >
+                          {item.badge.text}
+                        </StatusBadge>
+                      )}
+                    </div>
+                    {item.description && (
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5 truncate">
+                        {item.description}
+                      </p>
+                    )}
+                  </div>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+
+      {/* Footer */}
+      <div className="p-3 border-t border-neutral-200 dark:border-neutral-700">
+        <Card variant="glass" padding="sm">
+          <div className="flex items-center gap-2 text-xs text-neutral-600 dark:text-neutral-400">
+            <div className="w-2 h-2 bg-success-500 rounded-full animate-pulse" />
+            <span>سیستم عملیاتی</span>
+          </div>
+          <div className="text-xs text-neutral-500 dark:text-neutral-500 mt-1">
+            آخرین بروزرسانی: الان
+          </div>
+        </Card>
+      </div>
+    </aside>
+  );
+
+  const TopBar = () => (
+    <header className="bg-white border-b border-neutral-200 px-4 py-3 dark:bg-neutral-900 dark:border-neutral-700">
+      <div className="flex items-center justify-between">
+        {/* Left side */}
+        <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="lg:hidden"
+            onClick={() => setSidebarOpen(true)}
+          >
+            <Menu className="w-5 h-5" />
+          </Button>
+
+          {/* Breadcrumb */}
+          <nav className="hidden sm:flex items-center gap-2 text-sm">
+            <Link 
+              to="/dashboard" 
+              className="text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200"
+            >
+              داشبورد
+            </Link>
+            {location.pathname !== '/dashboard' && (
+              <>
+                <span className="text-neutral-300 dark:text-neutral-600">/</span>
+                <span className="text-neutral-900 dark:text-white font-medium">
+                  {navigationItems.find(item => isActiveRoute(item.href))?.label || 'صفحه'}
+                </span>
+              </>
+            )}
+          </nav>
+        </div>
+
+        {/* Right side */}
+        <div className="flex items-center gap-2">
+          {/* Search */}
+          <Button variant="ghost" size="sm" className="hidden sm:flex">
+            <Search className="w-4 h-4" />
+            <span className="hidden md:inline">جستجو</span>
+            <kbd className="hidden lg:inline-flex h-5 select-none items-center gap-1 rounded border bg-neutral-100 px-1.5 font-mono text-[10px] font-medium opacity-100 dark:bg-neutral-800">
+              Ctrl+K
+            </kbd>
+          </Button>
+
+          {/* Notifications */}
+          <Button variant="ghost" size="sm" className="relative">
+            <Bell className="w-4 h-4" />
+            <span className="absolute -top-1 -right-1 w-2 h-2 bg-error-500 rounded-full" />
+          </Button>
+
+          {/* User menu */}
+          <Button variant="ghost" size="sm" className="gap-2">
+            <User className="w-4 h-4" />
+            <span className="hidden sm:inline">کاربر</span>
+            <ChevronDown className="w-3 h-3" />
+          </Button>
+        </div>
+      </div>
+    </header>
+  );
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-slate-950">
-      {/* Header */}
-      <header className="relative overflow-hidden bg-gradient-to-l from-blue-800 to-blue-900 text-white shadow-lg">
-        <div className="absolute inset-0 opacity-20 bg-gradient-radial" />
-        <div className="max-w-full mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-14 sm:h-16 gap-2 sm:gap-3">
-            <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-              <button
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="md:hidden p-1.5 sm:p-2 rounded-md hover:bg-white/10 transition-colors flex-shrink-0"
-              >
-                <MenuOutlined className="text-sm sm:text-base" />
-              </button>
-              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                <AlertOutlined className="text-yellow-400 text-sm sm:text-base flex-shrink-0" />
-                <div className="min-w-0">
-                  <h1 className="text-base sm:text-lg lg:text-xl font-bold truncate">{t('app.title')}</h1>
-                  <p className="text-blue-200 text-xs sm:text-sm hidden sm:block truncate">{t('app.subtitle')}</p>
-                </div>
-              </div>
-            </div>
-            <div className="hidden lg:flex items-center gap-3 flex-1 max-w-xl mx-4">
-              {/* Global search */}
-              <div className="flex items-center gap-2 flex-1 bg-white/10 hover:bg-white/15 border border-white/20 rounded-lg px-3 py-1.5">
-                <SearchOutlined className="text-blue-100" />
-                <input
-                  ref={searchInputRef}
-                  value={globalQuery}
-                  onChange={(e) => setGlobalQuery(e.target.value)}
-                  placeholder={t('app.searchPlaceholder')}
-                  aria-label="global-search"
-                  className="bg-transparent placeholder-blue-200 text-white text-sm w-full focus:outline-none"
-                />
-              </div>
-            </div>
-            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-              <button
-                onClick={() => setLanguage(prev => prev === 'fa' ? 'en' : 'fa')}
-                className="px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs sm:text-sm"
-                title={language === 'fa' ? 'Switch to English' : 'تغییر به فارسی'}
-              >
-                {language === 'fa' ? 'FA' : 'EN'}
-              </button>
-              <button
-                onClick={() => setIsPaletteOpen(true)}
-                className="hidden lg:inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-3 py-1.5 text-white hover:bg-white/20 text-sm"
-                title="Command menu (Ctrl+K)"
-              >
-                ⌘K
-              </button>
-              <button
-                className="relative p-1.5 sm:p-2 rounded-lg hover:bg-white/10 border border-white/10 text-blue-100"
-                aria-label="notifications"
-                title={t('aria.notifications')}
-              >
-                <BellOutlined className="text-sm sm:text-base" />
-                <span className="absolute -top-0.5 -left-0.5 w-1.5 h-1.5 sm:w-2 sm:h-2 bg-yellow-400 rounded-full" />
-              </button>
-              <button
-                onClick={() => setDarkMode(v => !v)}
-                className="hidden sm:inline-flex px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs sm:text-sm"
-                title={t('commands.toggleTheme')}
-              >
-                {darkMode ? t('theme.light') : t('theme.dark')}
-              </button>
-              <SettingOutlined
-                onClick={() => onPageChange('settings')}
-                className="hidden sm:block text-blue-200 hover:text-white cursor-pointer transition-colors text-base sm:text-lg"
-              />
-              {/* User avatar */}
-              <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-white/20 border border-white/30 flex items-center justify-center text-white text-xs font-semibold">
-                U
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900" dir="rtl">
+      {/* Mobile backdrop */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
 
-      <div className="flex min-h-[calc(100vh-4rem)]">
+      <div className="flex h-screen">
         {/* Sidebar */}
-        <aside className={`
-          fixed inset-y-0 right-0 z-50 w-64 bg-white dark:bg-slate-900 shadow-xl transform transition-transform duration-300 ease-in-out mt-16
-          lg:relative lg:translate-x-0 lg:mt-0 lg:z-0 lg:w-64
-          md:w-72 md:relative md:translate-x-0 md:mt-0 md:z-0
-          ${sidebarOpen ? 'translate-x-0' : 'translate-x-full md:translate-x-0'}
-        `}>
-          <nav className="h-full overflow-y-auto py-6">
-            <div className="px-3 sm:px-4 space-y-1 sm:space-y-2">
-              {[...navItems, { id: 'settings' as any, label: t('nav.settings'), icon: SettingOutlined }, { id: 'help' as any, label: t('nav.help'), icon: AlertOutlined }].map((item) => {
-                const Icon = item.icon;
-                const isActive = currentPage === item.id;
-
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => {
-                      onPageChange(item.id);
-                      setSidebarOpen(false);
-                    }}
-                    className={`
-                      w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 text-right rounded-lg transition-all duration-200 text-sm sm:text-base
-                      ${isActive
-                        ? 'bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-200 border-r-4 border-blue-700 dark:border-blue-400 font-semibold shadow-sm'
-                        : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-gray-800'
-                      }
-                    `}
-                  >
-                    <Icon size={18} className="sm:w-5 sm:h-5" />
-                    <span className="font-medium">{item.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </nav>
-        </aside>
-
-        {/* Overlay for mobile */}
-        {sidebarOpen && (
-          <div
-            className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
-            onClick={() => setSidebarOpen(false)}
-          />
-        )}
+        <Sidebar />
 
         {/* Main content */}
-        <main className="flex-1 w-full md:pl-0 lg:pl-0">
-          <div className="max-w-full mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
-            {children}
-          </div>
-        </main>
+        <div className="flex-1 flex flex-col min-w-0">
+          <TopBar />
+          
+          {/* Page content */}
+          <main className="flex-1 overflow-auto">
+            <div className="p-4 lg:p-6">
+              {children}
+            </div>
+          </main>
+        </div>
       </div>
-      <CommandPalette
-        open={isPaletteOpen}
-        onOpenChange={setIsPaletteOpen}
-        items={commands}
-        placeholder={i18n.t('app.searchPlaceholder')}
-      />
     </div>
   );
-}
+};
+
+export default AppLayout;

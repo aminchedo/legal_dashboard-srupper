@@ -1,719 +1,803 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useCallback } from 'react';
 import { 
-  User, Settings, Bell, Shield, Database, Moon, Sun, Globe, 
-  Save, Camera, Key, Trash2, Download, Upload, Clock, 
-  Languages, Palette, Mail, Lock, Smartphone, AlertCircle
+  Settings, User, Bell, Shield, Database, 
+  Globe, Palette, Monitor, Save, RefreshCw,
+  Key, Mail, Phone, MapPin, Building,
+  Clock, Language, Moon, Sun, Eye, EyeOff,
+  Upload, Download, Trash2, Check, X,
+  AlertTriangle, Info
 } from 'lucide-react';
-import { AnimatedCard, AnimatedButton } from '../../components/ui/animations';
-import { cn } from '../../lib/utils';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, StatusBadge } from '../../components/ui';
+import { LEGAL_TERMINOLOGY } from '../../lib/terminology';
+import { cn, formatPersianNumber } from '../../lib/utils';
 
-interface SettingsSectionProps {
-  title: string;
-  description: string;
-  icon: React.ComponentType<{ className?: string }>;
-  children: React.ReactNode;
+// Types
+interface UserSettings {
+  profile: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+    title: string;
+    organization: string;
+    address: string;
+    avatar?: string;
+  };
+  preferences: {
+    language: 'fa' | 'en';
+    theme: 'light' | 'dark' | 'system';
+    timezone: string;
+    dateFormat: 'jalali' | 'gregorian';
+    currency: 'IRR' | 'USD' | 'EUR';
+    pageSize: number;
+  };
+  notifications: {
+    email: boolean;
+    sms: boolean;
+    push: boolean;
+    documentProcessed: boolean;
+    deadlineReminders: boolean;
+    systemAlerts: boolean;
+    weeklyReports: boolean;
+  };
+  security: {
+    twoFactorAuth: boolean;
+    sessionTimeout: number;
+    loginAlerts: boolean;
+    passwordExpiry: number;
+  };
+  system: {
+    autoBackup: boolean;
+    backupFrequency: 'daily' | 'weekly' | 'monthly';
+    retentionPeriod: number;
+    maxConcurrentJobs: number;
+    enableDebugMode: boolean;
+  };
 }
 
-const SettingsSection: React.FC<SettingsSectionProps> = ({ title, description, icon: Icon, children }) => (
-  <AnimatedCard className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-    <div className="flex items-start space-x-4 space-x-reverse mb-6">
-      <div className="p-3 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
-        <Icon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-      </div>
-      <div className="flex-1">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">{title}</h3>
-        <p className="text-gray-600 dark:text-gray-400">{description}</p>
-      </div>
-    </div>
-    {children}
-  </AnimatedCard>
-);
-
-const InputField: React.FC<{
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  type?: string;
-  placeholder?: string;
-  disabled?: boolean;
-}> = ({ label, value, onChange, type = 'text', placeholder, disabled = false }) => (
-  <div className="space-y-2">
-    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-      {label}
-    </label>
-    <input
-      type={type}
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder={placeholder}
-      disabled={disabled}
-      className={cn(
-        "w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg",
-        "bg-white dark:bg-gray-700 text-gray-900 dark:text-white",
-        "focus:ring-2 focus:ring-blue-500 focus:border-transparent",
-        "disabled:opacity-50 disabled:cursor-not-allowed",
-        "transition-colors duration-200"
-      )}
-    />
-  </div>
-);
-
-const SelectField: React.FC<{
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  options: { value: string; label: string }[];
-}> = ({ label, value, onChange, options }) => (
-  <div className="space-y-2">
-    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-      {label}
-    </label>
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200"
-    >
-      {options.map((option) => (
-        <option key={option.value} value={option.value}>
-          {option.label}
-        </option>
-      ))}
-    </select>
-  </div>
-);
-
-const ToggleField: React.FC<{
-  label: string;
-  description?: string;
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-}> = ({ label, description, checked, onChange }) => (
-  <div className="flex items-start justify-between">
-    <div className="flex-1">
-      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-        {label}
-      </label>
-      {description && (
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{description}</p>
-      )}
-    </div>
-    <button
-      onClick={() => onChange(!checked)}
-      className={cn(
-        "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
-        checked ? "bg-blue-600" : "bg-gray-200 dark:bg-gray-700"
-      )}
-    >
-      <span
-        className={cn(
-          "inline-block h-4 w-4 transform rounded-full bg-white transition-transform",
-          checked ? "translate-x-6" : "translate-x-1"
-        )}
-      />
-    </button>
-  </div>
-);
-
-export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState('profile');
-  const [unsavedChanges, setUnsavedChanges] = useState(false);
-  
-  // User Profile State
-  const [profile, setProfile] = useState({
-    firstName: 'احمد',
-    lastName: 'محمدی',
-    email: 'ahmad.mohammadi@example.com',
-    phone: '+98 912 345 6789',
-    organization: 'دادگستری تهران',
-    position: 'کارشناس حقوقی'
-  });
-
-  // Preferences State
-  const [preferences, setPreferences] = useState({
+const defaultSettings: UserSettings = {
+  profile: {
+    firstName: 'علی',
+    lastName: 'احمدی',
+    email: 'ali.ahmadi@example.com',
+    phone: '09123456789',
+    title: 'مشاور حقوقی ارشد',
+    organization: 'مؤسسه حقوقی آسمان',
+    address: 'تهران، خیابان ولیعصر، پلاک ۱۲۳'
+  },
+  preferences: {
     language: 'fa',
-    theme: 'auto',
+    theme: 'light',
     timezone: 'Asia/Tehran',
-    dateFormat: 'persian',
-    pageSize: '20',
-    autoSave: true,
-    compactMode: false
-  });
-
-  // Notifications State
-  const [notifications, setNotifications] = useState({
-    emailNotifications: true,
-    pushNotifications: true,
+    dateFormat: 'jalali',
+    currency: 'IRR',
+    pageSize: 20
+  },
+  notifications: {
+    email: true,
+    sms: false,
+    push: true,
+    documentProcessed: true,
+    deadlineReminders: true,
     systemAlerts: true,
-    weeklyReport: true,
-    jobCompletion: true,
-    errorAlerts: true,
-    maintenanceNotices: false
-  });
-
-  // Security State
-  const [security, setSecurity] = useState({
-    twoFactorEnabled: false,
-    sessionTimeout: '30',
-    requirePasswordChange: false,
-    loginAlerts: true
-  });
-
-  // System State
-  const [system, setSystem] = useState({
+    weeklyReports: false
+  },
+  security: {
+    twoFactorAuth: false,
+    sessionTimeout: 60,
+    loginAlerts: true,
+    passwordExpiry: 90
+  },
+  system: {
     autoBackup: true,
     backupFrequency: 'daily',
-    logLevel: 'info',
-    debugMode: false,
-    maintenanceMode: false
-  });
+    retentionPeriod: 30,
+    maxConcurrentJobs: 5,
+    enableDebugMode: false
+  }
+};
+
+// Components
+const FormGroup: React.FC<{
+  label: string;
+  description?: string;
+  required?: boolean;
+  error?: string;
+  children: React.ReactNode;
+}> = ({ label, description, required, error, children }) => (
+  <div className="space-y-2">
+    <div>
+      <label className="text-sm font-medium text-neutral-900">
+        {label}
+        {required && <span className="text-error-600 mr-1">*</span>}
+      </label>
+      {description && (
+        <p className="text-xs text-neutral-600 mt-1">{description}</p>
+      )}
+    </div>
+    {children}
+    {error && (
+      <p className="text-xs text-error-600 flex items-center gap-1">
+        <AlertTriangle className="w-3 h-3" />
+        {error}
+      </p>
+    )}
+  </div>
+);
+
+const ToggleSwitch: React.FC<{
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  disabled?: boolean;
+}> = ({ checked, onChange, disabled }) => (
+  <button
+    type="button"
+    onClick={() => !disabled && onChange(!checked)}
+    disabled={disabled}
+    className={cn(
+      "relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2",
+      checked ? "bg-primary-600" : "bg-neutral-200",
+      disabled && "opacity-50 cursor-not-allowed"
+    )}
+  >
+    <span
+      className={cn(
+        "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
+        checked ? "translate-x-5" : "translate-x-0"
+      )}
+    />
+  </button>
+);
+
+const SettingItem: React.FC<{
+  title: string;
+  description: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  disabled?: boolean;
+}> = ({ title, description, checked, onChange, disabled }) => (
+  <div className="flex items-center justify-between p-4 border border-neutral-200 rounded-lg hover:bg-neutral-50 transition-colors">
+    <div className="flex-1">
+      <h4 className="text-sm font-medium text-neutral-900">{title}</h4>
+      <p className="text-sm text-neutral-600 mt-1">{description}</p>
+    </div>
+    <ToggleSwitch checked={checked} onChange={onChange} disabled={disabled} />
+  </div>
+);
+
+const SettingsPage: React.FC = () => {
+  const [settings, setSettings] = useState<UserSettings>(defaultSettings);
+  const [activeTab, setActiveTab] = useState('profile');
+  const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const tabs = [
     { id: 'profile', label: 'پروفایل کاربری', icon: User },
-    { id: 'preferences', label: 'تنظیمات کلی', icon: Settings },
+    { id: 'preferences', label: 'تنظیمات نمایش', icon: Palette },
     { id: 'notifications', label: 'اعلان‌ها', icon: Bell },
     { id: 'security', label: 'امنیت', icon: Shield },
     { id: 'system', label: 'سیستم', icon: Database }
   ];
 
-  const handleSave = () => {
-    // Simulate save operation
-    console.log('Saving settings...');
-    setUnsavedChanges(false);
-    // Show success toast
+  const handleInputChange = useCallback((section: keyof UserSettings, field: string, value: any) => {
+    setSettings(prev => ({
+      ...prev,
+      [section]: {
+        ...prev[section],
+        [field]: value
+      }
+    }));
+    setHasChanges(true);
+    
+    // Clear error when field is changed
+    if (errors[`${section}.${field}`]) {
+      setErrors(prev => ({
+        ...prev,
+        [`${section}.${field}`]: ''
+      }));
+    }
+  }, [errors]);
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+
+    // Profile validation
+    if (!settings.profile.firstName.trim()) {
+      newErrors['profile.firstName'] = 'نام الزامی است';
+    }
+    if (!settings.profile.lastName.trim()) {
+      newErrors['profile.lastName'] = 'نام خانوادگی الزامی است';
+    }
+    if (!settings.profile.email.trim()) {
+      newErrors['profile.email'] = 'ایمیل الزامی است';
+    } else if (!/\S+@\S+\.\S+/.test(settings.profile.email)) {
+      newErrors['profile.email'] = 'فرمت ایمیل صحیح نیست';
+    }
+    if (!settings.profile.phone.trim()) {
+      newErrors['profile.phone'] = 'شماره تلفن الزامی است';
+    } else if (!/^09\d{9}$/.test(settings.profile.phone.replace(/\s/g, ''))) {
+      newErrors['profile.phone'] = 'فرمت شماره تلفن صحیح نیست';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
-  const updateProfile = (field: string, value: string) => {
-    setProfile(prev => ({ ...prev, [field]: value }));
-    setUnsavedChanges(true);
-  };
+  const handleSave = useCallback(async () => {
+    if (!validateForm()) {
+      return;
+    }
 
-  const updatePreferences = (field: string, value: string | boolean) => {
-    setPreferences(prev => ({ ...prev, [field]: value }));
-    setUnsavedChanges(true);
-  };
+    setIsLoading(true);
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setHasChanges(false);
+      console.log('Settings saved:', settings);
+    } catch (error) {
+      console.error('Failed to save settings:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [settings]);
 
-  const updateNotifications = (field: string, value: boolean) => {
-    setNotifications(prev => ({ ...prev, [field]: value }));
-    setUnsavedChanges(true);
-  };
+  const handleReset = useCallback(() => {
+    setSettings(defaultSettings);
+    setHasChanges(false);
+    setErrors({});
+  }, []);
 
-  const updateSecurity = (field: string, value: string | boolean) => {
-    setSecurity(prev => ({ ...prev, [field]: value }));
-    setUnsavedChanges(true);
-  };
+  const handleExportSettings = useCallback(() => {
+    const dataStr = JSON.stringify(settings, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'settings.json';
+    link.click();
+    URL.revokeObjectURL(url);
+  }, [settings]);
 
-  const updateSystem = (field: string, value: string | boolean) => {
-    setSystem(prev => ({ ...prev, [field]: value }));
-    setUnsavedChanges(true);
-  };
+  const handleImportSettings = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const importedSettings = JSON.parse(e.target?.result as string);
+          setSettings(importedSettings);
+          setHasChanges(true);
+        } catch (error) {
+          console.error('Failed to import settings:', error);
+        }
+      };
+      reader.readAsText(file);
+    }
+  }, []);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="max-w-6xl mx-auto p-6 space-y-6"
-      dir="rtl"
-    >
+    <div className="space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-6 text-white">
-        <h1 className="text-3xl font-bold mb-2">تنظیمات سیستم</h1>
-        <p className="text-blue-100">مدیریت تنظیمات کاربری و سیستم</p>
+      <div className="flex flex-col sm:flex-row justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-neutral-900">
+            {LEGAL_TERMINOLOGY.settings.title}
+          </h1>
+          <p className="text-neutral-600 mt-1">
+            مدیریت تنظیمات کاربری و سیستم
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          {hasChanges && (
+            <div className="flex items-center gap-2 text-sm text-warning-600">
+              <div className="w-2 h-2 bg-warning-500 rounded-full" />
+              <span>تغییرات ذخیره نشده</span>
+            </div>
+          )}
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleReset}
+            disabled={isLoading}
+          >
+            <RefreshCw className="w-4 h-4 ml-1" />
+            بازگردانی
+          </Button>
+          <Button 
+            variant="primary" 
+            size="sm" 
+            onClick={handleSave}
+            loading={isLoading}
+            disabled={!hasChanges}
+          >
+            <Save className="w-4 h-4 ml-1" />
+            ذخیره تغییرات
+          </Button>
+        </div>
       </div>
-
-      {/* Unsaved Changes Warning */}
-      {unsavedChanges && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-center justify-between"
-        >
-          <div className="flex items-center space-x-3 space-x-reverse">
-            <AlertCircle className="w-5 h-5 text-yellow-600" />
-            <span className="text-yellow-800">تغییراتی ذخیره نشده دارید</span>
-          </div>
-          <div className="flex space-x-2 space-x-reverse">
-            <AnimatedButton
-              variant="ghost"
-              onClick={() => setUnsavedChanges(false)}
-              className="text-yellow-700 hover:bg-yellow-100"
-            >
-              لغو
-            </AnimatedButton>
-            <AnimatedButton
-              variant="primary"
-              onClick={handleSave}
-              className="bg-yellow-600 hover:bg-yellow-700 text-white"
-            >
-              ذخیره
-            </AnimatedButton>
-          </div>
-        </motion.div>
-      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Sidebar */}
         <div className="lg:col-span-1">
-          <nav className="space-y-2">
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={cn(
-                    "w-full flex items-center space-x-3 space-x-reverse px-4 py-3 rounded-lg text-right transition-all duration-200",
-                    isActive
-                      ? "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border-r-4 border-blue-600"
-                      : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
-                  )}
+          <Card>
+            <CardContent className="p-0">
+              <nav className="space-y-1">
+                {tabs.map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={cn(
+                        "w-full flex items-center gap-3 px-4 py-3 text-right transition-all duration-200",
+                        isActive
+                          ? "bg-primary-50 text-primary-700 border-l-4 border-primary-600"
+                          : "text-neutral-600 hover:bg-neutral-50"
+                      )}
+                    >
+                      <Icon className="w-5 h-5" />
+                      <span className="font-medium">{tab.label}</span>
+                    </button>
+                  );
+                })}
+              </nav>
+            </CardContent>
+          </Card>
+
+          {/* Quick Actions */}
+          <Card className="mt-4">
+            <CardHeader>
+              <CardTitle className="text-sm">عملیات سریع</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportSettings}
+                className="w-full justify-start"
+              >
+                <Download className="w-4 h-4 ml-1" />
+                صادرات تنظیمات
+              </Button>
+              <div>
+                <input
+                  type="file"
+                  accept=".json"
+                  onChange={handleImportSettings}
+                  className="hidden"
+                  id="import-settings"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => document.getElementById('import-settings')?.click()}
+                  className="w-full justify-start"
                 >
-                  <Icon className="w-5 h-5" />
-                  <span className="font-medium">{tab.label}</span>
-                </button>
-              );
-            })}
-          </nav>
+                  <Upload className="w-4 h-4 ml-1" />
+                  وارد کردن تنظیمات
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Content */}
-        <div className="lg:col-span-3 space-y-6">
+        <div className="lg:col-span-3">
           {/* Profile Tab */}
           {activeTab === 'profile' && (
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="space-y-6"
-            >
-              <SettingsSection
-                title="اطلاعات شخصی"
-                description="مدیریت اطلاعات پروفایل کاربری"
-                icon={User}
-              >
-                <div className="space-y-6">
-                  {/* Avatar Section */}
-                  <div className="flex items-center space-x-6 space-x-reverse">
-                    <div className="relative">
-                      <div className="w-20 h-20 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center">
-                        <User className="w-8 h-8 text-blue-600 dark:text-blue-400" />
-                      </div>
-                      <button className="absolute -bottom-1 -right-1 p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors">
-                        <Camera className="w-4 h-4" />
-                      </button>
-                    </div>
-                    <div>
-                      <h4 className="font-medium text-gray-900 dark:text-white">تصویر پروفایل</h4>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">JPG یا PNG، حداکثر ۲ مگابایت</p>
-                    </div>
-                  </div>
+            <Card>
+              <CardHeader>
+                <CardTitle>اطلاعات پروفایل</CardTitle>
+                <CardDescription>
+                  مدیریت اطلاعات شخصی و حرفه‌ای
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormGroup
+                    label="نام"
+                    required
+                    error={errors['profile.firstName']}
+                  >
+                    <input
+                      type="text"
+                      value={settings.profile.firstName}
+                      onChange={(e) => handleInputChange('profile', 'firstName', e.target.value)}
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    />
+                  </FormGroup>
 
-                  {/* Form Fields */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <InputField
-                      label="نام"
-                      value={profile.firstName}
-                      onChange={(value) => updateProfile('firstName', value)}
-                      placeholder="نام خود را وارد کنید"
+                  <FormGroup
+                    label="نام خانوادگی"
+                    required
+                    error={errors['profile.lastName']}
+                  >
+                    <input
+                      type="text"
+                      value={settings.profile.lastName}
+                      onChange={(e) => handleInputChange('profile', 'lastName', e.target.value)}
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     />
-                    <InputField
-                      label="نام خانوادگی"
-                      value={profile.lastName}
-                      onChange={(value) => updateProfile('lastName', value)}
-                      placeholder="نام خانوادگی خود را وارد کنید"
-                    />
-                    <InputField
-                      label="ایمیل"
-                      value={profile.email}
-                      onChange={(value) => updateProfile('email', value)}
+                  </FormGroup>
+
+                  <FormGroup
+                    label="ایمیل"
+                    required
+                    error={errors['profile.email']}
+                  >
+                    <input
                       type="email"
-                      placeholder="email@example.com"
+                      value={settings.profile.email}
+                      onChange={(e) => handleInputChange('profile', 'email', e.target.value)}
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     />
-                    <InputField
-                      label="شماره تماس"
-                      value={profile.phone}
-                      onChange={(value) => updateProfile('phone', value)}
-                      type="tel"
-                      placeholder="+98 912 345 6789"
-                    />
-                    <InputField
-                      label="سازمان"
-                      value={profile.organization}
-                      onChange={(value) => updateProfile('organization', value)}
-                      placeholder="نام سازمان"
-                    />
-                    <InputField
-                      label="سمت"
-                      value={profile.position}
-                      onChange={(value) => updateProfile('position', value)}
-                      placeholder="سمت شغلی"
-                    />
-                  </div>
+                  </FormGroup>
 
-                  {/* Password Change */}
-                  <div className="border-t pt-6">
-                    <h4 className="font-medium text-gray-900 dark:text-white mb-4">تغییر رمز عبور</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <InputField
-                        label="رمز عبور فعلی"
-                        value=""
-                        onChange={() => {}}
-                        type="password"
-                        placeholder="رمز عبور فعلی"
-                      />
-                      <InputField
-                        label="رمز عبور جدید"
-                        value=""
-                        onChange={() => {}}
-                        type="password"
-                        placeholder="رمز عبور جدید"
-                      />
-                    </div>
-                  </div>
+                  <FormGroup
+                    label="شماره تلفن"
+                    required
+                    error={errors['profile.phone']}
+                  >
+                    <input
+                      type="tel"
+                      value={settings.profile.phone}
+                      onChange={(e) => handleInputChange('profile', 'phone', e.target.value)}
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      placeholder="09123456789"
+                    />
+                  </FormGroup>
+
+                  <FormGroup label="عنوان شغلی">
+                    <input
+                      type="text"
+                      value={settings.profile.title}
+                      onChange={(e) => handleInputChange('profile', 'title', e.target.value)}
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    />
+                  </FormGroup>
+
+                  <FormGroup label="نام سازمان">
+                    <input
+                      type="text"
+                      value={settings.profile.organization}
+                      onChange={(e) => handleInputChange('profile', 'organization', e.target.value)}
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    />
+                  </FormGroup>
                 </div>
-              </SettingsSection>
-            </motion.div>
+
+                <FormGroup label="آدرس">
+                  <textarea
+                    value={settings.profile.address}
+                    onChange={(e) => handleInputChange('profile', 'address', e.target.value)}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  />
+                </FormGroup>
+              </CardContent>
+            </Card>
           )}
 
           {/* Preferences Tab */}
           {activeTab === 'preferences' && (
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="space-y-6"
-            >
-              <SettingsSection
-                title="تنظیمات کلی"
-                description="شخصی‌سازی تجربه کاربری"
-                icon={Settings}
-              >
+            <Card>
+              <CardHeader>
+                <CardTitle>تنظیمات نمایش</CardTitle>
+                <CardDescription>
+                  شخصی‌سازی رابط کاربری و تنظیمات نمایش
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <SelectField
-                    label="زبان رابط کاربری"
-                    value={preferences.language}
-                    onChange={(value) => updatePreferences('language', value)}
-                    options={[
-                      { value: 'fa', label: 'فارسی' },
-                      { value: 'en', label: 'English' }
-                    ]}
-                  />
-                  <SelectField
-                    label="تم ظاهری"
-                    value={preferences.theme}
-                    onChange={(value) => updatePreferences('theme', value)}
-                    options={[
-                      { value: 'light', label: 'روشن' },
-                      { value: 'dark', label: 'تیره' },
-                      { value: 'auto', label: 'خودکار' }
-                    ]}
-                  />
-                  <SelectField
-                    label="منطقه زمانی"
-                    value={preferences.timezone}
-                    onChange={(value) => updatePreferences('timezone', value)}
-                    options={[
-                      { value: 'Asia/Tehran', label: 'تهران' },
-                      { value: 'Asia/Dubai', label: 'دبی' },
-                      { value: 'UTC', label: 'UTC' }
-                    ]}
-                  />
-                  <SelectField
-                    label="فرمت تاریخ"
-                    value={preferences.dateFormat}
-                    onChange={(value) => updatePreferences('dateFormat', value)}
-                    options={[
-                      { value: 'persian', label: 'شمسی' },
-                      { value: 'gregorian', label: 'میلادی' }
-                    ]}
-                  />
-                  <SelectField
-                    label="تعداد آیتم در هر صفحه"
-                    value={preferences.pageSize}
-                    onChange={(value) => updatePreferences('pageSize', value)}
-                    options={[
-                      { value: '10', label: '۱۰' },
-                      { value: '20', label: '۲۰' },
-                      { value: '50', label: '۵۰' },
-                      { value: '100', label: '۱۰۰' }
-                    ]}
-                  />
+                  <FormGroup label="زبان رابط کاربری">
+                    <select
+                      value={settings.preferences.language}
+                      onChange={(e) => handleInputChange('preferences', 'language', e.target.value)}
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    >
+                      <option value="fa">فارسی</option>
+                      <option value="en">English</option>
+                    </select>
+                  </FormGroup>
+
+                  <FormGroup label="تم نمایش">
+                    <select
+                      value={settings.preferences.theme}
+                      onChange={(e) => handleInputChange('preferences', 'theme', e.target.value)}
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    >
+                      <option value="light">روشن</option>
+                      <option value="dark">تیره</option>
+                      <option value="system">بر اساس سیستم</option>
+                    </select>
+                  </FormGroup>
+
+                  <FormGroup label="منطقه زمانی">
+                    <select
+                      value={settings.preferences.timezone}
+                      onChange={(e) => handleInputChange('preferences', 'timezone', e.target.value)}
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    >
+                      <option value="Asia/Tehran">تهران (GMT+3:30)</option>
+                      <option value="UTC">UTC (GMT+0)</option>
+                    </select>
+                  </FormGroup>
+
+                  <FormGroup label="فرمت تاریخ">
+                    <select
+                      value={settings.preferences.dateFormat}
+                      onChange={(e) => handleInputChange('preferences', 'dateFormat', e.target.value)}
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    >
+                      <option value="jalali">شمسی</option>
+                      <option value="gregorian">میلادی</option>
+                    </select>
+                  </FormGroup>
+
+                  <FormGroup label="واحد پول">
+                    <select
+                      value={settings.preferences.currency}
+                      onChange={(e) => handleInputChange('preferences', 'currency', e.target.value)}
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    >
+                      <option value="IRR">ریال ایران</option>
+                      <option value="USD">دلار آمریکا</option>
+                      <option value="EUR">یورو</option>
+                    </select>
+                  </FormGroup>
+
+                  <FormGroup label="تعداد آیتم در صفحه">
+                    <select
+                      value={settings.preferences.pageSize}
+                      onChange={(e) => handleInputChange('preferences', 'pageSize', parseInt(e.target.value))}
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    >
+                      <option value={10}>۱۰</option>
+                      <option value={20}>۲۰</option>
+                      <option value={50}>۵۰</option>
+                      <option value={100}>۱۰۰</option>
+                    </select>
+                  </FormGroup>
                 </div>
-                <div className="space-y-4 pt-4 border-t">
-                  <ToggleField
-                    label="ذخیره خودکار"
-                    description="ذخیره خودکار تغییرات در فرم‌ها"
-                    checked={preferences.autoSave}
-                    onChange={(checked) => updatePreferences('autoSave', checked)}
-                  />
-                  <ToggleField
-                    label="حالت فشرده"
-                    description="نمایش بیشتر اطلاعات در فضای کمتر"
-                    checked={preferences.compactMode}
-                    onChange={(checked) => updatePreferences('compactMode', checked)}
-                  />
-                </div>
-              </SettingsSection>
-            </motion.div>
+              </CardContent>
+            </Card>
           )}
 
           {/* Notifications Tab */}
           {activeTab === 'notifications' && (
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="space-y-6"
-            >
-              <SettingsSection
-                title="تنظیمات اعلان‌ها"
-                description="مدیریت انواع اعلان‌ها و نحوه دریافت آن‌ها"
-                icon={Bell}
-              >
-                <div className="space-y-6">
-                  <div>
-                    <h4 className="font-medium text-gray-900 dark:text-white mb-4">روش‌های دریافت اعلان</h4>
-                    <div className="space-y-4">
-                      <ToggleField
-                        label="اعلان‌های ایمیل"
-                        description="دریافت اعلان‌ها از طریق ایمیل"
-                        checked={notifications.emailNotifications}
-                        onChange={(checked) => updateNotifications('emailNotifications', checked)}
-                      />
-                      <ToggleField
-                        label="اعلان‌های push"
-                        description="دریافت اعلان‌های فوری در مرورگر"
-                        checked={notifications.pushNotifications}
-                        onChange={(checked) => updateNotifications('pushNotifications', checked)}
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <h4 className="font-medium text-gray-900 dark:text-white mb-4">انواع اعلان‌ها</h4>
-                    <div className="space-y-4">
-                      <ToggleField
-                        label="هشدارهای سیستم"
-                        description="اعلان‌های مهم سیستم و خطاها"
-                        checked={notifications.systemAlerts}
-                        onChange={(checked) => updateNotifications('systemAlerts', checked)}
-                      />
-                      <ToggleField
-                        label="گزارش هفتگی"
-                        description="خلاصه فعالیت‌های هفته"
-                        checked={notifications.weeklyReport}
-                        onChange={(checked) => updateNotifications('weeklyReport', checked)}
-                      />
-                      <ToggleField
-                        label="تکمیل پروژه‌ها"
-                        description="اعلان در صورت تکمیل پروژه‌های اسکرپینگ"
-                        checked={notifications.jobCompletion}
-                        onChange={(checked) => updateNotifications('jobCompletion', checked)}
-                      />
-                      <ToggleField
-                        label="هشدارهای خطا"
-                        description="اعلان فوری در صورت بروز خطا"
-                        checked={notifications.errorAlerts}
-                        onChange={(checked) => updateNotifications('errorAlerts', checked)}
-                      />
-                      <ToggleField
-                        label="اعلان‌های نگهداری"
-                        description="اطلاع‌رسانی نگهداری و به‌روزرسانی سیستم"
-                        checked={notifications.maintenanceNotices}
-                        onChange={(checked) => updateNotifications('maintenanceNotices', checked)}
-                      />
-                    </div>
-                  </div>
+            <Card>
+              <CardHeader>
+                <CardTitle>تنظیمات اعلان‌ها</CardTitle>
+                <CardDescription>
+                  مدیریت نحوه دریافت اعلان‌ها و هشدارها
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-4">
+                  <h4 className="font-medium text-neutral-900">روش‌های دریافت اعلان</h4>
+                  <SettingItem
+                    title="اعلان‌های ایمیل"
+                    description="دریافت اعلان‌ها از طریق ایمیل"
+                    checked={settings.notifications.email}
+                    onChange={(checked) => handleInputChange('notifications', 'email', checked)}
+                  />
+                  <SettingItem
+                    title="اعلان‌های پیامکی"
+                    description="دریافت اعلان‌ها از طریق پیامک"
+                    checked={settings.notifications.sms}
+                    onChange={(checked) => handleInputChange('notifications', 'sms', checked)}
+                  />
+                  <SettingItem
+                    title="اعلان‌های فوری"
+                    description="نمایش اعلان‌های فوری در مرورگر"
+                    checked={settings.notifications.push}
+                    onChange={(checked) => handleInputChange('notifications', 'push', checked)}
+                  />
                 </div>
-              </SettingsSection>
-            </motion.div>
+
+                <div className="space-y-4 pt-6 border-t border-neutral-200">
+                  <h4 className="font-medium text-neutral-900">نوع اعلان‌ها</h4>
+                  <SettingItem
+                    title="پردازش اسناد"
+                    description="اعلان زمان تکمیل پردازش اسناد"
+                    checked={settings.notifications.documentProcessed}
+                    onChange={(checked) => handleInputChange('notifications', 'documentProcessed', checked)}
+                  />
+                  <SettingItem
+                    title="یادآوری مهلت‌ها"
+                    description="هشدار نزدیک شدن مهلت‌های مهم"
+                    checked={settings.notifications.deadlineReminders}
+                    onChange={(checked) => handleInputChange('notifications', 'deadlineReminders', checked)}
+                  />
+                  <SettingItem
+                    title="هشدارهای سیستم"
+                    description="اعلان مشکلات و خطاهای سیستم"
+                    checked={settings.notifications.systemAlerts}
+                    onChange={(checked) => handleInputChange('notifications', 'systemAlerts', checked)}
+                  />
+                  <SettingItem
+                    title="گزارش‌های هفتگی"
+                    description="دریافت خلاصه‌ای از فعالیت‌های هفته"
+                    checked={settings.notifications.weeklyReports}
+                    onChange={(checked) => handleInputChange('notifications', 'weeklyReports', checked)}
+                  />
+                </div>
+              </CardContent>
+            </Card>
           )}
 
           {/* Security Tab */}
           {activeTab === 'security' && (
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="space-y-6"
-            >
-              <SettingsSection
-                title="تنظیمات امنیت"
-                description="مدیریت امنیت حساب کاربری و دسترسی‌ها"
-                icon={Shield}
-              >
-                <div className="space-y-6">
-                  <ToggleField
-                    label="احراز هویت دو مرحله‌ای"
-                    description="افزایش امنیت با استفاده از تایید دو مرحله‌ای"
-                    checked={security.twoFactorEnabled}
-                    onChange={(checked) => updateSecurity('twoFactorEnabled', checked)}
+            <Card>
+              <CardHeader>
+                <CardTitle>تنظیمات امنیت</CardTitle>
+                <CardDescription>
+                  مدیریت امنیت حساب کاربری و دسترسی‌ها
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  <SettingItem
+                    title="احراز هویت دومرحله‌ای"
+                    description="افزایش امنیت با استفاده از کد تأیید پیامکی"
+                    checked={settings.security.twoFactorAuth}
+                    onChange={(checked) => handleInputChange('security', 'twoFactorAuth', checked)}
                   />
-                  
-                  <SelectField
-                    label="مهلت زمانی جلسه (دقیقه)"
-                    value={security.sessionTimeout}
-                    onChange={(value) => updateSecurity('sessionTimeout', value)}
-                    options={[
-                      { value: '15', label: '۱۵ دقیقه' },
-                      { value: '30', label: '۳۰ دقیقه' },
-                      { value: '60', label: '۱ ساعت' },
-                      { value: '120', label: '۲ ساعت' },
-                      { value: '480', label: '۸ ساعت' }
-                    ]}
+                  <SettingItem
+                    title="هشدار ورود"
+                    description="اعلان ورود از دستگاه‌های جدید"
+                    checked={settings.security.loginAlerts}
+                    onChange={(checked) => handleInputChange('security', 'loginAlerts', checked)}
                   />
-
-                  <ToggleField
-                    label="الزام تغییر رمز عبور"
-                    description="الزام تغییر رمز عبور در ورود بعدی"
-                    checked={security.requirePasswordChange}
-                    onChange={(checked) => updateSecurity('requirePasswordChange', checked)}
-                  />
-
-                  <ToggleField
-                    label="هشدار ورود"
-                    description="اطلاع‌رسانی ورود‌های جدید به حساب"
-                    checked={security.loginAlerts}
-                    onChange={(checked) => updateSecurity('loginAlerts', checked)}
-                  />
-
-                  {/* Active Sessions */}
-                  <div className="border-t pt-6">
-                    <h4 className="font-medium text-gray-900 dark:text-white mb-4">جلسات فعال</h4>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                        <div className="flex items-center space-x-3 space-x-reverse">
-                          <Smartphone className="w-5 h-5 text-gray-500" />
-                          <div>
-                            <p className="font-medium text-gray-900 dark:text-white">جلسه فعلی</p>
-                            <p className="text-sm text-gray-500">Chrome on Windows • تهران</p>
-                          </div>
-                        </div>
-                        <span className="text-green-600 text-sm">فعال</span>
-                      </div>
-                    </div>
-                  </div>
                 </div>
-              </SettingsSection>
-            </motion.div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-neutral-200">
+                  <FormGroup 
+                    label="مدت زمان نشست (دقیقه)"
+                    description="خروج خودکار پس از عدم فعالیت"
+                  >
+                    <select
+                      value={settings.security.sessionTimeout}
+                      onChange={(e) => handleInputChange('security', 'sessionTimeout', parseInt(e.target.value))}
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    >
+                      <option value={15}>۱۵ دقیقه</option>
+                      <option value={30}>۳۰ دقیقه</option>
+                      <option value={60}>۱ ساعت</option>
+                      <option value={120}>۲ ساعت</option>
+                      <option value={240}>۴ ساعت</option>
+                    </select>
+                  </FormGroup>
+
+                  <FormGroup 
+                    label="انقضای کلمه عبور (روز)"
+                    description="تغییر اجباری کلمه عبور"
+                  >
+                    <select
+                      value={settings.security.passwordExpiry}
+                      onChange={(e) => handleInputChange('security', 'passwordExpiry', parseInt(e.target.value))}
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    >
+                      <option value={30}>۳۰ روز</option>
+                      <option value={60}>۶۰ روز</option>
+                      <option value={90}>۹۰ روز</option>
+                      <option value={180}>۱۸۰ روز</option>
+                      <option value={365}>۳۶۵ روز</option>
+                    </select>
+                  </FormGroup>
+                </div>
+
+                <div className="pt-6 border-t border-neutral-200">
+                  <Button variant="outline" size="sm">
+                    <Key className="w-4 h-4 ml-1" />
+                    تغییر کلمه عبور
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           )}
 
           {/* System Tab */}
           {activeTab === 'system' && (
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="space-y-6"
-            >
-              <SettingsSection
-                title="تنظیمات سیستم"
-                description="مدیریت تنظیمات سیستم و نگهداری"
-                icon={Database}
-              >
-                <div className="space-y-6">
-                  <ToggleField
-                    label="پشتیبان‌گیری خودکار"
-                    description="پشتیبان‌گیری خودکار از داده‌ها"
-                    checked={system.autoBackup}
-                    onChange={(checked) => updateSystem('autoBackup', checked)}
+            <Card>
+              <CardHeader>
+                <CardTitle>تنظیمات سیستم</CardTitle>
+                <CardDescription>
+                  پیکربندی سیستم و عملیات پیشرفته
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  <SettingItem
+                    title="پشتیبان‌گیری خودکار"
+                    description="پشتیبان‌گیری منظم از داده‌های سیستم"
+                    checked={settings.system.autoBackup}
+                    onChange={(checked) => handleInputChange('system', 'autoBackup', checked)}
                   />
-
-                  <SelectField
-                    label="فرکانس پشتیبان‌گیری"
-                    value={system.backupFrequency}
-                    onChange={(value) => updateSystem('backupFrequency', value)}
-                    options={[
-                      { value: 'hourly', label: 'ساعتی' },
-                      { value: 'daily', label: 'روزانه' },
-                      { value: 'weekly', label: 'هفتگی' },
-                      { value: 'monthly', label: 'ماهانه' }
-                    ]}
+                  <SettingItem
+                    title="حالت دیباگ"
+                    description="فعال‌سازی گزارش‌های تفصیلی برای عیب‌یابی"
+                    checked={settings.system.enableDebugMode}
+                    onChange={(checked) => handleInputChange('system', 'enableDebugMode', checked)}
                   />
+                </div>
 
-                  <SelectField
-                    label="سطح گزارش‌دهی"
-                    value={system.logLevel}
-                    onChange={(value) => updateSystem('logLevel', value)}
-                    options={[
-                      { value: 'error', label: 'خطا' },
-                      { value: 'warn', label: 'هشدار' },
-                      { value: 'info', label: 'اطلاعات' },
-                      { value: 'debug', label: 'دیباگ' }
-                    ]}
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-neutral-200">
+                  <FormGroup label="دوره پشتیبان‌گیری">
+                    <select
+                      value={settings.system.backupFrequency}
+                      onChange={(e) => handleInputChange('system', 'backupFrequency', e.target.value)}
+                      disabled={!settings.system.autoBackup}
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:opacity-50"
+                    >
+                      <option value="daily">روزانه</option>
+                      <option value="weekly">هفتگی</option>
+                      <option value="monthly">ماهانه</option>
+                    </select>
+                  </FormGroup>
 
-                  <ToggleField
-                    label="حالت دیباگ"
-                    description="فعال‌سازی حالت دیباگ برای عیب‌یابی"
-                    checked={system.debugMode}
-                    onChange={(checked) => updateSystem('debugMode', checked)}
-                  />
+                  <FormGroup label="مدت نگهداری پشتیبان (روز)">
+                    <select
+                      value={settings.system.retentionPeriod}
+                      onChange={(e) => handleInputChange('system', 'retentionPeriod', parseInt(e.target.value))}
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    >
+                      <option value={7}>۷ روز</option>
+                      <option value={14}>۱۴ روز</option>
+                      <option value={30}>۳۰ روز</option>
+                      <option value={90}>۹۰ روز</option>
+                    </select>
+                  </FormGroup>
 
-                  <ToggleField
-                    label="حالت نگهداری"
-                    description="قرار دادن سیستم در حالت نگهداری"
-                    checked={system.maintenanceMode}
-                    onChange={(checked) => updateSystem('maintenanceMode', checked)}
-                  />
+                  <FormGroup label="حداکثر کارهای همزمان">
+                    <select
+                      value={settings.system.maxConcurrentJobs}
+                      onChange={(e) => handleInputChange('system', 'maxConcurrentJobs', parseInt(e.target.value))}
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    >
+                      <option value={1}>۱</option>
+                      <option value={3}>۳</option>
+                      <option value={5}>۵</option>
+                      <option value={10}>۱۰</option>
+                    </select>
+                  </FormGroup>
+                </div>
 
-                  {/* System Actions */}
-                  <div className="border-t pt-6">
-                    <h4 className="font-medium text-gray-900 dark:text-white mb-4">عملیات سیستم</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <AnimatedButton
-                        variant="secondary"
-                        className="flex items-center justify-center space-x-2 space-x-reverse"
-                      >
-                        <Download className="w-4 h-4" />
-                        <span>پشتیبان‌گیری دستی</span>
-                      </AnimatedButton>
-                      <AnimatedButton
-                        variant="secondary"
-                        className="flex items-center justify-center space-x-2 space-x-reverse"
-                      >
-                        <Upload className="w-4 h-4" />
-                        <span>بازیابی از پشتیبان</span>
-                      </AnimatedButton>
-                      <AnimatedButton
-                        variant="danger"
-                        className="flex items-center justify-center space-x-2 space-x-reverse"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        <span>پاک‌سازی کش</span>
-                      </AnimatedButton>
-                      <AnimatedButton
-                        variant="secondary"
-                        className="flex items-center justify-center space-x-2 space-x-reverse"
-                      >
-                        <Clock className="w-4 h-4" />
-                        <span>تاریخچه عملیات</span>
-                      </AnimatedButton>
+                <div className="pt-6 border-t border-neutral-200">
+                  <div className="bg-warning-50 border border-warning-200 rounded-lg p-4">
+                    <div className="flex items-start gap-3">
+                      <AlertTriangle className="w-5 h-5 text-warning-600 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <h4 className="text-sm font-medium text-warning-800">منطقه خطرناک</h4>
+                        <p className="text-sm text-warning-700 mt-1">
+                          عملیات زیر ممکن است باعث از دست رفتن داده‌ها شود. با احتیاط استفاده کنید.
+                        </p>
+                        <div className="flex gap-2 mt-3">
+                          <Button variant="outline" size="sm">
+                            <Trash2 className="w-4 h-4 ml-1" />
+                            پاک کردن تمام داده‌ها
+                          </Button>
+                          <Button variant="outline" size="sm">
+                            <RefreshCw className="w-4 h-4 ml-1" />
+                            بازنشانی سیستم
+                          </Button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </SettingsSection>
-            </motion.div>
+              </CardContent>
+            </Card>
           )}
-
-          {/* Save Button */}
-          <div className="flex justify-end space-x-4 space-x-reverse pt-6 border-t">
-            <AnimatedButton
-              variant="ghost"
-              onClick={() => setUnsavedChanges(false)}
-            >
-              لغو تغییرات
-            </AnimatedButton>
-            <AnimatedButton
-              variant="primary"
-              onClick={handleSave}
-              disabled={!unsavedChanges}
-              className="flex items-center space-x-2 space-x-reverse"
-            >
-              <Save className="w-4 h-4" />
-              <span>ذخیره تغییرات</span>
-            </AnimatedButton>
-          </div>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
-}
+};
+
+export default SettingsPage;
 
 
