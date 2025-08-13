@@ -16,14 +16,16 @@ app.add_middleware(
 def read_root():
     return {"status": "ok", "message": "Legal Dashboard API is running"}
 
-@app.get("/api/health")
+@app.get("/health")
 def health_check():
     return {"status": "healthy", "service": "Legal Dashboard API"}
 
- # For Vercel serverless functions
+# For Vercel serverless functions
+def handler(request):
+    return app
+
+# For local development
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
- # Export the app for Vercel serverless functions
-handler = app
  
