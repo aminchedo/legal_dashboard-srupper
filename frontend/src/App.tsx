@@ -10,7 +10,7 @@ import SystemHealthPage from './pages/System/SystemHealthPage';
 import ProxiesPage from './pages/Proxies/ProxiesPage';
 import SettingsPage from './pages/Settings/SettingsPage';
 import HelpPage from './pages/Help/HelpPage';
-import RecordingPage from './pages/Recording/Modal';
+import RecordingPage from './pages/Recording/RecordingPage';
  import DataPage from './pages/Data/DataPage';
  
 // Create QueryClient with proper configuration
@@ -63,11 +63,12 @@ function App() {
                 <Route path="/jobs/*" element={<JobsListPage />} />
                 <Route path="/system" element={<SystemHealthPage />} />
                 <Route path="/proxies" element={<ProxiesPage />} />
+                <Route path="/recording" element={<RecordingPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
                 <Route path="/help" element={<HelpPage />} />
                 {/* Legacy routes - redirect to new structure */}
                  <Route path="/data" element={<Navigate to="/documents" replace />} />
-                 <Route path="/scraping" element={<RecordingPage />} />
+                 <Route path="/scraping" element={<Navigate to="/recording" replace />} />
                  {/* Fallback */}
                 <Route path="*" element={<Navigate to="/dashboard" replace />} />
               </Routes>

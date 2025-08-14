@@ -48,13 +48,13 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     { name: t('nav.dashboard'), href: '/dashboard', icon: HomeIcon },
     { name: t('nav.documents'), href: '/documents', icon: DocumentIcon, badge: 3 },
     { name: t('nav.analytics'), href: '/analytics', icon: ChartBarIcon },
-    { name: 'Jobs', href: '/jobs', icon: CogIcon },
-    { name: 'Proxies', href: '/proxies', icon: ServerIcon },
-    { name: 'System', href: '/system', icon: Cog6ToothIcon },
-    { name: 'Recording', href: '/recording', icon: VideoCameraIcon },
-    { name: 'Data', href: '/data', icon: TableCellsIcon },
-    { name: 'Settings', href: '/settings', icon: CogIcon },
-    { name: 'Help', href: '/help', icon: QuestionMarkCircleIcon },
+    { name: t('nav.jobs'), href: '/jobs', icon: CogIcon },
+    { name: t('nav.proxies'), href: '/proxies', icon: ServerIcon },
+    { name: t('nav.system'), href: '/system', icon: Cog6ToothIcon },
+    { name: t('nav.recording'), href: '/recording', icon: VideoCameraIcon },
+    { name: t('nav.data'), href: '/data', icon: TableCellsIcon },
+    { name: t('nav.settings'), href: '/settings', icon: CogIcon },
+    { name: t('nav.help'), href: '/help', icon: QuestionMarkCircleIcon },
   ];
 
   const sidebarVariants = {
