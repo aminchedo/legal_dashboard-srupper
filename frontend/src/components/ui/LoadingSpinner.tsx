@@ -351,6 +351,9 @@ export default function LoadingSpinner({
   return null;
 }
 
+// Provide a named export alongside the default export
+export { LoadingSpinner };
+
 // ===== RESPONSIVE SKELETON LOADER COMPONENT =====
 
 interface SkeletonProps {

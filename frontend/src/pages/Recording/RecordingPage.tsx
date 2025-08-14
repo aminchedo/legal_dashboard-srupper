@@ -1,4 +1,3 @@
-```typescript
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   Play, 
@@ -113,11 +112,13 @@ interface SystemHealth {
 
 // Sub-components for better organization
 const ConnectionStatus: React.FC<{ isConnected: boolean }> = ({ isConnected }) => (
-  <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-lg text-sm font-medium ${
-    isConnected 
-      ? 'bg-green-100 text-green-800 border border-green-200' 
-      : 'bg-red-100 text-red-800 border border-red-200'
-  }`}>
+  <div
+    className={`inline-flex items-center gap-2 px-3 py-1 rounded-lg text-sm font-medium ${
+      isConnected
+        ? 'bg-green-100 text-green-800 border border-green-200'
+        : 'bg-red-100 text-red-800 border border-red-200'
+    }`}
+  >
     {isConnected ? <Wifi size={16} /> : <WifiOff size={16} />}
     <span>{isConnected ? 'متصل' : 'قطع'}</span>
   </div>
@@ -968,4 +969,3 @@ const ScrapingPage: React.FC = () => {
 };
 
 export default ScrapingPage;
-```
