@@ -55,6 +55,8 @@ interface NavigationItem {
 
 interface AppLayoutProps {
   children: React.ReactNode;
+  currentPage?: string;
+  onPageChange?: (page: string) => void;
 }
 
 const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {

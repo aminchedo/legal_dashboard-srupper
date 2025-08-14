@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import AppLayout from '../components/layout/AppLayout';
 import { PageType } from '../types';
 
+// تابع تبدیل مسیر به نوع صفحه
 function pathToPageType(pathname: string): PageType {
     if (pathname.startsWith('/analytics')) return 'analytics';
     if (pathname.startsWith('/recording')) return 'recording';
@@ -12,15 +13,17 @@ function pathToPageType(pathname: string): PageType {
     if (pathname.startsWith('/proxies')) return 'proxies';
     if (pathname.startsWith('/settings')) return 'settings';
     if (pathname.startsWith('/help')) return 'help';
+    if (pathname.startsWith('/data')) return 'data';
     return 'dashboard';
 }
 
+// تابع تبدیل نوع صفحه به مسیر
 function pageTypeToPath(page: PageType): string {
     switch (page) {
         case 'analytics':
             return '/analytics';
         case 'recording':
-            return '/Modal';
+            return '/recording'; // اصلاح شده از '/Modal' به '/recording'
         case 'jobs':
             return '/jobs';
         case 'documents':
@@ -33,6 +36,8 @@ function pageTypeToPath(page: PageType): string {
             return '/settings';
         case 'help':
             return '/help';
+        case 'data':
+            return '/data';
         default:
             return '/dashboard';
     }
