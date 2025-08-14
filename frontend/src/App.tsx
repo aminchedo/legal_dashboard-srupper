@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { ErrorBoundary } from 'react-error-boundary';
 import { motion } from 'framer-motion';
+import ErrorBoundary from './components/ErrorBoundary';
 import AppLayout from './components/layout/AppLayout';
 import DashboardPage from './pages/Dashboard/DashboardPage';
 import DocumentsListPage from './pages/Documents/DocumentsListPage';
@@ -28,59 +28,7 @@ const queryClient = new QueryClient({
   },
 });
 
-// Error Fallback Component
-const ErrorFallback: React.FC<{ error: Error; resetErrorBoundary: () => void }> = ({ 
-  error, 
-  resetErrorBoundary 
-}) => {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="premium-card p-8 max-w-md w-full mx-4 text-center">
-        <div className="mb-6">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-            </svg>
-          </div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2 persian-text">
-            خطایی رخ داده است
-          </h2>
-          <p className="text-gray-600 persian-text">
-            متأسفانه مشکلی در بارگذاری صفحه پیش آمده است.
-          </p>
-        </div>
-        
-        <div className="space-y-3">
-          <Button 
-            onClick={resetErrorBoundary}
-            variant="primary"
-            className="w-full"
-          >
-            تلاش مجدد
-          </Button>
-          <Button 
-            onClick={() => window.location.href = '/dashboard'}
-            variant="outline"
-            className="w-full"
-          >
-            بازگشت به داشبورد
-          </Button>
-        </div>
-        
-        {process.env.NODE_ENV === 'development' && (
-          <details className="mt-6 text-left">
-            <summary className="cursor-pointer text-sm text-gray-500 persian-text">
-              جزئیات خطا (فقط در حالت توسعه)
-            </summary>
-            <pre className="mt-2 text-xs text-red-600 bg-red-50 p-3 rounded overflow-auto">
-              {error.message}
-            </pre>
-          </details>
-        )}
-      </div>
-    </div>
-  );
-};
+
 
 // Page Loading Fallback
 const PageLoadingFallback: React.FC = () => {
@@ -162,7 +110,7 @@ function App() {
   }
 
   return (
-    <ErrorBoundary FallbackComponent={ErrorFallback}>
+    <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <Router>
           <Routes>
