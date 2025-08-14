@@ -37,6 +37,26 @@ const mockData = {
     }
 };
 
+// Utility function for safe Persian text encoding
+function safePersianEncode(text: string): string {
+    try {
+        return encodeURIComponent(text);
+    } catch (error) {
+        console.warn('Failed to encode Persian text:', text);
+        return text;
+    }
+}
+
+// Utility function for safe Persian text decoding
+function safePersianDecode(text: string): string {
+    try {
+        return decodeURIComponent(text);
+    } catch (error) {
+        console.warn('Failed to decode Persian text:', text);
+        return text;
+    }
+}
+
 class ApiClient {
     private baseUrl = import.meta.env.VITE_API_URL || '/api';
     private get token() {
@@ -48,16 +68,43 @@ class ApiClient {
             ...options.headers,
             'Authorization': `Bearer ${this.token}`,
             'Content-Type': 'application/json',
+            'Accept': 'application/json',
         };
         
         try {
             const response = await fetch(`${this.baseUrl}${path}`, { ...options, headers });
+            
+            // Log response for debugging
+            console.log(`API Request: ${this.baseUrl}${path}`, {
+                status: response.status,
+                statusText: response.statusText,
+                headers: Object.fromEntries(response.headers.entries())
+            });
+            
             if (!response.ok) {
                 const errorBody = await response.text();
-                console.error("API Error Response:", errorBody);
-                throw new Error(`API request failed: ${response.statusText}`);
+                console.error("API Error Response:", {
+                    status: response.status,
+                    statusText: response.statusText,
+                    body: errorBody
+                });
+                
+                // Handle specific error cases
+                if (response.status === 500) {
+                    throw new Error(`Server error: ${response.statusText}`);
+                } else if (response.status === 404) {
+                    throw new Error(`Endpoint not found: ${path}`);
+                } else {
+                    throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+                }
             }
-            return response.json();
+            
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+                return response.json();
+            } else {
+                return response.text();
+            }
         } catch (error) {
             // Check if it's a connection error
             if (error instanceof TypeError && error.message.includes('fetch')) {
@@ -86,7 +133,12 @@ class ApiClient {
         const params = new URLSearchParams();
         Object.entries(filters).forEach(([key, value]) => {
             if (value !== undefined && value !== null) {
-                params.append(key, String(value));
+                // Handle Persian text encoding for search parameters
+                if (typeof value === 'string' && /[\u0600-\u06FF]/.test(value)) {
+                    params.append(key, safePersianEncode(value));
+                } else {
+                    params.append(key, String(value));
+                }
             }
         });
         return this.fetchWithFallback(`/documents?${params}`, mockData.documents);
@@ -135,9 +187,20 @@ class ApiClient {
         Object.entries(searchQuery).forEach(([key, value]) => {
             if (value !== undefined && value !== null) {
                 if (Array.isArray(value)) {
-                    value.forEach(v => params.append(key, String(v)));
+                    value.forEach(v => {
+                        if (typeof v === 'string' && /[\u0600-\u06FF]/.test(v)) {
+                            params.append(key, safePersianEncode(v));
+                        } else {
+                            params.append(key, String(v));
+                        }
+                    });
                 } else {
-                    params.append(key, String(value));
+                    // Handle Persian text encoding
+                    if (typeof value === 'string' && /[\u0600-\u06FF]/.test(value)) {
+                        params.append(key, safePersianEncode(value));
+                    } else {
+                        params.append(key, String(value));
+                    }
                 }
             }
         });
@@ -145,7 +208,8 @@ class ApiClient {
     }
 
     async getDocumentSuggestions(query: string) {
-        return this.fetch(`/documents/suggestions?q=${encodeURIComponent(query)}`);
+        const encodedQuery = safePersianEncode(query);
+        return this.fetch(`/documents/suggestions?q=${encodedQuery}`);
     }
 
     // ===== BULK OPERATIONS =====
@@ -184,7 +248,11 @@ class ApiClient {
         const params = new URLSearchParams();
         Object.entries(filters).forEach(([key, value]) => {
             if (value !== undefined && value !== null) {
-                params.append(key, String(value));
+                if (typeof value === 'string' && /[\u0600-\u06FF]/.test(value)) {
+                    params.append(key, safePersianEncode(value));
+                } else {
+                    params.append(key, String(value));
+                }
             }
         });
         params.append('format', format);

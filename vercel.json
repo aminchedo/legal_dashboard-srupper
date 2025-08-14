@@ -11,10 +11,16 @@
     "frontend/api/**/*.js": {
       "maxDuration": 30,
       "memory": 1024
+    },
+    "api/index.py": {
+      "runtime": "python3.9",
+      "maxDuration": 30
     }
   },
   "env": {
-    "NODE_ENV": "production"
+    "NODE_ENV": "production",
+    "PYTHONPATH": "./",
+    "PYTHON_SETUP_REQUIRES": "setuptools>=68.0.0 wheel>=0.41.0"
   },
   "headers": [
     {
@@ -26,11 +32,15 @@
         },
         {
           "key": "Access-Control-Allow-Methods",
-          "value": "GET, POST, OPTIONS"
+          "value": "GET, POST, PUT, DELETE, OPTIONS"
         },
         {
           "key": "Access-Control-Allow-Headers",
           "value": "Content-Type, Authorization"
+        },
+        {
+          "key": "Content-Type",
+          "value": "application/json; charset=utf-8"
         }
       ]
     }
