@@ -11,8 +11,8 @@ import ProxiesPage from './pages/Proxies/ProxiesPage';
 import SettingsPage from './pages/Settings/SettingsPage';
 import HelpPage from './pages/Help/HelpPage';
 import RecordingPage from './pages/Recording/RecordingPage';
-import DataPage from './pages/Data/DataPage';
-
+ import DataPage from './pages/Data/DataPage';
+ 
 // Create QueryClient with proper configuration
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -65,11 +65,10 @@ function App() {
                 <Route path="/proxies" element={<ProxiesPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
                 <Route path="/help" element={<HelpPage />} />
-                
                 {/* Legacy routes - redirect to new structure */}
-                <Route path="/scraping" element={<RecordingPage />} />
-                
-                {/* Fallback */}
+                 <Route path="/data" element={<Navigate to="/documents" replace />} />
+                 <Route path="/scraping" element={<RecordingPage />} />
+                 {/* Fallback */}
                 <Route path="*" element={<Navigate to="/dashboard" replace />} />
               </Routes>
             </AppLayout>

@@ -26,7 +26,8 @@ import {
   Sun,
   Moon,
   Download,
-} from 'lucide-react';
+   Globe2,
+ } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import Button from '../ui/Button';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
@@ -111,8 +112,9 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       id: 'scraping',
       label: 'استخراج اطلاعات',
       href: '/scraping',
-      icon: Download,
-      description: 'استخراج خودکار اطلاعات حقوقی',
+       icon: Globe2,
+       icon: Download,
+       description: 'استخراج خودکار اطلاعات حقوقی',
     },
     {
       id: 'system',
