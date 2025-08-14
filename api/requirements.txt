@@ -1,2 +1,2 @@
-fastapi>=0.115.0
-uvicorn[standard]>=0.30.0
+# No external dependencies required - using Python standard library
+# The handler uses only built-in modules: http.server, json, urllib.parse

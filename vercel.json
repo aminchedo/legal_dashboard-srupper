@@ -4,15 +4,16 @@
   "buildCommand": "cd frontend && npm run build",
   "outputDirectory": "frontend/dist",
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/frontend/api/$1" },
+    { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/(.*)", "destination": "/frontend/dist/index.html" }
   ],
   "functions": {
-    "frontend/api/**/*.js": {
+    "api/**/*.js": {
+      "runtime": "nodejs18.x",
       "maxDuration": 30,
       "memory": 1024
     },
-    "api/index.py": {
+    "api/**/*.py": {
       "runtime": "python3.9",
       "maxDuration": 30
     }

@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Vercel Deployment Script for Persian Legal Document Management System
-# This script deploys the application to Vercel with proper configuration
+# Vercel Deployment Script for Persian Legal Dashboard
+# This script handles the deployment of the fixed application to Vercel
 
 set -e  # Exit on any error
 
@@ -37,73 +37,88 @@ if [ ! -f "vercel.json" ]; then
     exit 1
 fi
 
-# Check if frontend directory exists
-if [ ! -d "frontend" ]; then
-    print_error "frontend directory not found."
-    exit 1
-fi
-
-print_status "Checking Vercel CLI installation..."
+# Check if Vercel CLI is installed
 if ! command -v vercel &> /dev/null; then
-    print_error "Vercel CLI not found. Installing..."
-    npm install -g vercel
+    print_error "Vercel CLI is not installed. Please install it first:"
+    echo "npm install -g vercel"
+    exit 1
 fi
 
 print_status "Building frontend application..."
 cd frontend
-npm install --legacy-peer-deps
-npm run build
-cd ..
 
-print_status "Verifying build output..."
-if [ ! -f "frontend/dist/index.html" ]; then
-    print_error "Build failed - index.html not found in frontend/dist"
+# Install dependencies
+print_status "Installing frontend dependencies..."
+npm install --legacy-peer-deps
+
+# Build the application
+print_status "Building frontend for production..."
+npm run build
+
+if [ $? -eq 0 ]; then
+    print_success "Frontend build completed successfully!"
+else
+    print_error "Frontend build failed!"
     exit 1
 fi
 
-print_success "Frontend build completed successfully"
+cd ..
 
-print_status "Verifying API routes..."
-api_routes=(
-    "frontend/api/health.js"
-    "frontend/api/analytics.js"
-    "frontend/api/documents/search.js"
-    "frontend/api/documents/categories.js"
-    "frontend/api/documents/statistics.js"
-    "frontend/api/documents/tags.js"
-    "frontend/api/scraping/stats.js"
-)
+# Test Python handler
+print_status "Testing Python handler..."
+if python3 -c "from api.index import handler; print('Python handler test passed')" 2>/dev/null; then
+    print_success "Python handler test passed!"
+else
+    print_error "Python handler test failed!"
+    exit 1
+fi
 
-for route in "${api_routes[@]}"; do
-    if [ ! -f "$route" ]; then
-        print_error "API route not found: $route"
-        exit 1
-    fi
-done
-
-print_success "All API routes verified"
-
-print_status "Deploying to Vercel..."
-print_warning "This will deploy to production. Use --prod=false for preview deployment."
+# Check API structure
+print_status "Verifying API structure..."
+if [ -d "api" ] && [ -f "api/index.py" ] && [ -f "api/documents/search.js" ]; then
+    print_success "API structure verified!"
+else
+    print_error "API structure is incomplete!"
+    exit 1
+fi
 
 # Deploy to Vercel
-if vercel --prod --yes; then
+print_status "Deploying to Vercel..."
+print_warning "This will deploy to production. Make sure you want to proceed."
+
+read -p "Do you want to continue with deployment? (y/N): " -n 1 -r
+echo
+if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    print_warning "Deployment cancelled by user."
+    exit 0
+fi
+
+# Deploy to Vercel
+print_status "Starting Vercel deployment..."
+vercel --prod
+
+if [ $? -eq 0 ]; then
     print_success "Deployment completed successfully!"
-    
     print_status "Testing deployed endpoints..."
     
-    # Get the deployment URL (you'll need to extract this from vercel output)
-    print_status "Please check the deployment URL provided by Vercel"
-    print_status "Test the following endpoints:"
-    echo "  - /api/health"
-    echo "  - /api/analytics"
-    echo "  - /api/documents/categories"
-    echo "  - /api/documents/statistics"
-    echo "  - /api/documents/tags"
-    echo "  - /api/scraping/stats"
+    # Get the deployment URL (you'll need to replace this with your actual domain)
+    print_status "Please test the following endpoints on your deployed URL:"
+    echo "  - Health check: /api/health"
+    echo "  - Document search: /api/documents/search"
+    echo "  - Analytics: /api/analytics"
+    echo "  - Persian search test: /api/documents/search?category=%D9%87%D9%85%D9%87"
     
-    print_success "Deployment script completed!"
 else
     print_error "Deployment failed!"
     exit 1
 fi
+
+print_success "🎉 Deployment process completed!"
+print_status "Next steps:"
+echo "  1. Test all API endpoints"
+echo "  2. Verify Persian text handling"
+echo "  3. Check dashboard functionality"
+echo "  4. Monitor Vercel function logs"
+
+echo ""
+print_status "For monitoring, use: vercel logs --follow"
