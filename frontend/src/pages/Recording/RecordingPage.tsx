@@ -111,18 +111,18 @@ interface SystemHealth {
 }
 
 // Sub-components for better organization
-const ConnectionStatus: React.FC<{ isConnected: boolean }> = ({ isConnected }) => (
-  <div
-    className={`inline-flex items-center gap-2 px-3 py-1 rounded-lg text-sm font-medium ${
-      isConnected
-        ? 'bg-green-100 text-green-800 border border-green-200'
-        : 'bg-red-100 text-red-800 border border-red-200'
-    }`}
-  >
-    {isConnected ? <Wifi size={16} /> : <WifiOff size={16} />}
-    <span>{isConnected ? 'متصل' : 'قطع'}</span>
-  </div>
-);
+const ConnectionStatus: React.FC<{ isConnected: boolean }> = ({ isConnected }) => {
+  const statusClass = isConnected 
+    ? 'bg-green-100 text-green-800 border border-green-200' 
+    : 'bg-red-100 text-red-800 border border-red-200';
+    
+  return (
+    <div className={'inline-flex items-center gap-2 px-3 py-1 rounded-lg text-sm font-medium ' + statusClass}>
+      {isConnected ? <Wifi size={16} /> : <WifiOff size={16} />}
+      <span>{isConnected ? 'متصل' : 'قطع'}</span>
+    </div>
+  );
+};
 
 const SystemHealthCard: React.FC<{ 
   icon: React.ReactNode; 
@@ -132,7 +132,7 @@ const SystemHealthCard: React.FC<{
 }> = ({ icon, value, label, color }) => (
   <div className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-md transition-shadow">
     <div className="flex items-center justify-between">
-      <div className={`p-2 rounded-lg ${color}`}>
+              <div className={'p-2 rounded-lg ' + color}>
         {icon}
       </div>
       <div className="text-right">
@@ -172,7 +172,7 @@ const LogEntry: React.FC<{ log: ScrapingLog }> = ({ log }) => {
   const style = getLogStyle(log.type);
 
   return (
-    <div className={`p-4 rounded-lg border ${style.bg} transition-all duration-200 hover:shadow-sm`}>
+          <div className={'p-4 rounded-lg border ' + style.bg + ' transition-all duration-200 hover:shadow-sm'}>
       <div className="flex items-start gap-3">
         {style.icon}
         <div className="flex-1 min-w-0">
@@ -218,33 +218,31 @@ const SourceSelector: React.FC<{
       {sources.map((source) => (
         <label 
           key={source.id} 
-          className={`relative p-4 rounded-lg border-2 cursor-pointer transition-all ${
-            disabled ? 'opacity-50 cursor-not-allowed' : ''
-          } ${
-            selectedSources.includes(source.id)
+                      className={'relative p-4 rounded-lg border-2 cursor-pointer transition-all ' +
+            (disabled ? 'opacity-50 cursor-not-allowed' : '') + ' ' +
+            (selectedSources.includes(source.id)
               ? 'border-blue-500 bg-blue-50 shadow-sm'
-              : 'border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300'
-          }`}
-        >
+              : 'border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300')
+                    }>
           <input
             type="checkbox"
             checked={selectedSources.includes(source.id)}
             onChange={() => !disabled && onSelectionChange(source.id)}
             disabled={disabled}
             className="absolute top-3 left-3 w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-            aria-labelledby={`source-${source.id}-label`}
+                          aria-labelledby={'source-' + source.id + '-label'}
           />
           
           <div className="mr-8">
             <div className="flex items-center gap-2 mb-2">
-              <h4 id={`source-${source.id}-label`} className="font-medium text-gray-900 text-sm">
+              <h4 id={'source-' + source.id + '-label'} className="font-medium text-gray-900 text-sm">
                 {source.name}
               </h4>
-              <span className={`px-2 py-1 text-xs rounded-full border ${
+              <span className={'px-2 py-1 text-xs rounded-full border ' + (
                 source.status === 'active' 
                   ? 'bg-green-100 text-green-800 border-green-200' 
                   : 'bg-gray-100 text-gray-600 border-gray-200'
-              }`}>
+              )}>
                 {source.status === 'active' ? 'فعال' : 'غیرفعال'}
               </span>
             </div>
@@ -434,7 +432,7 @@ const JobStatus: React.FC<{
               <div className="w-full bg-gray-200 rounded-full h-1 mt-2">
                 <div 
                   className="bg-blue-600 h-1 rounded-full transition-all duration-500"
-                  style={{ width: `${job.progress}%` }}
+                                      style={{ width: job.progress + '%' }}
                 />
               </div>
             )}
@@ -446,7 +444,7 @@ const JobStatus: React.FC<{
 };
 
 // Main Component
-const ScrapingPage: React.FC = () => {
+const RecordingPage: React.FC = () => {
   // State Management
   const [isScrapingActive, setIsScrapingActive] = useState(false);
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
@@ -479,12 +477,12 @@ const ScrapingPage: React.FC = () => {
   
   const getAuthHeaders = () => {
     const token = localStorage.getItem('accessToken');
-    return token ? { Authorization: `Bearer ${token}` } : {};
+          return token ? { Authorization: 'Bearer ' + token } : {};
   };
 
   const apiCall = async (endpoint: string, options: RequestInit = {}) => {
     try {
-      const response = await fetch(`${API_BASE}${endpoint}`, {
+              const response = await fetch(API_BASE + endpoint, {
         ...options,
         headers: {
           'Content-Type': 'application/json',
@@ -494,7 +492,7 @@ const ScrapingPage: React.FC = () => {
       });
       
       if (!response.ok) {
-        throw new Error(`API Error: ${response.status} ${response.statusText}`);
+                  throw new Error('API Error: ' + response.status + ' ' + response.statusText);
       }
       
       return await response.json();
@@ -523,7 +521,7 @@ const ScrapingPage: React.FC = () => {
     try {
       const data = await apiCall('/scraping/sources');
       setAvailableSources(data.sources || []);
-      addLog('success', 'منابع بارگذاری شدند', `${data.sources?.length || 0} منبع یافت شد`);
+              addLog('success', 'منابع بارگذاری شدند', (data.sources?.length || 0) + ' منبع یافت شد');
     } catch (error) {
       addLog('error', 'خطا در بارگذاری منابع', 'امکان دریافت لیست منابع وجود ندارد');
     }
@@ -556,7 +554,7 @@ const ScrapingPage: React.FC = () => {
     }
 
     setIsScrapingActive(true);
-    addLog('info', 'شروع عملیات اسکریپینگ واقعی', `${selectedSources.length} منبع انتخاب شده`);
+            addLog('info', 'شروع عملیات اسکریپینگ واقعی', selectedSources.length + ' منبع انتخاب شده');
 
     try {
       const jobPromises = selectedSources.map(async (sourceId) => {
@@ -578,14 +576,14 @@ const ScrapingPage: React.FC = () => {
           body: JSON.stringify(jobData)
         });
 
-        addLog('success', `شروع اسکریپینگ ${source.name}`, `Job ID: ${response.jobId}`);
+                  addLog('success', 'شروع اسکریپینگ ' + source.name, 'Job ID: ' + response.jobId);
         return response.jobId;
       });
 
       const jobIds = await Promise.all(jobPromises);
       const validJobIds = jobIds.filter(Boolean);
 
-      addLog('info', 'همه job ها آغاز شدند', `${validJobIds.length} job در صف اجرا`);
+              addLog('info', 'همه job ها آغاز شدند', validJobIds.length + ' job در صف اجرا');
       
       if (validJobIds.length > 0) {
         startJobMonitoring(validJobIds);
@@ -601,7 +599,7 @@ const ScrapingPage: React.FC = () => {
     const monitorJobs = async () => {
       try {
         const jobStatuses = await Promise.all(
-          jobIds.map(jobId => apiCall(`/scraping/status/${jobId}`))
+          jobIds.map(jobId => apiCall('/scraping/status/' + jobId))
         );
 
         let allCompleted = true;
@@ -613,11 +611,11 @@ const ScrapingPage: React.FC = () => {
 
           if (job?.status === 'completed') {
             const source = availableSources.find(s => s.id === job.source_id);
-            addLog('success', `تکمیل ${source?.name || 'نامعلوم'}`, 
-              `${job.result?.documentsCreated || 0} سند استخراج شد`);
+                        addLog('success', 'تکمیل ' + (source?.name || 'نامعلوم'),
+              (job.result?.documentsCreated || 0) + ' سند استخراج شد');
           } else if (job?.status === 'failed') {
             const source = availableSources.find(s => s.id === job.source_id);
-            addLog('error', `خطا در ${source?.name || 'نامعلوم'}`, job.error || 'خطای ناشناخته');
+                          addLog('error', 'خطا در ' + (source?.name || 'نامعلوم'), job.error || 'خطای ناشناخته');
           }
         });
 
@@ -968,4 +966,4 @@ const ScrapingPage: React.FC = () => {
   );
 };
 
-export default ScrapingPage;
+export default RecordingPage;
