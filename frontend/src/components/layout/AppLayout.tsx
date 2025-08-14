@@ -25,6 +25,8 @@ import {
   Maximize2,
   Sun,
   Moon,
+  Download,
+  Globe2,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import Button from '../ui/Button';
@@ -98,6 +100,13 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         variant: 'success' as const,
       },
       notificationCount: 2,
+    },
+    {
+      id: 'scraping',
+      label: 'استخراج اطلاعات',
+      href: '/scraping',
+      icon: Globe2,
+      description: 'استخراج خودکار اطلاعات حقوقی',
     },
     {
       id: 'system',

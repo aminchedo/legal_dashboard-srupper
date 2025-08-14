@@ -10,6 +10,7 @@ import SystemHealthPage from './pages/System/SystemHealthPage';
 import ProxiesPage from './pages/Proxies/ProxiesPage';
 import SettingsPage from './pages/Settings/SettingsPage';
 import HelpPage from './pages/Help/HelpPage';
+import RecordingPage from './pages/Recording/RecordingPage';
 
 // Create QueryClient with proper configuration
 const queryClient = new QueryClient({
@@ -65,7 +66,7 @@ function App() {
                 
                 {/* Legacy routes - redirect to new structure */}
                 <Route path="/data" element={<Navigate to="/documents" replace />} />
-                <Route path="/scraping" element={<Navigate to="/jobs" replace />} />
+                <Route path="/scraping" element={<RecordingPage />} />
                 
                 {/* Fallback */}
                 <Route path="*" element={<Navigate to="/dashboard" replace />} />
