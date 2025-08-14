@@ -25,6 +25,7 @@ import {
   Maximize2,
   Sun,
   Moon,
+  Download,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import Button from '../ui/Button';
@@ -81,6 +82,13 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       notificationCount: 3,
     },
     {
+      id: 'data',
+      label: 'مدیریت داده‌ها',
+      href: '/data',
+      icon: Database,
+      description: 'مدیریت داده‌های استخراج‌شده',
+    },
+    {
       id: 'analytics',
       label: LEGAL_TERMINOLOGY.analytics,
       href: '/analytics',
@@ -98,6 +106,13 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         variant: 'success' as const,
       },
       notificationCount: 2,
+    },
+    {
+      id: 'scraping',
+      label: 'استخراج اطلاعات',
+      href: '/scraping',
+      icon: Download,
+      description: 'استخراج خودکار اطلاعات حقوقی',
     },
     {
       id: 'system',
