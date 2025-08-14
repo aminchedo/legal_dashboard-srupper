@@ -35,7 +35,7 @@ import {
   ArrowDownIcon,
   ClockIcon,
   UserIcon,
-  QuestionMarkCircleIcon,
+  HelpCircle,
 } from 'lucide-react';
 
 import Card, { MetricCard, StatCard, InfoCard } from '../../components/ui/Card';
@@ -129,7 +129,7 @@ const DashboardPage: React.FC = () => {
         </div>
         <div className="flex flex-col sm:flex-row gap-3">
           <Button variant="outline" size="md">
-            <QuestionMarkCircleIcon className="h-4 w-4 mr-2" />
+            <HelpCircle className="h-4 w-4 mr-2" />
             راهنما
           </Button>
           <Button variant="primary" size="md" gradient>
