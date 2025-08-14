@@ -2,7 +2,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../services/apiClient';
 import { ScrapedItem, DatabaseStats } from '../types';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+// Use the same base URL as apiClient
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
   const token = localStorage.getItem('accessToken');
@@ -90,7 +91,18 @@ export const useScrapingJobs = (params?: { page?: number; limit?: number; status
   if (params?.limit) query.set('limit', String(params.limit));
   if (params?.status) query.set('status', params.status);
   const url = `${API_BASE}/scraping/status?${query.toString()}`;
-  return useQuery({ queryKey: ['scrapingJobs', params], queryFn: () => fetchJson<{ jobs: any[]; pagination: any }>(url), refetchInterval: 3000 });
+  return useQuery({ 
+    queryKey: ['scrapingJobs', params], 
+    queryFn: () => fetchJson<{ jobs: any[]; pagination: any }>(url), 
+    refetchInterval: 3000,
+    retry: (failureCount, error) => {
+      if (error?.message?.includes('ERR_CONNECTION_REFUSED')) {
+        return false;
+      }
+      return failureCount < 3;
+    },
+    retryDelay: 1000,
+  });
 };
 
 export const useScrapingSources = () => {
@@ -121,5 +133,12 @@ export const useScrapedItems = (limit = 10) => {
       return data.items || [];
     },
     staleTime: 60 * 1000,
+    retry: (failureCount, error) => {
+      if (error?.message?.includes('ERR_CONNECTION_REFUSED')) {
+        return false;
+      }
+      return failureCount < 3;
+    },
+    retryDelay: 1000,
   });
 };
