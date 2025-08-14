@@ -1,6 +1,6 @@
 // Core UI Components
 export { default as Button } from './Button';
-export { default as Card, MetricCard, StatCard, InfoCard, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from './Card';
+export { default as Card, MetricCard, StatCard, InfoCard, CardHeader, CardTitle, CardDescription, CardContent, CardBody, CardFooter } from './Card';
 export { default as StatusBadge } from './StatusBadge';
 export { default as LoadingSpinner } from './LoadingSpinner';
 export { default as Input } from './Input';

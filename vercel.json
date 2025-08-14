@@ -2,7 +2,22 @@
   "buildCommand": "cd frontend && npm run build",
   "outputDirectory": "frontend/dist",
   "framework": "vite",
+  "functions": {
+    "api/analytics.js": {
+      "runtime": "nodejs20.x"
+    },
+    "api/scraping/stats.js": {
+      "runtime": "nodejs20.x"
+    },
+    "api/documents.js": {
+      "runtime": "nodejs20.x"
+    }
+  },
   "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/$1"
+    },
     {
       "source": "/(.*)",
       "destination": "/index.html"
