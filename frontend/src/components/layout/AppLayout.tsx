@@ -82,6 +82,13 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       notificationCount: 3,
     },
     {
+      id: 'data',
+      label: 'مدیریت داده‌ها',
+      href: '/data',
+      icon: Database,
+      description: 'مدیریت داده‌های استخراج‌شده',
+    },
+    {
       id: 'analytics',
       label: LEGAL_TERMINOLOGY.analytics,
       href: '/analytics',

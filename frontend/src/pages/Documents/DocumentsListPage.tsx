@@ -33,6 +33,8 @@ import {
 } from '../../components/ui';
 import { LEGAL_TERMINOLOGY } from '../../lib/terminology';
 import { cn, formatBytes, formatDate, formatRelativeTime } from '../../lib/utils';
+import AdvancedDocumentFilter from '../../components/Documents/AdvancedDocumentFilter';
+import BulkOperationsBar from '../../components/Documents/BulkOperationsBar';
 
 // Mock data for documents
 interface Document {
@@ -117,6 +119,7 @@ const DocumentsListPage: React.FC = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showUpload, setShowUpload] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   // Filter and sort documents
   const filteredAndSortedDocuments = useMemo(() => {
@@ -196,6 +199,42 @@ const DocumentsListPage: React.FC = () => {
     return iconMap[type] || FileText;
   };
 
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+  const selectAll = () => setSelectedIds(filteredAndSortedDocuments.map(d => d.id));
+  const deselectAll = () => setSelectedIds([]);
+
+  const handleBulkDelete = async (ids: string[]) => { console.log('bulk delete', ids); };
+  const handleBulkCategorize = async (ids: string[], category: string) => { console.log('bulk categorize', ids, category); };
+  const handleBulkTag = async (ids: string[], tags: string[]) => { console.log('bulk tag', ids, tags); };
+  const handleBulkExport = async (ids: string[], format: 'json' | 'csv' | 'xlsx') => { console.log('bulk export', ids, format); };
+  const handleBulkStatusChange = async (ids: string[], status: string) => { console.log('bulk status change', ids, status); };
+
+  const categories = Array.from(new Set(mockDocuments.map(d => d.category))).map((name, idx) => ({ id: String(idx+1), name }));
+  const tags = Array.from(new Set(mockDocuments.flatMap(d => d.tags))).map((name, idx) => ({ id: String(idx+1), name }));
+  const sources = [{ name: 'example.com', count: 12 }, { name: 'gov.ir', count: 8 }];
+
+  const [advFilters, setAdvFilters] = useState({
+    query: '',
+    category: 'همه',
+    source: 'همه',
+    status: 'همه',
+    dateFrom: '',
+    dateTo: '',
+    tags: [] as string[],
+    minScore: null as number | null,
+    maxScore: null as number | null,
+    sortBy: 'created_at',
+    sortOrder: 'desc' as 'asc' | 'desc',
+    page: 1,
+    limit: 25,
+  });
+
+  const handleAdvancedFiltersChange = (partial: Partial<typeof advFilters>) => {
+    setAdvFilters(prev => ({ ...prev, ...partial }));
+  };
+
   const DocumentCard: React.FC<{ document: Document }> = ({ document }) => {
     const TypeIcon = getTypeIcon(document.type);
     const statusBadge = getStatusBadge(document.status);
@@ -208,6 +247,7 @@ const DocumentsListPage: React.FC = () => {
             <div className="flex items-center gap-4">
               {/* Icon and Title */}
               <div className="flex items-center gap-3 flex-1 min-w-0">
+                <input type="checkbox" checked={selectedIds.includes(document.id)} onChange={() => toggleSelect(document.id)} className="ml-2" />
                 <TypeIcon className="w-8 h-8 text-primary-500 flex-shrink-0" />
                 <div className="min-w-0 flex-1">
                   <h3 className="font-medium text-neutral-900 dark:text-neutral-100 truncate">
@@ -246,6 +286,7 @@ const DocumentsListPage: React.FC = () => {
           {/* Header */}
           <div className="flex items-start justify-between gap-2">
             <div className="flex items-center gap-2">
+              <input type="checkbox" checked={selectedIds.includes(document.id)} onChange={() => toggleSelect(document.id)} className="ml-2" />
               <TypeIcon className="w-5 h-5 text-primary-500" />
               {document.isConfidential && (
                 <StatusBadge variant="error" size="sm">محرمانه</StatusBadge>
@@ -355,6 +396,34 @@ const DocumentsListPage: React.FC = () => {
           </Button>
         </div>
       </div>
+
+      {/* Advanced Filter and Bulk Ops */}
+      <AdvancedDocumentFilter
+        filters={advFilters as any}
+        onFiltersChange={handleAdvancedFiltersChange}
+        categories={categories}
+        sources={sources}
+        tags={tags}
+        suggestions={["قرارداد", "نظریه حقوقی", "دیوان عدالت"]}
+        isLoading={false}
+        onSearch={(q) => setSearchTerm(q)}
+        onExport={(fmt) => console.log('export', fmt)}
+        onImport={() => setShowUpload(true)}
+        resultCount={filteredAndSortedDocuments.length}
+      />
+      <BulkOperationsBar
+        selectedItems={selectedIds}
+        totalItems={filteredAndSortedDocuments.length}
+        onSelectAll={selectAll}
+        onDeselectAll={deselectAll}
+        onBulkDelete={handleBulkDelete}
+        onBulkCategorize={handleBulkCategorize}
+        onBulkTag={handleBulkTag}
+        onBulkExport={handleBulkExport}
+        onBulkStatusChange={handleBulkStatusChange}
+        categories={categories}
+        tags={tags}
+      />
 
       {/* Search and Controls */}
       <Card>
