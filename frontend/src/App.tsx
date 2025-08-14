@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import AppLayout from './components/layout/AppLayout';
 import DashboardPage from './pages/Dashboard/DashboardPage';
-import DocumentsListPage from './pages/Documents/DocumentsListPage';
+import EnhancedDocumentsPage from './pages/Documents/EnhancedDocumentsPage';
 import AnalyticsPage from './pages/Analytics/AnalyticsPage';
 import JobsListPage from './pages/Jobs/JobsListPage';
 import SystemHealthPage from './pages/System/SystemHealthPage';
@@ -57,7 +57,7 @@ function App() {
                 {/* Main application routes */}
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
                 <Route path="/dashboard" element={<DashboardPage />} />
-                <Route path="/documents/*" element={<DocumentsListPage />} />
+                <Route path="/documents/*" element={<EnhancedDocumentsPage />} />
                 <Route path="/data" element={<DataPage />} />
                 <Route path="/analytics" element={<AnalyticsPage />} />
                 <Route path="/jobs/*" element={<JobsListPage />} />

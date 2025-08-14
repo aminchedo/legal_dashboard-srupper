@@ -30,6 +30,10 @@ import Button from '../../components/ui/Button';
 import Card from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import SmartAnalytics from '../../components/Documents/SmartAnalytics';
+import SmartRating from '../../components/Documents/SmartRating';
+import SmartCategorization from '../../components/Documents/SmartCategorization';
+import { useDocumentsCursor } from '../../hooks/useDocumentsCursor';
 
 type ViewMode = 'grid' | 'list';
 
@@ -108,10 +112,30 @@ export default function EnhancedDocumentsPage() {
 
   // Data Fetching
   const { data: documentsData, isLoading: documentsLoading, error: documentsError } = useQuery({
-    queryKey: ['documents', filters],
-    queryFn: () => apiClient.searchDocuments(filters),
-    keepPreviousData: true,
+    queryKey: ['placeholder'],
+    queryFn: async () => ({}),
+    enabled: false,
   });
+
+  const cursorFilters = useMemo(() => ({
+    query: filters.query,
+    category: filters.category === 'همه' ? undefined : filters.category,
+    source: filters.source === 'همه' ? undefined : filters.source,
+    status: filters.status === 'همه' ? undefined : filters.status,
+    dateFrom: filters.dateFrom || undefined,
+    dateTo: filters.dateTo || undefined,
+    tags: filters.tags,
+    sortBy: filters.sortBy,
+    sortOrder: filters.sortOrder,
+  }), [filters]);
+
+  const { items: documents, isLoading: cursorLoading, error: cursorError, hasMore, loadNext, reset } = useDocumentsCursor<DocumentItem>(cursorFilters, filters.limit);
+ 
+  useEffect(() => {
+    if (documents.length === 0 && !cursorLoading) {
+      void loadNext();
+    }
+  }, [cursorFilters]);
 
   const { data: categoriesData } = useQuery({
     queryKey: ['categories'],
@@ -174,8 +198,7 @@ export default function EnhancedDocumentsPage() {
   });
 
   // Computed values
-  const documents = documentsData?.items || [];
-  const pagination = documentsData?.pagination;
+  const pagination = undefined;
   const categories = categoriesData || [];
   const tags = tagsData || [];
   const sources = statisticsData?.topDomains ? 
@@ -402,66 +425,11 @@ export default function EnhancedDocumentsPage() {
         </div>
       </div>
 
-      {/* Statistics Cards */}
-      {statisticsData && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <Card variant="ghost" padding="sm">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <FileText size={20} className="text-blue-600" />
-              </div>
-              <div>
-                <div className="text-sm text-gray-600">کل اسناد</div>
-                <div className="text-xl font-bold text-gray-900">
-                  {statisticsData.totalDocuments?.toLocaleString('fa-IR') || '0'}
-                </div>
-              </div>
-            </div>
-          </Card>
-          
-          <Card variant="ghost" padding="sm">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <TrendingUp size={20} className="text-green-600" />
-              </div>
-              <div>
-                <div className="text-sm text-gray-600">امروز</div>
-                <div className="text-xl font-bold text-gray-900">
-                  {statisticsData.todayCount?.toLocaleString('fa-IR') || '0'}
-                </div>
-              </div>
-            </div>
-          </Card>
-          
-          <Card variant="ghost" padding="sm">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-yellow-100 rounded-lg">
-                <Clock size={20} className="text-yellow-600" />
-              </div>
-              <div>
-                <div className="text-sm text-gray-600">در انتظار بررسی</div>
-                <div className="text-xl font-bold text-gray-900">
-                  {statisticsData.pendingReview?.toLocaleString('fa-IR') || '0'}
-                </div>
-              </div>
-            </div>
-          </Card>
-          
-          <Card variant="ghost" padding="sm">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <Tag size={20} className="text-purple-600" />
-              </div>
-              <div>
-                <div className="text-sm text-gray-600">دسته‌بندی‌ها</div>
-                <div className="text-xl font-bold text-gray-900">
-                  {categories.length.toLocaleString('fa-IR')}
-                </div>
-              </div>
-            </div>
-          </Card>
-        </div>
-      )}
+      {/* Smart Analytics */}
+      <SmartAnalytics fetchAnalytics={async () => {
+        const res = await apiClient.getSmartAnalytics();
+        return { total: res?.total || 0, avgScore: res?.avgScore || 0, categories: res?.categories || [] };
+      }} />
 
       {/* Advanced Filter */}
       <AdvancedDocumentFilter
@@ -471,11 +439,11 @@ export default function EnhancedDocumentsPage() {
         sources={sources}
         tags={tags}
         suggestions={suggestions}
-        isLoading={documentsLoading}
+        isLoading={cursorLoading}
         onSearch={handleSearch}
         onExport={(format) => setShowImportExport({ isOpen: true, mode: 'export' })}
         onImport={() => setShowImportExport({ isOpen: true, mode: 'import' })}
-        resultCount={pagination?.totalItems}
+        resultCount={undefined}
       />
 
       {/* Bulk Operations Bar */}
@@ -514,15 +482,11 @@ export default function EnhancedDocumentsPage() {
           </div>
         </div>
         
-        {pagination && (
-          <div className="text-sm text-gray-600">
-            نمایش {documents.length.toLocaleString('fa-IR')} از {pagination.totalItems.toLocaleString('fa-IR')} سند
-          </div>
-        )}
+        <div className="text-sm text-gray-600">{documents.length.toLocaleString('fa-IR')} سند بارگذاری شد</div>
       </div>
 
       {/* Documents List */}
-      {documentsLoading ? (
+      {cursorLoading && documents.length === 0 ? (
         <div className="flex justify-center py-12">
           <LoadingSpinner size="lg" />
         </div>
@@ -533,7 +497,7 @@ export default function EnhancedDocumentsPage() {
           <p className="text-gray-500 mb-4">
             {filters.query ? 'جستجوی شما نتیجه‌ای نداشت' : 'هنوز سندی اضافه نشده است'}
           </p>
-          <Button variant="primary" leftIcon={<Plus size={18} />}>
+          <Button variant="primary" leftIcon={<Plus size={18} /> }>
             ایجاد اولین سند
           </Button>
         </Card>
@@ -555,30 +519,16 @@ export default function EnhancedDocumentsPage() {
         </div>
       )}
 
-      {/* Pagination */}
-      {pagination && pagination.totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2 mt-8">
-          <Button
-            variant="outline"
-            onClick={() => handleFiltersChange({ page: filters.page - 1 })}
-            disabled={filters.page === 1}
-          >
-            قبلی
+      {/* Cursor Pagination */}
+      <div className="flex items-center justify-center mt-6">
+        {hasMore ? (
+          <Button variant="outline" onClick={() => loadNext()} disabled={cursorLoading}>
+            {cursorLoading ? 'در حال بارگذاری...' : 'بارگذاری بیشتر'}
           </Button>
-          
-          <span className="text-sm text-gray-600 mx-4">
-            صفحه {filters.page.toLocaleString('fa-IR')} از {pagination.totalPages.toLocaleString('fa-IR')}
-          </span>
-          
-          <Button
-            variant="outline"
-            onClick={() => handleFiltersChange({ page: filters.page + 1 })}
-            disabled={filters.page === pagination.totalPages}
-          >
-            بعدی
-          </Button>
-        </div>
-      )}
+        ) : (
+          <span className="text-sm text-neutral-500">همه موارد بارگذاری شد</span>
+        )}
+      </div>
 
       {/* Document Preview Modal */}
       <DocumentPreview

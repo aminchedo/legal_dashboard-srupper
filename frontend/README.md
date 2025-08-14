@@ -336,6 +336,7 @@ npm run analyze
 - **Component Storybook**: مستندات UI
 - **User Guide**: راهنمای کاربر
 - **Admin Manual**: راهنمای مدیر
+- **Smart Features**: به‌روزرسانی‌ها و راهنمای توسعه در `docs/smart-features.md`
 
 ### تماس
 - **Email**: support@legal-dashboard.ir
