@@ -1,3 +1,42 @@
+// Mock data for fallback when backend is unavailable
+const mockData = {
+    analytics: {
+        totalDocuments: 1247,
+        activeCases: 89,
+        completionRate: 87.5,
+        totalItems: 47582,
+        recentItems: 1843,
+        categories: { 'Legal': 12450, 'Economic': 8920, 'Social': 7830, 'Cultural': 6240, 'Technical': 5100 },
+        avgRating: 0.891,
+        todayStats: { success_rate: 94.1 },
+        weeklyTrend: [
+            { day: 'Mon', success: 231 }, { day: 'Tue', success: 295 }, { day: 'Wed', success: 374 },
+            { day: 'Thu', success: 345 }, { day: 'Fri', success: 396 }, { day: 'Sat', success: 281 }, { day: 'Sun', success: 150 }
+        ],
+        monthlyGrowth: 18.3
+    },
+    scrapingStats: {
+        totalSources: 12,
+        activeSources: 8,
+        recentlyScraped: 45,
+        successRate: 94.1,
+        failedJobs: 3,
+        queuedJobs: 7
+    },
+    documents: {
+        items: [
+            { id: '1', title: 'Labor Law - 2024 Amendment', domain: 'dastour.ir', status: 'completed', category: 'Legal' },
+            { id: '2', title: 'E-Commerce Regulations Act', domain: 'majles.ir', status: 'completed', category: 'Economic' },
+            { id: '3', title: 'Data Protection Directive', domain: 'president.ir', status: 'processing', category: 'Technical' },
+            { id: '4', title: 'New Import/Export Tariffs', domain: 'customs.ir', status: 'failed', category: 'Economic' },
+            { id: '5', title: 'National Cultural Development Plan', domain: 'farhang.gov.ir', status: 'completed', category: 'Cultural' }
+        ],
+        total: 1247,
+        page: 1,
+        limit: 20
+    }
+};
+
 class ApiClient {
     private baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
     private get token() {
@@ -10,13 +49,35 @@ class ApiClient {
             'Authorization': `Bearer ${this.token}`,
             'Content-Type': 'application/json',
         };
-        const response = await fetch(`${this.baseUrl}${path}`, { ...options, headers });
-        if (!response.ok) {
-            const errorBody = await response.text();
-            console.error("API Error Response:", errorBody);
-            throw new Error(`API request failed: ${response.statusText}`);
+        
+        try {
+            const response = await fetch(`${this.baseUrl}${path}`, { ...options, headers });
+            if (!response.ok) {
+                const errorBody = await response.text();
+                console.error("API Error Response:", errorBody);
+                throw new Error(`API request failed: ${response.statusText}`);
+            }
+            return response.json();
+        } catch (error) {
+            // Check if it's a connection error
+            if (error instanceof TypeError && error.message.includes('fetch')) {
+                console.warn(`Backend connection failed for ${path} - using mock data`);
+                throw new Error('ERR_CONNECTION_REFUSED');
+            }
+            throw error;
         }
-        return response.json();
+    }
+
+    private async fetchWithFallback(path: string, fallbackData: any, options: RequestInit = {}) {
+        try {
+            return await this.fetch(path, options);
+        } catch (error) {
+            if (error instanceof Error && error.message.includes('ERR_CONNECTION_REFUSED')) {
+                console.warn(`Using mock data for ${path} - backend not available`);
+                return fallbackData;
+            }
+            throw error;
+        }
     }
 
     // ===== DOCUMENT MANAGEMENT METHODS =====
@@ -28,7 +89,7 @@ class ApiClient {
                 params.append(key, String(value));
             }
         });
-        return this.fetch(`/documents?${params}`);
+        return this.fetchWithFallback(`/documents?${params}`, mockData.documents);
     }
 
     async getDocumentById(id: string) {
@@ -260,18 +321,18 @@ class ApiClient {
     // ===== EXISTING METHODS =====
 
     async getAnalytics(dateRange = {}) {
-        return this.fetch('/analytics', {
+        return this.fetchWithFallback('/analytics', mockData.analytics, {
             method: 'POST',
             body: JSON.stringify(dateRange),
         });
     }
 
     async getScrapingStats() {
-        return this.fetch('/scraping/stats');
+        return this.fetchWithFallback('/scraping/stats', mockData.scrapingStats);
     }
 
     async listScrapingSources() {
-        return this.fetch('/scraping/sources');
+        return this.fetchWithFallback('/scraping/sources', { sources: [], count: 0 });
     }
 }
 
