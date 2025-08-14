@@ -112,9 +112,8 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       id: 'scraping',
       label: 'استخراج اطلاعات',
       href: '/scraping',
-       icon: Globe2,
-       icon: Download,
-       description: 'استخراج خودکار اطلاعات حقوقی',
+      icon: Download,
+      description: 'استخراج خودکار اطلاعات حقوقی',
     },
     {
       id: 'system',

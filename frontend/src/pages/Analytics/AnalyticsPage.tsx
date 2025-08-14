@@ -34,9 +34,9 @@ import {
   Activity,
   Loader2
 } from 'lucide-react';
-import { Card } from '../../components/ui/Card';
-import { Button } from '../../components/ui/Button';
-import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
+import Card from '../../components/ui/Card';
+import Button from '../../components/ui/Button';
+import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import { LEGAL_TERMINOLOGY } from '../../lib/terminology';
 import { cn, formatPersianNumber, formatRelativeTime } from '../../lib/utils';
 

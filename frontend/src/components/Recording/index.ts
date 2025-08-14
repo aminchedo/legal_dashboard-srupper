@@ -8,6 +8,3 @@ export { default as FormField, Input, Select, Textarea } from './FormField';
 // Theme and Types
 export * from './theme';
 export * from './types';
-
-// Re-export for backward compatibility
-export { default } from './RecordingPage';
