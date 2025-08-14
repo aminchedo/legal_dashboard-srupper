@@ -317,7 +317,17 @@ export const InfoCard: React.FC<{
   );
 };
 
-export default Card;
+// Add CardBody to the Card component
+const CardWithBody = Object.assign(Card, {
+  Header: CardHeader,
+  Title: CardTitle,
+  Description: CardDescription,
+  Content: CardContent,
+  Body: CardBody,
+  Footer: CardFooter,
+});
+
+export default CardWithBody;
 
 // Sub-components for Card structure compatibility
 export const CardHeader: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className }) => (
@@ -340,6 +350,12 @@ export const CardDescription: React.FC<{ children: React.ReactNode; className?: 
 
 export const CardContent: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className }) => (
   <div className={cn('p-6 pt-0', className)}>
+    {children}
+  </div>
+);
+
+export const CardBody: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className }) => (
+  <div className={cn('p-6', className)}>
     {children}
   </div>
 );
