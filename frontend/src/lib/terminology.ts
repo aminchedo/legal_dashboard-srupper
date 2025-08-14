@@ -9,6 +9,15 @@ export const LEGAL_TERMINOLOGY = {
   // === MAIN NAVIGATION & SECTIONS ===
   dashboard: 'داشبورد مدیریت حقوقی',
   overview: 'نمای کلی سیستم',
+
+  // Page titles used in headers
+  pages: {
+    dashboard: 'داشبورد مدیریت حقوقی',
+    documents: 'مدیریت اسناد',
+    analytics: 'تحلیل و گزارش‌سازی',
+    settings: 'تنظیمات',
+    system: 'سیستم'
+  },
   
   // Document Management
   documents: 'مدیریت اسناد حقوقی',
@@ -88,6 +97,17 @@ export const LEGAL_TERMINOLOGY = {
     healthy: 'سالم',
     degraded: 'عملکرد کاهش یافته',
     operational: 'عملیاتی',
+    // Additional statuses used by some pages
+    archived: 'بایگانی شده',
+    pending_review: 'در انتظار بررسی',
+    under_revision: 'در حال ویرایش',
+  },
+
+  // === PRIORITY ===
+  priority: {
+    high: 'بالا',
+    medium: 'متوسط',
+    low: 'پایین',
   },
   
   // === TIME & DURATION ===
