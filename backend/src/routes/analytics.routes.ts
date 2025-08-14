@@ -4,7 +4,9 @@ import { requireAuth } from '@middleware/auth.middleware';
 
 const router = Router();
 
-// Dashboard analytics
+// Dashboard analytics - add root endpoint for compatibility
+router.get('/', requireAuth, controller.overview);
+router.post('/', requireAuth, controller.overview);
 router.get('/overview', requireAuth, controller.overview);
 
 // Document analytics

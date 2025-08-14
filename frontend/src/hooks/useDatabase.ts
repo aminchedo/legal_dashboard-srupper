@@ -18,6 +18,15 @@ export const useDatabase = () => {
     queryKey: ['database'],
     queryFn: () => apiClient.getAnalytics(),
     staleTime: 2 * 60 * 1000, // 2 minutes
+    retry: (failureCount, error) => {
+      // Don't retry on connection refused errors
+      if (error?.message?.includes('ERR_CONNECTION_REFUSED')) {
+        return false;
+      }
+      return failureCount < 3;
+    },
+    retryDelay: 1000,
+    refetchOnWindowFocus: false,
   });
 };
 
@@ -27,6 +36,15 @@ export const useDocuments = (filters: { page?: number; limit?: number; status?: 
     queryKey: ['documents', filters],
     queryFn: () => apiClient.getDocuments(filters),
     staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: (failureCount, error) => {
+      // Don't retry on connection refused errors
+      if (error?.message?.includes('ERR_CONNECTION_REFUSED')) {
+        return false;
+      }
+      return failureCount < 3;
+    },
+    retryDelay: 1000,
+    refetchOnWindowFocus: false,
   });
 };
 
@@ -34,7 +52,17 @@ export const useStatistics = () => {
   return useQuery<DatabaseStats>({
     queryKey: ['statistics'],
     queryFn: () => apiClient.getAnalytics(),
-    staleTime: 2 * 60 * 1000, // 2 minutes
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: (failureCount, error) => {
+      // Don't retry on connection refused errors
+      if (error?.message?.includes('ERR_CONNECTION_REFUSED')) {
+        return false;
+      }
+      return failureCount < 3;
+    },
+    retryDelay: 1000,
+    // Show cached data while fetching
+    refetchOnWindowFocus: false,
   });
 };
 
@@ -42,8 +70,17 @@ export const useScrapingStats = () => {
   return useQuery({
     queryKey: ['scrapingStats'],
     queryFn: () => apiClient.getScrapingStats(),
-    staleTime: 1 * 60 * 1000, // 1 minute
-    refetchInterval: 5000, // Refetch every 5 seconds
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    retry: (failureCount, error) => {
+      // Don't retry on connection refused errors
+      if (error?.message?.includes('ERR_CONNECTION_REFUSED')) {
+        return false;
+      }
+      return failureCount < 3;
+    },
+    retryDelay: 1000,
+    refetchOnWindowFocus: false,
+    refetchInterval: 10000, // Refetch every 10 seconds (reduced from 5)
   });
 };
 
@@ -61,6 +98,14 @@ export const useScrapingSources = () => {
     queryKey: ['scrapingSources'],
     queryFn: () => apiClient.listScrapingSources(),
     staleTime: 5 * 60 * 1000,
+    retry: (failureCount, error) => {
+      if (error?.message?.includes('ERR_CONNECTION_REFUSED')) {
+        return false;
+      }
+      return failureCount < 3;
+    },
+    retryDelay: 1000,
+    refetchOnWindowFocus: false,
   });
 };
 

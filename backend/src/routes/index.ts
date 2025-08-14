@@ -16,11 +16,11 @@ export function registerRoutes(app: Express): void {
     app.use('/api/auth', authRoutes);
     app.use('/api/dashboard', dashboardRoutes);
     // app.use('/api/documents', documentsRoutes);
-    // app.use('/api/analytics', analyticsRoutes);
+    app.use('/api/analytics', analyticsRoutes);
     app.use('/api/enhanced-analytics', enhancedAnalyticsRoutes);
     // app.use('/api/ocr', ocrRoutes);
     // app.use('/api/reports', reportsRoutes);
-    // app.use('/api/scraping', scrapingRoutes);
+    app.use('/api/scraping', scrapingRoutes);
     app.use('/api/ws', websocketRoutes);
     app.use('/api/ratings', ratingRoutes);
     app.use('/api/proxy', proxyRoutes);
