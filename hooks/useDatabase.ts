@@ -12,6 +12,15 @@ async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
   return res.json();
 }
 
+// General database information hook
+export const useDatabase = () => {
+  return useQuery({
+    queryKey: ['database'],
+    queryFn: () => apiClient.getAnalytics(),
+    staleTime: 2 * 60 * 1000, // 2 minutes
+  });
+};
+
 // Re-implement useDocuments to use apiClient
 export const useDocuments = (filters: { page?: number; limit?: number; status?: string; category?: string; source?: string, query?: string } = {}) => {
   return useQuery({
