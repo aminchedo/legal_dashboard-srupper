@@ -10,7 +10,7 @@
     "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
     "start:frontend": "cd frontend && npm run preview",
     "start:backend": "cd backend && npm run start",
-    "build": "npm run build --prefix frontend && npm run build --prefix backend",
+    "build": "npm run build --prefix frontend && echo "Backend build skipped"",
     "build:frontend": "cd frontend && npm run build",
     "build:backend": "cd backend && npm run build",
     "dev:simple": "concurrently \"node backend/server.js\" \"npm run dev:frontend\"",
