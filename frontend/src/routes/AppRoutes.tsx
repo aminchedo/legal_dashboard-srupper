@@ -55,7 +55,10 @@ export default function AppRoutes({ children }: Props) {
     const onPageChange = (page: PageType) => navigate(pageTypeToPath(page));
 
     return (
-        <AppLayout currentPage={currentPage} onPageChange={onPageChange}>
+        <AppLayout 
+            currentPage={currentPage} 
+            onPageChange={(page: string) => onPageChange(page as PageType)}
+        >
             {children}
         </AppLayout>
     );
