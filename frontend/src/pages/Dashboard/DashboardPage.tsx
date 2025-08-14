@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FileText, 
@@ -226,9 +227,16 @@ const HealthIndicator: React.FC<HealthIndicatorProps> = ({ label, status, value 
 };
 
 export default function DashboardPage() {
+  const navigate = useNavigate();
   const [currentTime, setCurrentTime] = useState(new Date());
   const { data: statistics, isLoading: statsLoading, error: statsError } = useStatistics();
   const { data: scrapingStats, isLoading: scrapingLoading } = useScrapingStats();
+
+  // Navigation handlers for QuickAction buttons
+  const handleUploadDocument = () => navigate('/documents');
+  const handleAdvancedSearch = () => navigate('/documents');
+  const handleGenerateReport = () => navigate('/analytics');
+  const handleSystemSettings = () => navigate('/settings');
 
   // Update time every minute
   useEffect(() => {
@@ -372,21 +380,25 @@ export default function DashboardPage() {
                 label="بارگذاری سند"
                 icon={Upload}
                 color="blue"
+                onClick={handleUploadDocument}
               />
               <QuickAction
                 label="جستجوی پیشرفته"
                 icon={Search}
                 color="green"
+                onClick={handleAdvancedSearch}
               />
               <QuickAction
                 label="تولید گزارش"
                 icon={BarChart3}
                 color="purple"
+                onClick={handleGenerateReport}
               />
               <QuickAction
                 label="تنظیمات سیستم"
                 icon={Settings}
                 color="orange"
+                onClick={handleSystemSettings}
               />
             </div>
           </CardContent>

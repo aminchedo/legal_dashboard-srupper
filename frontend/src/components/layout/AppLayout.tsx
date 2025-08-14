@@ -51,7 +51,7 @@ interface AppLayoutProps {
 }
 
 const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -226,12 +226,12 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       initial={false}
       animate={{
         width: sidebarCollapsed ? 64 : 288,
-        x: sidebarOpen ? 0 : '100%',
+        x: sidebarOpen || window.innerWidth >= 1024 ? 0 : '100%',
       }}
       transition={{ duration: 0.3, ease: 'easeInOut' }}
       className={cn(
         'fixed inset-y-0 right-0 z-50 bg-white border-l border-neutral-200 shadow-xl',
-        'lg:relative lg:translate-x-0 lg:shadow-none',
+        'lg:relative lg:translate-x-0 lg:shadow-none lg:block',
         'dark:bg-neutral-900 dark:border-neutral-700',
         'flex flex-col'
       )}
