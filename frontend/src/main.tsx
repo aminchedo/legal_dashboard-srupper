@@ -5,9 +5,7 @@ import './index.css'
 import './utils/i18n'
 
 createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
+  <App />
 )
 
 const loadingEl = document.getElementById('loading-screen')
