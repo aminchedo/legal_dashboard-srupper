@@ -25,7 +25,6 @@ import {
   Maximize2,
   Sun,
   Moon,
-  Notifications
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import Button from '../ui/Button';
