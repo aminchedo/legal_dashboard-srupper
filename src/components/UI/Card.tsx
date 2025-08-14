@@ -3,10 +3,12 @@ import { cn } from '../../utils/cn';
 import { motion, MotionProps } from 'framer-motion';
 
 export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
-  variant?: 'default' | 'bordered' | 'elevated' | 'ghost';
+  variant?: 'default' | 'bordered' | 'elevated' | 'ghost' | 'gradient';
   padding?: 'none' | 'sm' | 'md' | 'lg' | 'xl';
   hover?: boolean;
   animate?: boolean;
+  focus?: boolean;
+  disabled?: boolean;
 }
 
 export interface CardHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -27,18 +29,21 @@ const Card = forwardRef<HTMLDivElement, CardProps & MotionProps>(
       padding = 'md',
       hover = false,
       animate = true,
+      focus = false,
+      disabled = false,
       children,
       ...props
     },
     ref
   ) => {
-    const baseClasses = 'bg-white dark:bg-gray-800 transition-all duration-200';
+    const baseClasses = 'bg-white dark:bg-gray-800 transition-all duration-300 ease-in-out';
 
     const variantClasses = {
-      default: 'rounded-lg shadow-sm border border-gray-200 dark:border-gray-700',
-      bordered: 'rounded-lg border-2 border-gray-200 dark:border-gray-700',
-      elevated: 'rounded-lg shadow-lg border border-gray-200 dark:border-gray-700',
-      ghost: 'rounded-lg',
+      default: 'rounded-xl shadow-sm border border-gray-200/60 dark:border-gray-700/60 backdrop-blur-sm',
+      bordered: 'rounded-xl border-2 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600',
+      elevated: 'rounded-xl shadow-lg border border-gray-200/40 dark:border-gray-700/40 shadow-gray-100/50 dark:shadow-gray-900/20',
+      ghost: 'rounded-xl bg-transparent',
+      gradient: 'rounded-xl bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 border border-gray-200/60 dark:border-gray-700/60',
     };
 
     const paddingClasses = {
@@ -49,8 +54,16 @@ const Card = forwardRef<HTMLDivElement, CardProps & MotionProps>(
       xl: 'p-8',
     };
 
-    const hoverClasses = hover
-      ? 'hover:shadow-md hover:-translate-y-0.5 cursor-pointer'
+    const hoverClasses = hover && !disabled
+      ? 'hover:shadow-xl hover:shadow-gray-100/50 dark:hover:shadow-gray-900/20 hover:-translate-y-1 hover:scale-[1.02] cursor-pointer'
+      : '';
+
+    const focusClasses = focus
+      ? 'focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-300 dark:focus-within:border-blue-500'
+      : '';
+
+    const disabledClasses = disabled
+      ? 'opacity-60 cursor-not-allowed pointer-events-none'
       : '';
 
     const combinedClasses = cn(
@@ -58,23 +71,32 @@ const Card = forwardRef<HTMLDivElement, CardProps & MotionProps>(
       variantClasses[variant],
       paddingClasses[padding],
       hoverClasses,
+      focusClasses,
+      disabledClasses,
       className
     );
 
     const motionProps = animate ? {
-      initial: { opacity: 0, y: 20 },
-      animate: { opacity: 1, y: 0 },
-      exit: { opacity: 0, y: 20 },
-      transition: { duration: 0.2 }
+      initial: { opacity: 0, y: 20, scale: 0.95 },
+      animate: { opacity: 1, y: 0, scale: 1 },
+      exit: { opacity: 0, y: 20, scale: 0.95 },
+      transition: { duration: 0.3, ease: "easeOut" }
     } : {};
+
+    const cardProps = {
+      ref,
+      className: combinedClasses,
+      role: hover ? 'button' : undefined,
+      tabIndex: hover && !disabled ? 0 : undefined,
+      'aria-disabled': disabled || undefined,
+      ...props
+    };
 
     if (animate) {
       return (
         <motion.div
-          ref={ref}
-          className={combinedClasses}
+          {...cardProps}
           {...motionProps}
-          {...props}
         >
           {children}
         </motion.div>
@@ -82,7 +104,7 @@ const Card = forwardRef<HTMLDivElement, CardProps & MotionProps>(
     }
 
     return (
-      <div ref={ref} className={combinedClasses} {...props}>
+      <div {...cardProps}>
         {children}
       </div>
     );
@@ -92,15 +114,15 @@ const Card = forwardRef<HTMLDivElement, CardProps & MotionProps>(
 const CardHeader = forwardRef<HTMLDivElement, CardHeaderProps>(
   ({ className, divider = false, children, ...props }, ref) => {
     const classes = cn(
-      'flex flex-col space-y-1.5',
-      divider && 'pb-4 border-b border-gray-200 dark:border-gray-700',
+      'flex flex-col space-y-2',
+      divider && 'pb-4 mb-4 border-b border-gray-200 dark:border-gray-700',
       className
     );
 
     return (
-      <div ref={ref} className={classes} {...props}>
+      <header ref={ref} className={classes} {...props}>
         {children}
-      </div>
+      </header>
     );
   }
 );
@@ -120,15 +142,15 @@ const CardBody = forwardRef<HTMLDivElement, CardBodyProps>(
 const CardFooter = forwardRef<HTMLDivElement, CardFooterProps>(
   ({ className, divider = false, children, ...props }, ref) => {
     const classes = cn(
-      'flex items-center',
+      'flex items-center justify-between mt-4',
       divider && 'pt-4 border-t border-gray-200 dark:border-gray-700',
       className
     );
 
     return (
-      <div ref={ref} className={classes} {...props}>
+      <footer ref={ref} className={classes} {...props}>
         {children}
-      </div>
+      </footer>
     );
   }
 );
@@ -136,7 +158,7 @@ const CardFooter = forwardRef<HTMLDivElement, CardFooterProps>(
 const CardTitle = forwardRef<HTMLHeadingElement, React.HTMLAttributes<HTMLHeadingElement>>(
   ({ className, children, ...props }, ref) => {
     const classes = cn(
-      'text-lg font-semibold leading-none tracking-tight text-gray-900 dark:text-white',
+      'text-lg md:text-xl font-semibold leading-tight tracking-tight text-gray-900 dark:text-white',
       className
     );
 
@@ -151,7 +173,7 @@ const CardTitle = forwardRef<HTMLHeadingElement, React.HTMLAttributes<HTMLHeadin
 const CardDescription = forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLParagraphElement>>(
   ({ className, children, ...props }, ref) => {
     const classes = cn(
-      'text-sm text-gray-600 dark:text-gray-400',
+      'text-sm md:text-base text-gray-600 dark:text-gray-400 leading-relaxed',
       className
     );
 
@@ -163,12 +185,32 @@ const CardDescription = forwardRef<HTMLParagraphElement, React.HTMLAttributes<HT
   }
 );
 
+// Skeleton Card for loading states
+const CardSkeleton = forwardRef<HTMLDivElement, { className?: string }>(
+  ({ className }, ref) => {
+    return (
+      <Card 
+        ref={ref} 
+        className={cn("animate-pulse", className)} 
+        animate={false}
+      >
+        <div className="space-y-4">
+          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+          <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+          <div className="h-20 bg-gray-200 dark:bg-gray-700 rounded"></div>
+        </div>
+      </Card>
+    );
+  }
+);
+
 Card.displayName = 'Card';
 CardHeader.displayName = 'CardHeader';
 CardBody.displayName = 'CardBody';
 CardFooter.displayName = 'CardFooter';
 CardTitle.displayName = 'CardTitle';
 CardDescription.displayName = 'CardDescription';
+CardSkeleton.displayName = 'CardSkeleton';
 
-export { Card, CardHeader, CardBody, CardFooter, CardTitle, CardDescription };
+export { Card, CardHeader, CardBody, CardFooter, CardTitle, CardDescription, CardSkeleton };
 export default Card;

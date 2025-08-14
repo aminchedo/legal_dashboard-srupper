@@ -11,6 +11,9 @@ import {
 } from '../components/UI/Card';
 import Button from '../components/UI/Button';
 import LoadingSpinner from '../components/UI/LoadingSpinner';
+import MetricCard from '../components/UI/MetricCard';
+import { LineChart, BarChart } from '../components/UI/Chart';
+import { GridLayout, GridItem, DashboardSection, DashboardGrids } from '../components/UI/GridLayout';
 import { useAnalyticsDashboard, useSystemHealth } from '../hooks/api';
 import {
   DocumentIcon,
@@ -21,8 +24,6 @@ import {
   VideoCameraIcon,
   TableCellsIcon,
   PlusIcon,
-  ArrowUpIcon,
-  ArrowDownIcon,
   ExclamationTriangleIcon,
   CheckCircleIcon,
 } from '@heroicons/react/24/outline';
@@ -76,6 +77,24 @@ const mockActivities = [
     status: 'success' as const,
     user: 'System',
   },
+];
+
+// Mock chart data
+const activityTrendData = [
+  { label: 'Mon', value: 120 },
+  { label: 'Tue', value: 150 },
+  { label: 'Wed', value: 100 },
+  { label: 'Thu', value: 180 },
+  { label: 'Fri', value: 160 },
+  { label: 'Sat', value: 90 },
+  { label: 'Sun', value: 110 },
+];
+
+const documentTypeData = [
+  { label: 'Contracts', value: 89, color: '#3b82f6' },
+  { label: 'Reports', value: 43, color: '#ef4444' },
+  { label: 'Legal Docs', value: 23, color: '#10b981' },
+  { label: 'Others', value: 15, color: '#f59e0b' },
 ];
 
 const DashboardPage: React.FC = () => {
@@ -175,13 +194,13 @@ const DashboardPage: React.FC = () => {
   const getHealthIcon = (health: string) => {
     switch (health) {
       case 'good':
-        return <CheckCircleIcon className="h-5 w-5 text-green-500" />;
+        return CheckCircleIcon;
       case 'warning':
-        return <ExclamationTriangleIcon className="h-5 w-5 text-yellow-500" />;
+        return ExclamationTriangleIcon;
       case 'critical':
-        return <ExclamationTriangleIcon className="h-5 w-5 text-red-500" />;
+        return ExclamationTriangleIcon;
       default:
-        return <CheckCircleIcon className="h-5 w-5 text-gray-500" />;
+        return CheckCircleIcon;
     }
   };
 
@@ -208,280 +227,282 @@ const DashboardPage: React.FC = () => {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 md:p-6 space-y-6 md:space-y-8 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            {t('dashboard.title')}
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Welcome back! Here's what's happening with your legal analytics platform.
-          </p>
-        </div>
-        <div className="flex space-x-3">
-          <Button variant="outline" size="sm">
-            <QuestionMarkCircleIcon className="h-4 w-4 mr-2" />
-            Help
-          </Button>
-          <Button size="sm">
-            <PlusIcon className="h-4 w-4 mr-2" />
-            Quick Action
-          </Button>
-        </div>
-      </div>
+      <DashboardSection
+        title={t('dashboard.title')}
+        description="Welcome back! Here's what's happening with your legal analytics platform."
+        headerActions={
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button variant="outline" size="sm">
+              <QuestionMarkCircleIcon className="h-4 w-4 mr-2" />
+              Help
+            </Button>
+            <Button size="sm">
+              <PlusIcon className="h-4 w-4 mr-2" />
+              Quick Action
+            </Button>
+          </div>
+        }
+      />
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Total Documents
-              </p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {stats.totalDocuments.toLocaleString()}
-              </p>
-            </div>
-            <div className="h-12 w-12 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center">
-              <DocumentIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-            </div>
-          </div>
-          <div className="mt-4 flex items-center">
-            <ArrowUpIcon className="h-4 w-4 text-green-500" />
-            <span className="text-sm text-green-600 dark:text-green-400">
-              +12% from last month
-            </span>
-          </div>
-        </Card>
+      {/* Key Metrics */}
+      <DashboardSection>
+        <GridLayout {...DashboardGrids.metrics}>
+          <MetricCard
+            title="Total Documents"
+            value={stats.totalDocuments}
+            change={{
+              value: "+12%",
+              type: "increase",
+              label: "from last month"
+            }}
+            icon={DocumentIcon}
+            iconColor="blue"
+            delay={0}
+            loading={analyticsLoading}
+          />
+          <MetricCard
+            title="Active Jobs"
+            value={stats.totalJobs}
+            change={{
+              value: "-3",
+              type: "decrease",
+              label: "from yesterday"
+            }}
+            icon={CogIcon}
+            iconColor="green"
+            delay={0.1}
+            loading={analyticsLoading}
+          />
+          <MetricCard
+            title="Success Rate"
+            value={`${stats.successRate}%`}
+            change={{
+              value: "+2.3%",
+              type: "increase",
+              label: "improvement"
+            }}
+            icon={ChartBarIcon}
+            iconColor="purple"
+            delay={0.2}
+            loading={analyticsLoading}
+          />
+          <MetricCard
+            title="System Health"
+            value={stats.systemHealth === 'good' ? 'Healthy' : 'Issues'}
+            change={{
+              value: "All systems operational",
+              type: "neutral"
+            }}
+            icon={getHealthIcon(stats.systemHealth)}
+            iconColor={stats.systemHealth === 'good' ? 'green' : 'red'}
+            delay={0.3}
+            loading={systemLoading}
+          />
+        </GridLayout>
+      </DashboardSection>
 
-        <Card className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Active Jobs
-              </p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {stats.totalJobs}
-              </p>
-            </div>
-            <div className="h-12 w-12 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center">
-              <CogIcon className="h-6 w-6 text-green-600 dark:text-green-400" />
-            </div>
-          </div>
-          <div className="mt-4 flex items-center">
-            <ArrowDownIcon className="h-4 w-4 text-red-500" />
-            <span className="text-sm text-red-600 dark:text-red-400">
-              -3 from yesterday
-            </span>
-          </div>
-        </Card>
-
-        <Card className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Success Rate
-              </p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {stats.successRate}%
-              </p>
-            </div>
-            <div className="h-12 w-12 bg-purple-100 dark:bg-purple-900/20 rounded-lg flex items-center justify-center">
-              <ChartBarIcon className="h-6 w-6 text-purple-600 dark:text-purple-400" />
-            </div>
-          </div>
-          <div className="mt-4 flex items-center">
-            <ArrowUpIcon className="h-4 w-4 text-green-500" />
-            <span className="text-sm text-green-600 dark:text-green-400">
-              +2.3% improvement
-            </span>
-          </div>
-        </Card>
-
-        <Card className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                System Health
-              </p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {stats.systemHealth === 'good' ? 'Healthy' : 'Issues'}
-              </p>
-            </div>
-            <div className="h-12 w-12 bg-orange-100 dark:bg-orange-900/20 rounded-lg flex items-center justify-center">
-              {getHealthIcon(stats.systemHealth)}
-            </div>
-          </div>
-          <div className="mt-4 flex items-center">
-            {getHealthIcon(stats.systemHealth)}
-            <span className="ml-1 text-sm text-gray-600 dark:text-gray-400">
-              All systems operational
-            </span>
-          </div>
-        </Card>
-      </div>
+      {/* Charts Section */}
+      <DashboardSection
+        title="Analytics Overview"
+        description="Performance trends and insights"
+      >
+        <GridLayout {...DashboardGrids.twoColumn}>
+          <GridItem span={{ default: 1, lg: 2 }}>
+            <Card variant="elevated" padding="lg" hover>
+              <CardHeader>
+                <CardTitle>Activity Trends</CardTitle>
+                <CardDescription>
+                  Daily activity volume over the past week
+                </CardDescription>
+              </CardHeader>
+              <CardBody>
+                <div className="h-64">
+                  <LineChart 
+                    data={activityTrendData}
+                    animate={true}
+                    className="w-full h-full"
+                  />
+                </div>
+              </CardBody>
+            </Card>
+          </GridItem>
+          
+          <GridItem>
+            <Card variant="elevated" padding="lg" hover>
+              <CardHeader>
+                <CardTitle>Document Types</CardTitle>
+                <CardDescription>
+                  Distribution of processed documents
+                </CardDescription>
+              </CardHeader>
+              <CardBody>
+                <div className="h-64">
+                  <BarChart
+                    data={documentTypeData}
+                    animate={true}
+                    className="w-full h-full"
+                  />
+                </div>
+              </CardBody>
+            </Card>
+          </GridItem>
+        </GridLayout>
+      </DashboardSection>
 
       {/* Quick Actions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
-          <CardDescription>
-            Common tasks to get you started quickly
-          </CardDescription>
-        </CardHeader>
-        <CardBody>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {quickActions.map((action, index) => (
-              <motion.div
-                key={action.title}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-              >
-                <Link
-                  to={action.href}
-                  className="block p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+      <DashboardSection
+        title="Quick Actions"
+        description="Common tasks to get you started quickly"
+      >
+        <Card variant="elevated" padding="lg">
+          <CardBody>
+            <GridLayout {...DashboardGrids.metrics}>
+              {quickActions.map((action, index) => (
+                <motion.div
+                  key={action.title}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
                 >
-                  <div className="flex items-center space-x-3">
-                    <div className={`h-10 w-10 ${action.color} rounded-lg flex items-center justify-center`}>
-                      <action.icon className="h-5 w-5 text-white" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">
-                        {action.title}
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                        {action.description}
-                      </p>
-                    </div>
-                  </div>
-                </Link>
-              </motion.div>
-            ))}
-          </div>
-        </CardBody>
-      </Card>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Navigation Cards */}
-        <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Application Modules</CardTitle>
-              <CardDescription>
-                Navigate to different parts of the application
-              </CardDescription>
-            </CardHeader>
-            <CardBody>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {navigationCards.map((item, index) => (
-                  <motion.div
-                    key={item.title}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
+                  <Link
+                    to={action.href}
+                    className="block p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 hover:shadow-md transition-all duration-200 hover:-translate-y-0.5"
                   >
-                    <Link
-                      to={item.href}
-                      className="block p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-md transition-all duration-200 hover:-translate-y-1"
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center space-x-3">
-                          <div className="h-10 w-10 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center">
-                            <item.icon className="h-5 w-5 text-gray-600 dark:text-gray-400" />
-                          </div>
-                          <div>
-                            <h3 className="text-sm font-medium text-gray-900 dark:text-white">
-                              {item.title}
-                            </h3>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">
-                              {item.description}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-xs font-medium text-gray-900 dark:text-white">
-                            {item.stats}
-                          </p>
-                          <div className="flex items-center justify-end mt-1">
-                            {item.trend.isPositive ? (
-                              <ArrowUpIcon className="h-3 w-3 text-green-500" />
-                            ) : (
-                              <ArrowDownIcon className="h-3 w-3 text-red-500" />
-                            )}
-                            <span className={`text-xs ml-1 ${
-                              item.trend.isPositive 
-                                ? 'text-green-600 dark:text-green-400' 
-                                : 'text-red-600 dark:text-red-400'
-                            }`}>
-                              {item.trend.value}
-                            </span>
-                          </div>
-                        </div>
+                    <div className="flex items-center space-x-3">
+                      <div className={`h-10 w-10 ${action.color} rounded-lg flex items-center justify-center flex-shrink-0`}>
+                        <action.icon className="h-5 w-5 text-white" />
                       </div>
-                    </Link>
-                  </motion.div>
-                ))}
-              </div>
-            </CardBody>
-          </Card>
-        </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">
+                          {action.title}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                          {action.description}
+                        </p>
+                      </div>
+                    </div>
+                  </Link>
+                </motion.div>
+              ))}
+            </GridLayout>
+          </CardBody>
+        </Card>
+      </DashboardSection>
+
+      <GridLayout {...DashboardGrids.twoColumn}>
+        {/* Navigation Cards */}
+        <GridItem span={{ default: 1, lg: 2 }}>
+          <DashboardSection
+            title="Application Modules"
+            description="Navigate to different parts of the application"
+          >
+            <Card variant="elevated" padding="lg">
+              <CardBody>
+                <GridLayout cols={{ default: 1, md: 2 }} gap="md">
+                  {navigationCards.map((item, index) => (
+                    <motion.div
+                      key={item.title}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                    >
+                      <Link
+                        to={item.href}
+                        className="block p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-md transition-all duration-200 hover:-translate-y-1"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center space-x-3">
+                            <div className="h-10 w-10 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center">
+                              <item.icon className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+                            </div>
+                            <div>
+                              <h3 className="text-sm font-medium text-gray-900 dark:text-white">
+                                {item.title}
+                              </h3>
+                              <p className="text-xs text-gray-500 dark:text-gray-400">
+                                {item.description}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs font-medium text-gray-900 dark:text-white">
+                              {item.stats}
+                            </p>
+                            <div className="flex items-center justify-end mt-1">
+                              <span className={`text-xs ml-1 ${
+                                item.trend.isPositive 
+                                  ? 'text-green-600 dark:text-green-400' 
+                                  : 'text-red-600 dark:text-red-400'
+                              }`}>
+                                {item.trend.isPositive ? '↗' : '↘'} {item.trend.value}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </Link>
+                    </motion.div>
+                  ))}
+                </GridLayout>
+              </CardBody>
+            </Card>
+          </DashboardSection>
+        </GridItem>
 
         {/* Recent Activity */}
-        <div>
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
-              <CardDescription>
-                Latest system events and user actions
-              </CardDescription>
-            </CardHeader>
-            <CardBody>
-              <div className="space-y-4">
-                {activities.map((activity, index) => (
-                  <motion.div
-                    key={activity.id}
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    className="flex items-start space-x-3"
+        <GridItem>
+          <DashboardSection
+            title="Recent Activity"
+            description="Latest system events and user actions"
+          >
+            <Card variant="elevated" padding="lg">
+              <CardBody>
+                <div className="space-y-4">
+                  {activities.map((activity, index) => (
+                    <motion.div
+                      key={activity.id}
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      className="flex items-start space-x-3"
+                    >
+                      <div className={`h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                        activity.status === 'success' 
+                          ? 'bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400'
+                          : activity.status === 'error'
+                          ? 'bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400'
+                          : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+                      }`}>
+                        {getActivityIcon(activity.type)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">
+                          {activity.action}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                          {activity.description}
+                        </p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                          {formatTime(activity.timestamp)} • {activity.user}
+                        </p>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+                <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <Link
+                    to="/system"
+                    className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-500 font-medium"
                   >
-                    <div className={`h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                      activity.status === 'success' 
-                        ? 'bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400'
-                        : activity.status === 'error'
-                        ? 'bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400'
-                        : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
-                    }`}>
-                      {getActivityIcon(activity.type)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">
-                        {activity.action}
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                        {activity.description}
-                      </p>
-                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                        {formatTime(activity.timestamp)} • {activity.user}
-                      </p>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                <Link
-                  to="/system"
-                  className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-500 font-medium"
-                >
-                  View all activity →
-                </Link>
-              </div>
-            </CardBody>
-          </Card>
-        </div>
-      </div>
+                    View all activity →
+                  </Link>
+                </div>
+              </CardBody>
+            </Card>
+          </DashboardSection>
+        </GridItem>
+      </GridLayout>
     </div>
   );
 };
