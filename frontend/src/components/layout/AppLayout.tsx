@@ -39,6 +39,7 @@ import Card, { MetricCard, StatCard, InfoCard } from '../ui/Card';
 import { StatusBadge } from '../ui';
 import LEGAL_TERMINOLOGY from '../../lib/terminology';
 
+
 interface NavigationItem {
   id: string;
   label: string;
@@ -461,7 +462,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex">
       {/* Mobile Sidebar Overlay */}
       <AnimatePresence>
         {sidebarOpen && (
@@ -480,7 +481,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 
       {/* Main Content */}
       <div className={cn(
-        'lg:mr-64',
+        'flex-1 lg:mr-64',
         sidebarCollapsed && 'lg:mr-16'
       )}>
         {/* Header */}
