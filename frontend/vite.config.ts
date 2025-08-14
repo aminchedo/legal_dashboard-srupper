@@ -9,7 +9,7 @@ export default defineConfig({
     assetsDir: 'assets',
     emptyOutDir: true
   },
-  base: './',
+  base: '/',
   server: {
     port: 5173,
     proxy: {
