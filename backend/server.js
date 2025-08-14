@@ -47,6 +47,47 @@ app.get('/api/dashboard/activity', (req, res) => {
     res.json(MOCK_ACTIVITY_DATA);
 });
 
+// Analytics endpoint for frontend compatibility
+app.get('/api/analytics', (req, res) => {
+    console.log('GET /api/analytics -> Sending analytics data.');
+    res.json(MOCK_STATS_DATA);
+});
+
+app.post('/api/analytics', (req, res) => {
+    console.log('POST /api/analytics -> Sending analytics data.');
+    res.json(MOCK_STATS_DATA);
+});
+
+// Scraping stats endpoint
+app.get('/api/scraping/stats', (req, res) => {
+    console.log('GET /api/scraping/stats -> Sending scraping stats.');
+    res.json({
+        totalSources: 12,
+        activeSources: 8,
+        recentlyScraped: 45,
+        successRate: 94.1,
+        failedJobs: 3,
+        queuedJobs: 7
+    });
+});
+
+// Documents endpoint
+app.get('/api/documents', (req, res) => {
+    console.log('GET /api/documents -> Sending documents data.');
+    res.json({
+        items: MOCK_ACTIVITY_DATA.items,
+        total: 1247,
+        page: 1,
+        limit: 20
+    });
+});
+
+// Scraping sources endpoint
+app.get('/api/scraping/sources', (req, res) => {
+    console.log('GET /api/scraping/sources -> Sending sources data.');
+    res.json({ sources: [], count: 0 });
+});
+
 // Handle port already in use
 const PORT = process.env.PORT || 3001;
 

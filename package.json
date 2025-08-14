@@ -6,7 +6,7 @@
     "install:all": "npm install && npm install --prefix frontend && npm install --prefix backend",
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:frontend": "cd frontend && npm run dev",
-    "dev:backend": "cd backend && npm run dev",
+    "dev:backend": "cd backend && node server.js",
     "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
     "start:frontend": "cd frontend && npm run preview",
     "start:backend": "cd backend && npm run start",
