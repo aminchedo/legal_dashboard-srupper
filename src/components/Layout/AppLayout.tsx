@@ -22,6 +22,7 @@ import {
   UserCircleIcon,
   BellIcon,
   Cog6ToothIcon,
+  MagnifyingGlassIcon,
 } from '@heroicons/react/24/outline';
 import Button from '../UI/Button';
 
@@ -69,63 +70,82 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 
   const renderSidebarContent = () => (
     <div className="flex h-full flex-col">
-      {/* Logo */}
-      <div className="flex h-16 items-center px-6 border-b border-gray-200 dark:border-gray-700">
+      {/* Premium Logo Section */}
+      <div className="flex h-16 items-center px-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-purple-50">
         <div className="flex items-center">
-          <div className="h-8 w-8 rounded-lg bg-blue-600 flex items-center justify-center">
-            <span className="text-white font-bold text-sm">LD</span>
+          <motion.div 
+            className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg"
+            whileHover={{ scale: 1.05 }}
+            transition={{ duration: 0.2 }}
+          >
+            <span className="text-white font-bold text-lg">LD</span>
+          </motion.div>
+          <div className="ml-3">
+            <span className="text-xl font-bold text-gray-900 dark:text-white">
+              Legal Dashboard
+            </span>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Premium Platform
+            </p>
           </div>
-          <span className="ml-2 text-xl font-bold text-gray-900 dark:text-white">
-            Legal Dashboard
-          </span>
         </div>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 space-y-1 px-3 py-4 overflow-y-auto">
+      {/* Premium Navigation */}
+      <nav className="flex-1 space-y-1 px-3 py-6 overflow-y-auto">
         {navigation.map((item) => {
           const isActive = location.pathname === item.href;
           return (
-            <Link
+            <motion.div
               key={item.name}
-              to={item.href}
-              onClick={() => setSidebarOpen(false)}
-              className={cn(
-                'group flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200',
-                isActive
-                  ? 'bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400'
-                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
-              )}
+              whileHover={{ x: 4 }}
+              whileTap={{ scale: 0.98 }}
             >
-              <item.icon
+              <Link
+                to={item.href}
+                onClick={() => setSidebarOpen(false)}
                 className={cn(
-                  'mr-3 h-5 w-5 flex-shrink-0',
-                  isActive
-                    ? 'text-blue-500 dark:text-blue-400'
-                    : 'text-gray-400 dark:text-gray-500 group-hover:text-gray-500 dark:group-hover:text-gray-400'
+                  'premium-sidebar-item group',
+                  isActive && 'active'
                 )}
-              />
-              <span className="flex-1">{item.name}</span>
-              {item.badge && (
-                <span className="ml-auto inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-blue-100 bg-blue-600 rounded-full">
-                  {item.badge}
-                </span>
-              )}
-            </Link>
+              >
+                <item.icon
+                  className={cn(
+                    'premium-sidebar-icon',
+                    isActive
+                      ? 'text-white'
+                      : 'text-gray-400 group-hover:text-gray-600'
+                  )}
+                />
+                <span className="flex-1 persian-text">{item.name}</span>
+                {item.badge && (
+                  <motion.span 
+                    className="ml-auto inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-500 rounded-full"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 0.2, type: "spring" }}
+                  >
+                    {item.badge}
+                  </motion.span>
+                )}
+              </Link>
+            </motion.div>
           );
         })}
       </nav>
 
-      {/* User section */}
-      <div className="border-t border-gray-200 dark:border-gray-700 p-4">
+      {/* Premium User Section */}
+      <div className="border-t border-gray-200 dark:border-gray-700 p-4 bg-gradient-to-r from-gray-50 to-blue-50">
         <div className="flex items-center">
-          <img
-            className="h-8 w-8 rounded-full"
-            src={user?.avatar || '/api/placeholder/32/32'}
+          <motion.img
+            className="h-10 w-10 rounded-full ring-2 ring-white shadow-md"
+            src={user?.avatar || '/api/placeholder/40/40'}
             alt={user?.name || 'User'}
+            whileHover={{ scale: 1.05 }}
+            transition={{ duration: 0.2 }}
           />
           <div className="ml-3 flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+            <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
               {user?.name}
             </p>
             <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
@@ -139,7 +159,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 
   return (
     <div className="h-screen flex overflow-hidden bg-gray-50 dark:bg-gray-900">
-      {/* Mobile sidebar overlay */}
+      {/* Mobile Sidebar Overlay */}
       <AnimatePresence>
         {sidebarOpen && (
           <motion.div
@@ -149,23 +169,28 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             variants={overlayVariants}
             className="fixed inset-0 z-40 lg:hidden"
           >
-            <div
-              className="fixed inset-0 bg-black bg-opacity-50"
+            <motion.div
+              className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm"
               onClick={() => setSidebarOpen(false)}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
             />
             <motion.div
               variants={sidebarVariants}
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-              className="fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-800 shadow-xl"
+              className="fixed inset-y-0 left-0 z-50 w-80 premium-sidebar"
             >
-              <div className="absolute top-0 right-0 -mr-12 pt-2">
-                <button
+              <div className="absolute top-4 right-4">
+                <motion.button
                   type="button"
-                  className="ml-1 flex h-10 w-10 items-center justify-center rounded-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
+                  className="flex h-8 w-8 items-center justify-center rounded-full bg-white shadow-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   onClick={() => setSidebarOpen(false)}
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
                 >
-                  <XMarkIcon className="h-6 w-6 text-white" />
-                </button>
+                  <XMarkIcon className="h-5 w-5 text-gray-600" />
+                </motion.button>
               </div>
               {renderSidebarContent()}
             </motion.div>
@@ -173,92 +198,106 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         )}
       </AnimatePresence>
 
-      {/* Desktop sidebar */}
-      <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0">
-        <div className="bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700">
+      {/* Desktop Sidebar */}
+      <div className="hidden lg:flex lg:w-80 lg:flex-col lg:fixed lg:inset-y-0">
+        <div className="premium-sidebar">
           {renderSidebarContent()}
         </div>
       </div>
 
-      {/* Main content */}
-      <div className="flex flex-1 flex-col lg:pl-64">
-        {/* Header */}
-        <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
-          <div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
-            {/* Mobile menu button */}
-            <button
+      {/* Main Content */}
+      <div className="flex flex-1 flex-col lg:pl-80">
+        {/* Premium Header */}
+        <header className="premium-nav">
+          <div className="flex h-16 items-center justify-between px-6">
+            {/* Mobile Menu Button */}
+            <motion.button
               type="button"
-              className="lg:hidden p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
+              className="lg:hidden p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700"
               onClick={() => setSidebarOpen(true)}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             >
               <Bars3Icon className="h-6 w-6" />
-            </button>
+            </motion.button>
 
-            {/* Search bar - placeholder */}
-            <div className="flex-1 max-w-lg mx-4">
+            {/* Premium Search Bar */}
+            <div className="flex-1 max-w-lg mx-6">
               <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
+                </div>
                 <input
                   type="text"
-                  placeholder="Search..."
-                  className="w-full pl-4 pr-10 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="جستجو در داشبورد..."
+                  className="premium-input pl-10 pr-4 w-full"
                 />
               </div>
             </div>
 
-            {/* Header actions */}
-            <div className="flex items-center space-x-4">
-              {/* Theme toggle */}
-              <Button
-                variant="ghost"
-                size="sm"
+            {/* Premium Header Actions */}
+            <div className="flex items-center space-x-3">
+              {/* Theme Toggle */}
+              <motion.button
                 onClick={toggleTheme}
-                className="p-2"
+                className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
                 {theme === 'dark' ? (
                   <SunIcon className="h-5 w-5" />
                 ) : (
                   <MoonIcon className="h-5 w-5" />
                 )}
-              </Button>
+              </motion.button>
 
               {/* Notifications */}
-              <Button variant="ghost" size="sm" className="p-2 relative">
+              <motion.button 
+                className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 relative"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
                 <BellIcon className="h-5 w-5" />
-                <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                <motion.span 
+                  className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.5, type: "spring" }}
+                >
                   3
-                </span>
-              </Button>
+                </motion.span>
+              </motion.button>
 
-              {/* User menu */}
+              {/* Premium User Menu */}
               <div className="relative">
-                <Button
-                  variant="ghost"
-                  size="sm"
+                <motion.button
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className="flex items-center space-x-2 p-2"
+                  className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                 >
                   <img
-                    className="h-6 w-6 rounded-full"
-                    src={user?.avatar || '/api/placeholder/24/24'}
+                    className="h-8 w-8 rounded-full ring-2 ring-white shadow-md"
+                    src={user?.avatar || '/api/placeholder/32/32'}
                     alt={user?.name}
                   />
-                  <span className="hidden md:block text-sm font-medium">
+                  <span className="hidden md:block text-sm font-medium text-gray-900 dark:text-white">
                     {user?.name}
                   </span>
-                </Button>
+                </motion.button>
 
                 <AnimatePresence>
                   {userMenuOpen && (
                     <motion.div
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.95 }}
-                      className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-50"
+                      initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                      className="absolute right-0 mt-2 w-56 premium-card shadow-xl z-50"
                     >
-                      <div className="py-1">
+                      <div className="py-2">
                         <Link
                           to="/settings"
-                          className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                          className="flex items-center px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                           onClick={() => setUserMenuOpen(false)}
                         >
                           <UserCircleIcon className="mr-3 h-4 w-4" />
@@ -266,22 +305,24 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                         </Link>
                         <Link
                           to="/settings"
-                          className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                          className="flex items-center px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                           onClick={() => setUserMenuOpen(false)}
                         >
                           <Cog6ToothIcon className="mr-3 h-4 w-4" />
                           Settings
                         </Link>
-                        <button
+                        <hr className="my-2 border-gray-200 dark:border-gray-700" />
+                        <motion.button
                           onClick={() => {
                             logout();
                             setUserMenuOpen(false);
                           }}
-                          className="flex w-full items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                          className="flex w-full items-center px-4 py-3 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                          whileHover={{ x: 4 }}
                         >
                           <ArrowRightOnRectangleIcon className="mr-3 h-4 w-4" />
                           Sign out
-                        </button>
+                        </motion.button>
                       </div>
                     </motion.div>
                   )}
@@ -291,15 +332,15 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
           </div>
         </header>
 
-        {/* Main content area */}
-        <main className="flex-1 overflow-auto">
+        {/* Premium Main Content Area */}
+        <main className="flex-1 overflow-auto bg-gray-50 dark:bg-gray-900">
           <motion.div
             key={location.pathname}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.2 }}
-            className="h-full"
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            className="h-full premium-container py-6"
           >
             {children}
           </motion.div>

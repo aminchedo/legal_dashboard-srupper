@@ -4,16 +4,13 @@ import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { 
   Card, 
-  CardHeader, 
-  CardBody, 
-  CardTitle, 
-  CardDescription 
+  MetricCard, 
+  StatCard, 
+  InfoCard 
 } from '../components/UI/Card';
 import Button from '../components/UI/Button';
 import LoadingSpinner from '../components/UI/LoadingSpinner';
-import MetricCard from '../components/UI/MetricCard';
 import { LineChart, BarChart } from '../components/UI/Chart';
-import { GridLayout, GridItem, DashboardSection, DashboardGrids } from '../components/UI/GridLayout';
 import { useAnalyticsDashboard, useSystemHealth } from '../hooks/api';
 import {
   DocumentIcon,
@@ -26,6 +23,10 @@ import {
   PlusIcon,
   ExclamationTriangleIcon,
   CheckCircleIcon,
+  ArrowUpIcon,
+  ArrowDownIcon,
+  ClockIcon,
+  UserIcon,
 } from '@heroicons/react/24/outline';
 
 // Mock data for demonstration
@@ -111,7 +112,7 @@ const DashboardPage: React.FC = () => {
       description: 'Upload and process new legal documents',
       href: '/documents',
       icon: DocumentIcon,
-      color: 'bg-blue-500',
+      color: 'blue',
       action: 'upload',
     },
     {
@@ -119,7 +120,7 @@ const DashboardPage: React.FC = () => {
       description: 'Set up a new web scraping task',
       href: '/jobs',
       icon: CogIcon,
-      color: 'bg-green-500',
+      color: 'green',
       action: 'create',
     },
     {
@@ -127,7 +128,7 @@ const DashboardPage: React.FC = () => {
       description: 'Check performance metrics and insights',
       href: '/analytics',
       icon: ChartBarIcon,
-      color: 'bg-purple-500',
+      color: 'purple',
       action: 'view',
     },
     {
@@ -135,7 +136,7 @@ const DashboardPage: React.FC = () => {
       description: 'Monitor system status and performance',
       href: '/system',
       icon: ServerIcon,
-      color: 'bg-orange-500',
+      color: 'orange',
       action: 'monitor',
     },
   ];
@@ -226,248 +227,316 @@ const DashboardPage: React.FC = () => {
     });
   };
 
-  return (
-    <div className="p-4 md:p-6 space-y-6 md:space-y-8 max-w-7xl mx-auto">
-      {/* Header */}
-      <DashboardSection
-        title={t('dashboard.title')}
-        description="Welcome back! Here's what's happening with your legal analytics platform."
-        headerActions={
-          <div className="flex flex-col sm:flex-row gap-3">
-            <Button variant="outline" size="sm">
-              <QuestionMarkCircleIcon className="h-4 w-4 mr-2" />
-              Help
-            </Button>
-            <Button size="sm">
-              <PlusIcon className="h-4 w-4 mr-2" />
-              Quick Action
-            </Button>
-          </div>
-        }
-      />
+  if (analyticsLoading || systemLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <LoadingSpinner variant="progress" size="lg" text="در حال بارگذاری داشبورد..." />
+      </div>
+    );
+  }
 
-      {/* Key Metrics */}
-      <DashboardSection>
-        <GridLayout {...DashboardGrids.metrics}>
+  return (
+    <div className="premium-container space-y-8">
+      {/* Premium Header */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6"
+      >
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2 persian-text">
+            {t('dashboard.title')}
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 persian-text">
+            خوش آمدید! اینجا آنچه در پلتفرم تحلیل حقوقی شما اتفاق می‌افتد را مشاهده می‌کنید.
+          </p>
+        </div>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <Button variant="outline" size="md">
+            <QuestionMarkCircleIcon className="h-4 w-4 mr-2" />
+            راهنما
+          </Button>
+          <Button size="md" gradient>
+            <PlusIcon className="h-4 w-4 mr-2" />
+            عملیات سریع
+          </Button>
+        </div>
+      </motion.div>
+
+      {/* Premium Key Metrics */}
+      <div className="premium-grid">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1, duration: 0.5 }}
+        >
           <MetricCard
-            title="Total Documents"
-            value={stats.totalDocuments}
-            change={{
-              value: "+12%",
-              type: "increase",
-              label: "from last month"
-            }}
-            icon={DocumentIcon}
-            iconColor="blue"
-            delay={0}
+            title="کل اسناد"
+            value={stats.totalDocuments.toLocaleString()}
+            change={12}
+            trend="up"
+            icon={<DocumentIcon className="h-6 w-6" />}
             loading={analyticsLoading}
           />
+        </motion.div>
+        
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.5 }}
+        >
           <MetricCard
-            title="Active Jobs"
+            title="کارهای فعال"
             value={stats.totalJobs}
-            change={{
-              value: "-3",
-              type: "decrease",
-              label: "from yesterday"
-            }}
-            icon={CogIcon}
-            iconColor="green"
-            delay={0.1}
+            change={-3}
+            trend="down"
+            icon={<CogIcon className="h-6 w-6" />}
             loading={analyticsLoading}
           />
+        </motion.div>
+        
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.5 }}
+        >
           <MetricCard
-            title="Success Rate"
+            title="نرخ موفقیت"
             value={`${stats.successRate}%`}
-            change={{
-              value: "+2.3%",
-              type: "increase",
-              label: "improvement"
-            }}
-            icon={ChartBarIcon}
-            iconColor="purple"
-            delay={0.2}
+            change={2.3}
+            trend="up"
+            icon={<ChartBarIcon className="h-6 w-6" />}
             loading={analyticsLoading}
           />
+        </motion.div>
+        
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4, duration: 0.5 }}
+        >
           <MetricCard
-            title="System Health"
-            value={stats.systemHealth === 'good' ? 'Healthy' : 'Issues'}
-            change={{
-              value: "All systems operational",
-              type: "neutral"
-            }}
-            icon={getHealthIcon(stats.systemHealth)}
-            iconColor={stats.systemHealth === 'good' ? 'green' : 'red'}
-            delay={0.3}
+            title="سلامت سیستم"
+            value={stats.systemHealth === 'good' ? 'سالم' : 'مشکل'}
+            change={0}
+            trend="neutral"
+            icon={<CheckCircleIcon className="h-6 w-6" />}
             loading={systemLoading}
           />
-        </GridLayout>
-      </DashboardSection>
+        </motion.div>
+      </div>
 
-      {/* Charts Section */}
-      <DashboardSection
-        title="Analytics Overview"
-        description="Performance trends and insights"
+      {/* Premium Charts Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5, duration: 0.5 }}
+        className="space-y-6"
       >
-        <GridLayout {...DashboardGrids.twoColumn}>
-          <GridItem span={{ default: 1, lg: 2 }}>
-            <Card variant="elevated" padding="lg" hover>
-              <CardHeader>
-                <CardTitle>Activity Trends</CardTitle>
-                <CardDescription>
-                  Daily activity volume over the past week
-                </CardDescription>
-              </CardHeader>
-              <CardBody>
-                <div className="h-64">
-                  <LineChart 
-                    data={activityTrendData}
-                    animate={true}
-                    className="w-full h-full"
-                  />
-                </div>
-              </CardBody>
-            </Card>
-          </GridItem>
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white persian-text">
+              نمای کلی تحلیل
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400 persian-text">
+              روند عملکرد و بینش‌ها
+            </p>
+          </div>
+        </div>
+        
+        <div className="premium-grid">
+          <Card variant="elevated" size="lg" className="col-span-1 lg:col-span-2">
+            <div className="p-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 persian-text">
+                روند فعالیت
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-6 persian-text">
+                حجم فعالیت روزانه در هفته گذشته
+              </p>
+              <div className="h-80">
+                <LineChart 
+                  data={activityTrendData}
+                  animate={true}
+                  className="w-full h-full"
+                />
+              </div>
+            </div>
+          </Card>
           
-          <GridItem>
-            <Card variant="elevated" padding="lg" hover>
-              <CardHeader>
-                <CardTitle>Document Types</CardTitle>
-                <CardDescription>
-                  Distribution of processed documents
-                </CardDescription>
-              </CardHeader>
-              <CardBody>
-                <div className="h-64">
-                  <BarChart
-                    data={documentTypeData}
-                    animate={true}
-                    className="w-full h-full"
-                  />
-                </div>
-              </CardBody>
-            </Card>
-          </GridItem>
-        </GridLayout>
-      </DashboardSection>
+          <Card variant="elevated" size="lg">
+            <div className="p-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 persian-text">
+                انواع اسناد
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-6 persian-text">
+                توزیع اسناد پردازش شده
+              </p>
+              <div className="h-80">
+                <BarChart
+                  data={documentTypeData}
+                  animate={true}
+                  className="w-full h-full"
+                />
+              </div>
+            </div>
+          </Card>
+        </div>
+      </motion.div>
 
-      {/* Quick Actions */}
-      <DashboardSection
-        title="Quick Actions"
-        description="Common tasks to get you started quickly"
+      {/* Premium Quick Actions */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.6, duration: 0.5 }}
+        className="space-y-6"
       >
-        <Card variant="elevated" padding="lg">
-          <CardBody>
-            <GridLayout {...DashboardGrids.metrics}>
-              {quickActions.map((action, index) => (
-                <motion.div
-                  key={action.title}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2 persian-text">
+            عملیات سریع
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400 persian-text">
+            کارهای رایج برای شروع سریع
+          </p>
+        </div>
+        
+        <div className="premium-grid">
+          {quickActions.map((action, index) => (
+            <motion.div
+              key={action.title}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.7 + index * 0.1, duration: 0.5 }}
+            >
+              <Link to={action.href}>
+                <Card 
+                  variant="elevated" 
+                  hover 
+                  className="h-full cursor-pointer group"
                 >
-                  <Link
-                    to={action.href}
-                    className="block p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 hover:shadow-md transition-all duration-200 hover:-translate-y-0.5"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div className={`h-10 w-10 ${action.color} rounded-lg flex items-center justify-center flex-shrink-0`}>
-                        <action.icon className="h-5 w-5 text-white" />
+                  <div className="p-6">
+                    <div className="flex items-center space-x-4">
+                      <div className={`h-12 w-12 bg-gradient-to-br from-${action.color}-500 to-${action.color}-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-200`}>
+                        <action.icon className="h-6 w-6 text-white" />
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 dark:text-white">
+                      <div className="flex-1">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white persian-text group-hover:text-blue-600 transition-colors">
                           {action.title}
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                        </h3>
+                        <p className="text-gray-600 dark:text-gray-400 persian-text">
                           {action.description}
                         </p>
                       </div>
                     </div>
-                  </Link>
-                </motion.div>
-              ))}
-            </GridLayout>
-          </CardBody>
-        </Card>
-      </DashboardSection>
+                  </div>
+                </Card>
+              </Link>
+            </motion.div>
+          ))}
+        </div>
+      </motion.div>
 
-      <GridLayout {...DashboardGrids.twoColumn}>
+      {/* Premium Content Grid */}
+      <div className="premium-grid">
         {/* Navigation Cards */}
-        <GridItem span={{ default: 1, lg: 2 }}>
-          <DashboardSection
-            title="Application Modules"
-            description="Navigate to different parts of the application"
-          >
-            <Card variant="elevated" padding="lg">
-              <CardBody>
-                <GridLayout cols={{ default: 1, md: 2 }} gap="md">
-                  {navigationCards.map((item, index) => (
-                    <motion.div
-                      key={item.title}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                    >
-                      <Link
-                        to={item.href}
-                        className="block p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-md transition-all duration-200 hover:-translate-y-1"
-                      >
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.8, duration: 0.5 }}
+          className="col-span-1 lg:col-span-2"
+        >
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2 persian-text">
+                ماژول‌های برنامه
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400 persian-text">
+                به بخش‌های مختلف برنامه بروید
+              </p>
+            </div>
+            
+            <div className="premium-grid compact">
+              {navigationCards.map((item, index) => (
+                <motion.div
+                  key={item.title}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.9 + index * 0.1, duration: 0.5 }}
+                >
+                  <Link to={item.href}>
+                    <Card variant="elevated" hover className="h-full cursor-pointer">
+                      <div className="p-6">
                         <div className="flex items-start justify-between">
-                          <div className="flex items-center space-x-3">
-                            <div className="h-10 w-10 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center">
-                              <item.icon className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+                          <div className="flex items-center space-x-4">
+                            <div className="h-12 w-12 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-xl flex items-center justify-center">
+                              <item.icon className="h-6 w-6 text-gray-600 dark:text-gray-400" />
                             </div>
                             <div>
-                              <h3 className="text-sm font-medium text-gray-900 dark:text-white">
+                              <h3 className="text-lg font-semibold text-gray-900 dark:text-white persian-text">
                                 {item.title}
                               </h3>
-                              <p className="text-xs text-gray-500 dark:text-gray-400">
+                              <p className="text-gray-600 dark:text-gray-400 persian-text">
                                 {item.description}
                               </p>
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className="text-xs font-medium text-gray-900 dark:text-white">
+                            <p className="text-sm font-medium text-gray-900 dark:text-white persian-numbers">
                               {item.stats}
                             </p>
-                            <div className="flex items-center justify-end mt-1">
-                              <span className={`text-xs ml-1 ${
+                            <div className="flex items-center justify-end mt-2">
+                              {item.trend.isPositive ? (
+                                <ArrowUpIcon className="h-4 w-4 text-green-600" />
+                              ) : (
+                                <ArrowDownIcon className="h-4 w-4 text-red-600" />
+                              )}
+                              <span className={`text-sm ml-1 ${
                                 item.trend.isPositive 
-                                  ? 'text-green-600 dark:text-green-400' 
-                                  : 'text-red-600 dark:text-red-400'
-                              }`}>
-                                {item.trend.isPositive ? '↗' : '↘'} {item.trend.value}
+                                  ? 'text-green-600' 
+                                  : 'text-red-600'
+                              } persian-numbers`}>
+                                {item.trend.value}
                               </span>
                             </div>
                           </div>
                         </div>
-                      </Link>
-                    </motion.div>
-                  ))}
-                </GridLayout>
-              </CardBody>
-            </Card>
-          </DashboardSection>
-        </GridItem>
+                      </div>
+                    </Card>
+                  </Link>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </motion.div>
 
         {/* Recent Activity */}
-        <GridItem>
-          <DashboardSection
-            title="Recent Activity"
-            description="Latest system events and user actions"
-          >
-            <Card variant="elevated" padding="lg">
-              <CardBody>
-                <div className="space-y-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.0, duration: 0.5 }}
+        >
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2 persian-text">
+                فعالیت‌های اخیر
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400 persian-text">
+                آخرین رویدادهای سیستم و اقدامات کاربر
+              </p>
+            </div>
+            
+            <Card variant="elevated" size="lg">
+              <div className="p-6">
+                <div className="space-y-6">
                   {activities.map((activity, index) => (
                     <motion.div
                       key={activity.id}
                       initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      className="flex items-start space-x-3"
+                      transition={{ delay: 1.1 + index * 0.1, duration: 0.5 }}
+                      className="flex items-start space-x-4"
                     >
-                      <div className={`h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                      <div className={`h-10 w-10 rounded-full flex items-center justify-center flex-shrink-0 ${
                         activity.status === 'success' 
                           ? 'bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400'
                           : activity.status === 'error'
@@ -477,32 +546,39 @@ const DashboardPage: React.FC = () => {
                         {getActivityIcon(activity.type)}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 dark:text-white">
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white persian-text">
                           {activity.action}
                         </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                        <p className="text-sm text-gray-600 dark:text-gray-400 persian-text">
                           {activity.description}
                         </p>
-                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                          {formatTime(activity.timestamp)} • {activity.user}
-                        </p>
+                        <div className="flex items-center space-x-4 mt-2">
+                          <div className="flex items-center space-x-1 text-xs text-gray-500">
+                            <ClockIcon className="h-3 w-3" />
+                            <span className="persian-numbers">{formatTime(activity.timestamp)}</span>
+                          </div>
+                          <div className="flex items-center space-x-1 text-xs text-gray-500">
+                            <UserIcon className="h-3 w-3" />
+                            <span className="persian-text">{activity.user}</span>
+                          </div>
+                        </div>
                       </div>
                     </motion.div>
                   ))}
                 </div>
-                <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
                   <Link
                     to="/system"
-                    className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-500 font-medium"
+                    className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-500 font-medium persian-text"
                   >
-                    View all activity →
+                    مشاهده تمام فعالیت‌ها →
                   </Link>
                 </div>
-              </CardBody>
+              </div>
             </Card>
-          </DashboardSection>
-        </GridItem>
-      </GridLayout>
+          </div>
+        </motion.div>
+      </div>
     </div>
   );
 };

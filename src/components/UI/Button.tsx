@@ -1,120 +1,234 @@
-import React, { forwardRef } from 'react';
+import React from 'react';
+import { motion } from 'framer-motion';
 import { cn } from '../../utils/cn';
-import { motion, MotionProps } from 'framer-motion';
 
-export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'success' | 'warning';
-  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
-  isLoading?: boolean;
-  leftIcon?: React.ReactNode;
-  rightIcon?: React.ReactNode;
+export interface ButtonProps {
+  children: React.ReactNode;
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'success';
+  size?: 'sm' | 'md' | 'lg' | 'xl';
+  loading?: boolean;
+  disabled?: boolean;
   fullWidth?: boolean;
-  rounded?: boolean;
+  icon?: React.ReactNode;
+  iconPosition?: 'left' | 'right';
+  onClick?: () => void;
+  className?: string;
+  type?: 'button' | 'submit' | 'reset';
+  gradient?: boolean;
   animate?: boolean;
 }
 
-const Button = forwardRef<HTMLButtonElement, ButtonProps & MotionProps>(
-  (
-    {
-      className,
-      variant = 'primary',
-      size = 'md',
-      isLoading = false,
-      leftIcon,
-      rightIcon,
-      fullWidth = false,
-      rounded = false,
-      animate = true,
-      children,
-      disabled,
-      ...props
-    },
-    ref
-  ) => {
-    const baseClasses = 'inline-flex items-center justify-center font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
+const Button: React.FC<ButtonProps> = ({
+  children,
+  variant = 'primary',
+  size = 'md',
+  loading = false,
+  disabled = false,
+  fullWidth = false,
+  icon,
+  iconPosition = 'left',
+  onClick,
+  className,
+  type = 'button',
+  gradient = false,
+  animate = true,
+}) => {
+  const sizeClasses = {
+    sm: 'px-3 py-2 text-sm',
+    md: 'px-4 py-2.5 text-sm',
+    lg: 'px-6 py-3 text-base',
+    xl: 'px-8 py-4 text-lg',
+  };
 
-    const variantClasses = {
-      primary: 'bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500 dark:bg-blue-500 dark:hover:bg-blue-600',
-      secondary: 'bg-gray-600 hover:bg-gray-700 text-white focus:ring-gray-500 dark:bg-gray-500 dark:hover:bg-gray-600',
-      outline: 'border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700',
-      ghost: 'text-gray-700 hover:bg-gray-100 focus:ring-gray-500 dark:text-gray-300 dark:hover:bg-gray-800',
-      danger: 'bg-red-600 hover:bg-red-700 text-white focus:ring-red-500 dark:bg-red-500 dark:hover:bg-red-600',
-      success: 'bg-green-600 hover:bg-green-700 text-white focus:ring-green-500 dark:bg-green-500 dark:hover:bg-green-600',
-      warning: 'bg-yellow-600 hover:bg-yellow-700 text-white focus:ring-yellow-500 dark:bg-yellow-500 dark:hover:bg-yellow-600',
-    };
+  const variantClasses = {
+    primary: gradient 
+      ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg hover:shadow-xl hover:from-blue-600 hover:to-purple-700'
+      : 'bg-blue-600 text-white shadow-md hover:bg-blue-700 hover:shadow-lg',
+    secondary: 'bg-gray-100 text-gray-900 border border-gray-200 hover:bg-gray-200 hover:border-gray-300',
+    outline: 'bg-transparent text-blue-600 border-2 border-blue-600 hover:bg-blue-50 hover:border-blue-700',
+    ghost: 'bg-transparent text-gray-600 hover:bg-gray-100 hover:text-gray-900',
+    danger: 'bg-red-600 text-white shadow-md hover:bg-red-700 hover:shadow-lg',
+    success: 'bg-green-600 text-white shadow-md hover:bg-green-700 hover:shadow-lg',
+  };
 
-    const sizeClasses = {
-      xs: 'px-2 py-1 text-xs',
-      sm: 'px-3 py-1.5 text-sm',
-      md: 'px-4 py-2 text-sm',
-      lg: 'px-6 py-3 text-base',
-      xl: 'px-8 py-4 text-lg',
-    };
+  const disabledClasses = disabled || loading
+    ? 'opacity-50 cursor-not-allowed pointer-events-none'
+    : '';
 
-    const roundedClasses = rounded ? 'rounded-full' : 'rounded-md';
-    const widthClasses = fullWidth ? 'w-full' : '';
-
-    const combinedClasses = cn(
-      baseClasses,
-      variantClasses[variant],
-      sizeClasses[size],
-      roundedClasses,
-      widthClasses,
-      className
-    );
-
-    const content = (
-      <>
-        {isLoading ? (
-          <svg className="animate-spin -ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-          </svg>
-        ) : leftIcon ? (
-          <span className="mr-2">{leftIcon}</span>
-        ) : null}
-        
-        {children}
-        
-        {rightIcon && !isLoading && (
-          <span className="ml-2">{rightIcon}</span>
-        )}
-      </>
-    );
-
-    const motionProps = animate ? {
-      whileHover: { scale: 1.02 },
-      whileTap: { scale: 0.98 },
-      transition: { type: "spring", stiffness: 400, damping: 17 }
-    } : {};
-
-    if (animate) {
-      return (
-        <motion.button
-          ref={ref}
-          className={combinedClasses}
-          disabled={disabled || isLoading}
-          {...motionProps}
-          {...props}
+  const buttonContent = (
+    <div className="flex items-center justify-center space-x-2">
+      {icon && iconPosition === 'left' && (
+        <motion.div
+          className="flex-shrink-0"
+          animate={loading ? { rotate: 360 } : {}}
+          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
         >
-          {content}
-        </motion.button>
-      );
-    }
+          {icon}
+        </motion.div>
+      )}
+      
+      <span className="persian-text">
+        {loading ? 'در حال بارگذاری...' : children}
+      </span>
+      
+      {icon && iconPosition === 'right' && (
+        <motion.div
+          className="flex-shrink-0"
+          animate={loading ? { rotate: 360 } : {}}
+          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+        >
+          {icon}
+        </motion.div>
+      )}
+    </div>
+  );
 
+  const buttonElement = (
+    <button
+      type={type}
+      onClick={onClick}
+      disabled={disabled || loading}
+      className={cn(
+        'premium-button font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2',
+        sizeClasses[size],
+        variantClasses[variant],
+        disabledClasses,
+        fullWidth && 'w-full',
+        className
+      )}
+    >
+      {buttonContent}
+    </button>
+  );
+
+  if (animate) {
     return (
-      <button
-        ref={ref}
-        className={combinedClasses}
-        disabled={disabled || isLoading}
-        {...props}
+      <motion.div
+        whileHover={!disabled && !loading ? { scale: 1.02 } : undefined}
+        whileTap={!disabled && !loading ? { scale: 0.98 } : undefined}
+        transition={{ duration: 0.1 }}
       >
-        {content}
-      </button>
+        {buttonElement}
+      </motion.div>
     );
   }
-);
 
-Button.displayName = 'Button';
+  return buttonElement;
+};
+
+// Specialized Button Components
+export const IconButton: React.FC<{
+  icon: React.ReactNode;
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
+  size?: 'sm' | 'md' | 'lg';
+  loading?: boolean;
+  disabled?: boolean;
+  onClick?: () => void;
+  className?: string;
+  tooltip?: string;
+}> = ({ 
+  icon, 
+  variant = 'ghost', 
+  size = 'md', 
+  loading, 
+  disabled, 
+  onClick, 
+  className,
+  tooltip 
+}) => {
+  const sizeClasses = {
+    sm: 'w-8 h-8',
+    md: 'w-10 h-10',
+    lg: 'w-12 h-12',
+  };
+
+  const variantClasses = {
+    primary: 'bg-blue-600 text-white hover:bg-blue-700',
+    secondary: 'bg-gray-100 text-gray-600 hover:bg-gray-200',
+    ghost: 'bg-transparent text-gray-400 hover:text-gray-600 hover:bg-gray-100',
+    danger: 'bg-red-600 text-white hover:bg-red-700',
+  };
+
+  return (
+    <motion.button
+      onClick={onClick}
+      disabled={disabled || loading}
+      className={cn(
+        'premium-button rounded-full flex items-center justify-center transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2',
+        sizeClasses[size],
+        variantClasses[variant],
+        disabled && 'opacity-50 cursor-not-allowed',
+        className
+      )}
+      whileHover={!disabled && !loading ? { scale: 1.05 } : undefined}
+      whileTap={!disabled && !loading ? { scale: 0.95 } : undefined}
+      title={tooltip}
+    >
+      <motion.div
+        animate={loading ? { rotate: 360 } : {}}
+        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+      >
+        {icon}
+      </motion.div>
+    </motion.button>
+  );
+};
+
+export const ActionButton: React.FC<{
+  children: React.ReactNode;
+  icon?: React.ReactNode;
+  variant?: 'primary' | 'secondary' | 'success' | 'danger';
+  size?: 'sm' | 'md' | 'lg';
+  loading?: boolean;
+  disabled?: boolean;
+  onClick?: () => void;
+  className?: string;
+}> = ({ 
+  children, 
+  icon, 
+  variant = 'primary', 
+  size = 'md', 
+  loading, 
+  disabled, 
+  onClick, 
+  className 
+}) => {
+  return (
+    <Button
+      variant={variant}
+      size={size}
+      loading={loading}
+      disabled={disabled}
+      onClick={onClick}
+      icon={icon}
+      iconPosition="left"
+      className={cn('font-semibold', className)}
+    >
+      {children}
+    </Button>
+  );
+};
+
+export const FloatingActionButton: React.FC<{
+  icon: React.ReactNode;
+  onClick?: () => void;
+  className?: string;
+  tooltip?: string;
+}> = ({ icon, onClick, className, tooltip }) => {
+  return (
+    <motion.button
+      onClick={onClick}
+      className={cn(
+        'fixed bottom-6 right-6 w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg hover:shadow-xl flex items-center justify-center transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 z-50',
+        className
+      )}
+      whileHover={{ scale: 1.1, y: -2 }}
+      whileTap={{ scale: 0.9 }}
+      title={tooltip}
+    >
+      {icon}
+    </motion.button>
+  );
+};
 
 export default Button;
