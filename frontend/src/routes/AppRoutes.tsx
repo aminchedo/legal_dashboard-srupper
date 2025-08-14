@@ -20,7 +20,7 @@ function pageTypeToPath(page: PageType): string {
         case 'analytics':
             return '/analytics';
         case 'recording':
-            return '/recording';
+            return '/Modal';
         case 'jobs':
             return '/jobs';
         case 'documents':
@@ -55,5 +55,6 @@ export default function AppRoutes({ children }: Props) {
         </AppLayout>
     );
 }
+
 
 
