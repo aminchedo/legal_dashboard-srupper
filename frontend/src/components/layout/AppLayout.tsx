@@ -26,8 +26,8 @@ import {
   Sun,
   Moon,
   Download,
-  Globe2,
-} from 'lucide-react';
+   Globe2,
+ } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import Button from '../ui/Button';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
@@ -83,6 +83,13 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       notificationCount: 3,
     },
     {
+      id: 'data',
+      label: 'مدیریت داده‌ها',
+      href: '/data',
+      icon: Database,
+      description: 'مدیریت داده‌های استخراج‌شده',
+    },
+    {
       id: 'analytics',
       label: LEGAL_TERMINOLOGY.analytics,
       href: '/analytics',
@@ -105,8 +112,9 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       id: 'scraping',
       label: 'استخراج اطلاعات',
       href: '/scraping',
-      icon: Globe2,
-      description: 'استخراج خودکار اطلاعات حقوقی',
+       icon: Globe2,
+       icon: Download,
+       description: 'استخراج خودکار اطلاعات حقوقی',
     },
     {
       id: 'system',

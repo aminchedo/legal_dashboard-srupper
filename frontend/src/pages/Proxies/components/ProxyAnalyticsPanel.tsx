@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ProxyRecord, ProxyTestResult } from '../../../types';
 import Card from '../../../components/ui/Card';
-import { MetricCard } from '../../../components/ui/Card';
 import ScoreIndicator from '../../../components/ScoreIndicator';
 import { databaseService } from '../../../services/database';
 import { 
