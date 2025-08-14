@@ -160,7 +160,7 @@ class AnalyticsService {
       });
       
       // Store entities in database
-      const transaction = this.db.transaction();
+      const transaction = this.db.transaction() as any;
       try {
         transaction.begin();
         
@@ -319,7 +319,7 @@ class AnalyticsService {
       topics.forEach(topic => topic.weight = topic.weight / totalWeight);
       
       // Store topic model
-      const transaction = this.db.transaction();
+      const transaction = this.db.transaction() as any;
       try {
         transaction.begin();
         

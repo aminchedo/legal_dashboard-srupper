@@ -5,7 +5,7 @@ export const config = {
     JWT_SECRET: process.env.JWT_SECRET || 'dev-secret',
     JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '1h',
     JWT_REFRESH_EXPIRES_IN: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
-    CORS_ORIGIN: process.env.CORS_ORIGIN || 'http://localhost:5177',
+    CORS_ORIGIN: process.env.CORS_ORIGIN || 'http://localhost:5173',
     RATE_LIMIT_WINDOW_MS: Number(process.env.RATE_LIMIT_WINDOW_MS || 900000),
     RATE_LIMIT_MAX_REQUESTS: Number(process.env.RATE_LIMIT_MAX_REQUESTS || 100),
     UPLOAD_MAX_SIZE: Number(process.env.UPLOAD_MAX_SIZE || 10485760),

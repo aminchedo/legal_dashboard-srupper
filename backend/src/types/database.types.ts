@@ -37,9 +37,16 @@ export interface DatabaseTransaction {
   rollback(): void;
 }
 
+export interface PreparedStatement {
+  get(params?: unknown[]): any;
+  all(params?: unknown[]): any[];
+  run(params?: unknown[]): { changes: number; lastInsertRowid: number };
+}
+
 export interface DatabaseClient {
   query<T = unknown>(sql: string, params?: unknown[]): T[];
   run(sql: string, params?: unknown[]): { changes: number; lastInsertRowid: number };
+  prepare(sql: string): PreparedStatement;
   transaction<T>(callback?: (tx: DatabaseTransaction) => T): T | DatabaseTransaction;
   close(): void;
 }

@@ -19,6 +19,8 @@ router.post('/:id/versions/:version/revert', controller.revertToVersion);
 router.get('/search', controller.search);
 router.get('/categories', controller.categories);
 router.get('/sources', controller.sources);
+router.get('/statistics', controller.statistics);
+router.get('/tags', controller.tags);
 
 export default router;
 

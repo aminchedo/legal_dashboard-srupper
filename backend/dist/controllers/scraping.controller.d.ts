@@ -1,0 +1,10 @@
+import { Request, Response } from 'express';
+export declare function start(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
+export declare function status(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
+export declare function statusById(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
+export declare function sources(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
+export declare function createSource(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
+export declare function stopById(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
+export declare function stopAll(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
+export declare function health(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
+export declare function rotate(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;

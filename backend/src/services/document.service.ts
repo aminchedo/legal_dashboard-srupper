@@ -582,6 +582,81 @@ class DocumentService {
     }
 
     /**
+     * Get document statistics
+     */
+    async getStatistics(): Promise<any> {
+        try {
+            const db = this.db;
+            
+            // Get basic counts
+            const totalDocs = db.prepare('SELECT COUNT(*) as count FROM documents').get() as { count: number };
+            const totalCompleted = db.prepare('SELECT COUNT(*) as count FROM documents WHERE status = ?').get('completed') as { count: number };
+            const totalProcessing = db.prepare('SELECT COUNT(*) as count FROM documents WHERE status = ?').get('processing') as { count: number };
+            const totalFailed = db.prepare('SELECT COUNT(*) as count FROM documents WHERE status = ?').get('failed') as { count: number };
+            
+            // Get category distribution
+            const categoryStats = db.prepare(`
+                SELECT category, COUNT(*) as count 
+                FROM documents 
+                WHERE category IS NOT NULL 
+                GROUP BY category 
+                ORDER BY count DESC
+            `).all();
+            
+            // Get recent activity (last 7 days)
+            const recentActivity = db.prepare(`
+                SELECT DATE(created_at) as date, COUNT(*) as count 
+                FROM documents 
+                WHERE created_at >= date('now', '-7 days')
+                GROUP BY DATE(created_at)
+                ORDER BY date DESC
+            `).all();
+            
+            return {
+                totalDocuments: totalDocs.count,
+                completedDocuments: totalCompleted.count,
+                processingDocuments: totalProcessing.count,
+                failedDocuments: totalFailed.count,
+                completionRate: totalDocs.count > 0 ? (totalCompleted.count / totalDocs.count * 100) : 0,
+                categoryDistribution: categoryStats,
+                recentActivity
+            };
+        } catch (error) {
+            logger.error('Failed to get document statistics', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Get list of unique document tags
+     */
+    async getTags(): Promise<string[]> {
+        try {
+            const db = this.db;
+            
+            // Since keywords are stored as JSON array, we need to extract unique values
+            const documents = db.prepare('SELECT keywords FROM documents WHERE keywords IS NOT NULL').all() as { keywords: string }[];
+            
+            const allTags = new Set<string>();
+            documents.forEach(doc => {
+                try {
+                    const keywords = JSON.parse(doc.keywords);
+                    if (Array.isArray(keywords)) {
+                        keywords.forEach(tag => allTags.add(tag));
+                    }
+                } catch (e) {
+                    // Skip invalid JSON
+                }
+            });
+            
+            return Array.from(allTags).sort();
+        } catch (error) {
+            logger.error('Failed to get document tags', error);
+            throw error;
+        }
+    }
+
+    /**
      * Generate content hash for change detection
      */
     private generateContentHash(content: string): string {

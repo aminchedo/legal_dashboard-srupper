@@ -299,4 +299,36 @@ export async function sources(_req: Request, res: Response) {
   }
 }
 
+/**
+ * Get document statistics
+ */
+export async function statistics(_req: Request, res: Response) {
+  try {
+    const stats = await documentService.getStatistics();
+    return res.json(stats);
+  } catch (error) {
+    logger.error('Failed to get document statistics', error);
+    return res.status(500).json({
+      error: 'Failed to get document statistics',
+      details: (error as Error).message
+    });
+  }
+}
+
+/**
+ * Get list of document tags
+ */
+export async function tags(_req: Request, res: Response) {
+  try {
+    const tags = await documentService.getTags();
+    return res.json({ tags });
+  } catch (error) {
+    logger.error('Failed to get tags', error);
+    return res.status(500).json({
+      error: 'Failed to get tags',
+      details: (error as Error).message
+    });
+  }
+}
+
 
