@@ -2,6 +2,7 @@ from http.server import BaseHTTPRequestHandler
 import json
 import urllib.parse
 from typing import Dict, Any, Optional
+from analytics import handle_analytics_request
 
 # Utility function for safe Persian text handling
 def safe_persian_decode(text: str) -> str:
@@ -29,6 +30,37 @@ class handler(BaseHTTPRequestHandler):
                 response_data = self.handle_analytics_endpoint()
             elif path.startswith("/scraping"):
                 response_data = self.handle_scraping_endpoint()
+            else:
+                self.send_error(404, "Endpoint not found")
+                return
+            
+            # Send successful response
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json; charset=utf-8')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+            self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+            self.end_headers()
+            
+            response_json = json.dumps(response_data, ensure_ascii=False)
+            self.wfile.write(response_json.encode('utf-8'))
+            
+        except Exception as e:
+            self.send_error(500, f'Server Error: {str(e)}')
+    
+    def do_POST(self):
+        """Handle POST requests"""
+        try:
+            # Parse the request path
+            path = self.path.split('?')[0]  # Remove query parameters from path
+            
+            # Get request body
+            content_length = int(self.headers.get('Content-Length', 0))
+            body = self.rfile.read(content_length).decode('utf-8') if content_length > 0 else None
+            
+            # Handle different endpoints
+            if path.startswith("/analytics"):
+                response_data = handle_analytics_request(path, "POST", body)
             else:
                 self.send_error(404, "Endpoint not found")
                 return
@@ -77,10 +109,8 @@ class handler(BaseHTTPRequestHandler):
         """Handle analytics endpoints"""
         path = self.path.split('?')[0]
         
-        if path == "/analytics":
-            return self.get_analytics()
-        else:
-            return {"error": "Analytics endpoint not found", "path": path}
+        # Use the analytics module to handle the request
+        return handle_analytics_request(path, "GET")
     
     def handle_scraping_endpoint(self):
         """Handle scraping endpoints"""
@@ -241,40 +271,7 @@ class handler(BaseHTTPRequestHandler):
         except Exception as e:
             return {"error": "خطای برچسب‌ها", "message": str(e)}
     
-    def get_analytics(self):
-        """Get analytics data"""
-        try:
-            mock_analytics = {
-                "total_documents": 12450,
-                "total_categories": 15,
-                "total_sources": 8,
-                "recent_uploads": 234,
-                "processing_jobs": 12,
-                "completed_jobs": 89,
-                "failed_jobs": 3,
-                "success_rate": 96.7,
-                "categories": [
-                    {"name": "قراردادها", "count": 45, "percentage": 30.0},
-                    {"name": "آراء قضایی", "count": 62, "percentage": 41.3},
-                    {"name": "قوانین", "count": 43, "percentage": 28.7}
-                ],
-                "trends": [
-                    {"date": "2024-01-01", "documents": 120, "growth": 5.2},
-                    {"date": "2024-01-02", "documents": 135, "growth": 12.5},
-                    {"date": "2024-01-03", "documents": 142, "growth": 5.2},
-                    {"date": "2024-01-04", "documents": 158, "growth": 11.3},
-                    {"date": "2024-01-05", "documents": 168, "growth": 6.3}
-                ],
-                "sources": [
-                    {"name": "majles.ir", "count": 45, "status": "active"},
-                    {"name": "dastour.ir", "count": 38, "status": "active"},
-                    {"name": "ilo.ir", "count": 22, "status": "active"},
-                    {"name": "consumer.ir", "count": 15, "status": "inactive"}
-                ]
-            }
-            return mock_analytics
-        except Exception as e:
-            return {"error": "خطای تحلیل", "message": str(e)}
+
     
     def get_scraping_stats(self):
         """Get scraping statistics"""

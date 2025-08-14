@@ -1,168 +1,13 @@
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
-from typing import Optional, Dict, Any, List
 import json
 from datetime import datetime, timedelta
+from typing import Dict, Any, List, Optional
 
-router = APIRouter()
-
-# Model برای POST request
-class AnalyticsRequest(BaseModel):
-    start_date: Optional[str] = None
-    end_date: Optional[str] = None
-    category: Optional[str] = None
-    source: Optional[str] = None
-    status: Optional[str] = None
-    limit: Optional[int] = 50
-
-# قبل (فقط GET):
-@router.get("/analytics")
-async def get_analytics():
-    """دریافت آمار کلی بدون فیلتر"""
+def get_analytics_data(filters: Dict[str, Any] = None) -> Dict[str, Any]:
+    """Get analytics data with optional filters"""
     try:
-        # منطق analytics پایه
-        analytics_data = await get_analytics_data({})
-        
-        return {
-            "status": "success",
-            "message": "آمار کلی با موفقیت دریافت شد",
-            "data": analytics_data,
-            "timestamp": datetime.now().isoformat()
-        }
-    except Exception as e:
-        raise HTTPException(
-            status_code=500, 
-            detail=f"خطا در دریافت آمار: {str(e)}"
-        )
-
-# بعد (هم GET هم POST):
-@router.get("/analytics/advanced")
-async def get_analytics_advanced(
-    start_date: Optional[str] = None,
-    end_date: Optional[str] = None,
-    category: Optional[str] = None,
-    source: Optional[str] = None,
-    status: Optional[str] = None,
-    limit: Optional[int] = 50
-):
-    """دریافت آمار با پارامترهای GET"""
-    try:
-        # منطق analytics با پارامترها
-        filters = {
-            "start_date": start_date,
-            "end_date": end_date, 
-            "category": category,
-            "source": source,
-            "status": status,
-            "limit": limit
-        }
-        
-        # حذف None values
-        filters = {k: v for k, v in filters.items() if v is not None}
-        
-        # اعتبارسنجی تاریخ‌ها
-        if start_date and end_date:
-            try:
-                datetime.fromisoformat(start_date.replace('Z', '+00:00'))
-                datetime.fromisoformat(end_date.replace('Z', '+00:00'))
-            except ValueError:
-                raise HTTPException(
-                    status_code=400, 
-                    detail="فرمت تاریخ نامعتبر است. از فرمت ISO استفاده کنید."
-                )
-        
-        # منطق آمارگیری
-        analytics_data = await get_analytics_data(filters)
-        
-        return {
-            "status": "success",
-            "message": "آمار با فیلترهای اعمال شده دریافت شد",
-            "data": analytics_data,
-            "filters": filters,
-            "timestamp": datetime.now().isoformat()
-        }
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(
-            status_code=500, 
-            detail=f"خطا در دریافت آمار: {str(e)}"
-        )
-
-@router.post("/analytics")
-async def post_analytics(request: AnalyticsRequest):
-    """دریافت آمار با پارامترهای POST"""
-    try:
-        filters = request.dict(exclude_none=True)
-        
-        # اعتبارسنجی تاریخ‌ها
-        if filters.get("start_date") and filters.get("end_date"):
-            try:
-                datetime.fromisoformat(filters["start_date"].replace('Z', '+00:00'))
-                datetime.fromisoformat(filters["end_date"].replace('Z', '+00:00'))
-            except ValueError:
-                raise HTTPException(
-                    status_code=400, 
-                    detail="فرمت تاریخ نامعتبر است. از فرمت ISO استفاده کنید."
-                )
-        
-        # منطق آمارگیری
-        analytics_data = await get_analytics_data(filters)
-        
-        return {
-            "status": "success",
-            "message": "آمار با درخواست POST دریافت شد",
-            "data": analytics_data,
-            "filters": filters,
-            "timestamp": datetime.now().isoformat()
-        }
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(
-            status_code=500, 
-            detail=f"خطا در دریافت آمار: {str(e)}"
-        )
-
-@router.get("/analytics/categories")
-async def get_analytics_categories():
-    """دریافت دسته‌بندی‌های موجود برای فیلتر"""
-    try:
-        categories = await get_available_categories()
-        
-        return {
-            "status": "success",
-            "message": "دسته‌بندی‌های موجود دریافت شد",
-            "data": categories,
-            "timestamp": datetime.now().isoformat()
-        }
-    except Exception as e:
-        raise HTTPException(
-            status_code=500, 
-            detail=f"خطا در دریافت دسته‌بندی‌ها: {str(e)}"
-        )
-
-@router.get("/analytics/sources")
-async def get_analytics_sources():
-    """دریافت منابع موجود برای فیلتر"""
-    try:
-        sources = await get_available_sources()
-        
-        return {
-            "status": "success",
-            "message": "منابع موجود دریافت شد",
-            "data": sources,
-            "timestamp": datetime.now().isoformat()
-        }
-    except Exception as e:
-        raise HTTPException(
-            status_code=500, 
-            detail=f"خطا در دریافت منابع: {str(e)}"
-        )
-
-async def get_analytics_data(filters: Dict[str, Any]) -> Dict[str, Any]:
-    """منطق اصلی آمارگیری"""
-    try:
+        if filters is None:
+            filters = {}
+            
         # شبیه‌سازی داده‌های آمارگیری
         base_data = {
             "total_documents": 12450,
@@ -208,18 +53,59 @@ async def get_analytics_data(filters: Dict[str, Any]) -> Dict[str, Any]:
         ]
         
         return {
-            "summary": base_data,
-            "categories": categories,
-            "trends": trends,
-            "sources": sources,
-            "applied_filters": filters,
-            "generated_at": datetime.now().isoformat()
+            "status": "success",
+            "message": "آمار کلی با موفقیت دریافت شد",
+            "data": {
+                "summary": base_data,
+                "categories": categories,
+                "trends": trends,
+                "sources": sources,
+                "applied_filters": filters,
+                "generated_at": datetime.now().isoformat()
+            },
+            "timestamp": datetime.now().isoformat()
         }
         
     except Exception as e:
-        raise Exception(f"خطا در پردازش داده‌های آمارگیری: {str(e)}")
+        return {
+            "status": "error",
+            "message": f"خطا در پردازش داده‌های آمارگیری: {str(e)}",
+            "timestamp": datetime.now().isoformat()
+        }
 
-async def get_available_categories() -> List[Dict[str, Any]]:
+def get_analytics_advanced(filters: Dict[str, Any]) -> Dict[str, Any]:
+    """Get advanced analytics with filters"""
+    try:
+        # اعتبارسنجی تاریخ‌ها
+        if filters.get("start_date") and filters.get("end_date"):
+            try:
+                datetime.fromisoformat(filters["start_date"].replace('Z', '+00:00'))
+                datetime.fromisoformat(filters["end_date"].replace('Z', '+00:00'))
+            except ValueError:
+                return {
+                    "status": "error",
+                    "message": "فرمت تاریخ نامعتبر است. از فرمت ISO استفاده کنید.",
+                    "timestamp": datetime.now().isoformat()
+                }
+        
+        # منطق آمارگیری
+        analytics_data = get_analytics_data(filters)
+        
+        return {
+            "status": "success",
+            "message": "آمار با فیلترهای اعمال شده دریافت شد",
+            "data": analytics_data["data"],
+            "filters": filters,
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"خطا در دریافت آمار: {str(e)}",
+            "timestamp": datetime.now().isoformat()
+        }
+
+def get_available_categories() -> List[Dict[str, Any]]:
     """دریافت دسته‌بندی‌های موجود"""
     return [
         {"id": "contracts", "name": "قراردادها", "count": 2340},
@@ -229,7 +115,7 @@ async def get_available_categories() -> List[Dict[str, Any]]:
         {"id": "standards", "name": "استانداردها", "count": 890}
     ]
 
-async def get_available_sources() -> List[Dict[str, Any]]:
+def get_available_sources() -> List[Dict[str, Any]]:
     """دریافت منابع موجود"""
     return [
         {"id": "majles", "name": "majles.ir", "status": "active", "count": 45},
@@ -237,3 +123,54 @@ async def get_available_sources() -> List[Dict[str, Any]]:
         {"id": "ilo", "name": "ilo.ir", "status": "active", "count": 22},
         {"id": "consumer", "name": "consumer.ir", "status": "inactive", "count": 15}
     ]
+
+def handle_analytics_request(path: str, method: str = "GET", body: str = None) -> Dict[str, Any]:
+    """Handle analytics requests based on path and method"""
+    try:
+        if path == "/analytics" and method == "GET":
+            return get_analytics_data()
+        elif path == "/analytics/advanced" and method == "GET":
+            # Parse query parameters (simplified)
+            filters = {}
+            return get_analytics_advanced(filters)
+        elif path == "/analytics" and method == "POST":
+            # Parse JSON body
+            if body:
+                try:
+                    request_data = json.loads(body)
+                    filters = {k: v for k, v in request_data.items() if v is not None}
+                    return get_analytics_advanced(filters)
+                except json.JSONDecodeError:
+                    return {
+                        "status": "error",
+                        "message": "فرمت JSON نامعتبر است",
+                        "timestamp": datetime.now().isoformat()
+                    }
+            return get_analytics_data()
+        elif path == "/analytics/categories":
+            return {
+                "status": "success",
+                "message": "دسته‌بندی‌های موجود دریافت شد",
+                "data": get_available_categories(),
+                "timestamp": datetime.now().isoformat()
+            }
+        elif path == "/analytics/sources":
+            return {
+                "status": "success",
+                "message": "منابع موجود دریافت شد",
+                "data": get_available_sources(),
+                "timestamp": datetime.now().isoformat()
+            }
+        else:
+            return {
+                "status": "error",
+                "message": "Analytics endpoint not found",
+                "path": path,
+                "timestamp": datetime.now().isoformat()
+            }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"خطا در پردازش درخواست analytics: {str(e)}",
+            "timestamp": datetime.now().isoformat()
+        }
