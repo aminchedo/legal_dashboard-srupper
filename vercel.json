@@ -9,11 +9,11 @@
   ],
   "functions": {
     "api/**/*.py": {
-      "runtime": "python3.9",
+      "runtime": "python",
       "maxDuration": 30
     },
     "api/**/*.js": {
-      "runtime": "nodejs18.x",
+      "runtime": "nodejs",
       "maxDuration": 30
     }
   },
