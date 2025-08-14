@@ -1,421 +1,489 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
-  Search, 
-  Filter, 
-  Upload, 
   FileText, 
-  Calendar, 
-  User, 
-  Download, 
-  Eye, 
-  Edit3, 
-  Trash2, 
   Grid, 
   List, 
-  SortAsc, 
-  SortDesc, 
-  MoreVertical,
-  Tag,
+  Plus, 
+  Settings, 
+  TrendingUp,
   Clock,
-  FileCheck,
-  AlertTriangle
+  User,
+  ExternalLink,
+  Tag,
+  Star,
+  Calendar,
+  Eye,
+  Edit3,
+  Trash2,
+  Check,
 } from 'lucide-react';
-import { 
-  Card, 
-  CardHeader, 
-  CardTitle, 
-  CardContent, 
-  Button, 
-  Input, 
-  Select, 
-  FileUpload, 
-  StatusBadge 
-} from '../../components/ui';
-import { LEGAL_TERMINOLOGY } from '../../lib/terminology';
-import { cn, formatBytes, formatDate, formatRelativeTime } from '../../lib/utils';
+import { format } from 'date-fns';
+import { faIR } from 'date-fns/locale';
+
+import { apiClient } from '../../services/apiClient';
 import AdvancedDocumentFilter from '../../components/Documents/AdvancedDocumentFilter';
 import BulkOperationsBar from '../../components/Documents/BulkOperationsBar';
+import DocumentPreview from '../../components/Documents/DocumentPreview';
+import ImportExportModal from '../../components/Documents/ImportExportModal';
+import Button from '../../components/ui/Button';
+import Card from '../../components/ui/Card';
+import Badge from '../../components/ui/Badge';
+import LoadingSpinner from '../../components/ui/LoadingSpinner';
 
-// Mock data for documents
-interface Document {
-  id: string;
-  title: string;
-  description?: string;
+type ViewMode = 'grid' | 'list';
+
+interface FilterState {
+  query: string;
   category: string;
-  type: 'contract' | 'legal_opinion' | 'court_ruling' | 'legislation' | 'correspondence' | 'other';
-  status: 'active' | 'archived' | 'pending_review' | 'under_revision';
-  priority: 'high' | 'medium' | 'low';
-  size: number;
-  format: string;
-  createdAt: Date;
-  updatedAt: Date;
-  createdBy: string;
+  source: string;
+  status: string;
+  dateFrom: string;
+  dateTo: string;
   tags: string[];
-  version: number;
-  isConfidential: boolean;
+  minScore: number | null;
+  maxScore: number | null;
+  sortBy: string;
+  sortOrder: 'asc' | 'desc';
+  page: number;
+  limit: number;
 }
 
-const mockDocuments: Document[] = [
-  {
-    id: '1',
-    title: 'قرارداد خدمات حقوقی شرکت آلفا',
-    description: 'قرارداد ارائه خدمات مشاوره حقوقی به مدت یک سال',
-    category: 'قراردادها',
-    type: 'contract',
-    status: 'active',
-    priority: 'high',
-    size: 2048576,
-    format: 'PDF',
-    createdAt: new Date('2024-01-15'),
-    updatedAt: new Date('2024-01-20'),
-    createdBy: 'احمد محمدی',
-    tags: ['قرارداد', 'خدمات', 'حقوقی'],
-    version: 2,
-    isConfidential: true
-  },
-  {
-    id: '2',
-    title: 'نظریه حقوقی در خصوص مالکیت فکری',
-    description: 'بررسی جنبه‌های حقوقی حمایت از مالکیت فکری در قوانین ایران',
-    category: 'نظریات حقوقی',
-    type: 'legal_opinion',
-    status: 'pending_review',
-    priority: 'medium',
-    size: 1536000,
-    format: 'DOCX',
-    createdAt: new Date('2024-01-10'),
-    updatedAt: new Date('2024-01-18'),
-    createdBy: 'مریم احمدی',
-    tags: ['مالکیت فکری', 'نظریه', 'حقوق'],
-    version: 1,
-    isConfidential: false
-  },
-  {
-    id: '3',
-    title: 'رای دیوان عدالت اداری - پرونده ۱۴۰۳۰۱۲۳۴',
-    description: 'رای دیوان در خصوص ابطال تصمیم اداری شهرداری',
-    category: 'آراء قضایی',
-    type: 'court_ruling',
-    status: 'archived',
-    priority: 'low',
-    size: 892416,
-    format: 'PDF',
-    createdAt: new Date('2024-01-05'),
-    updatedAt: new Date('2024-01-05'),
-    createdBy: 'سعید رضایی',
-    tags: ['دیوان', 'عدالت اداری', 'رای'],
-    version: 1,
-    isConfidential: false
-  }
-];
+interface DocumentItem {
+  id: string;
+  title: string;
+  content: string;
+  category: string;
+  source: string;
+  status: 'draft' | 'review' | 'published' | 'archived';
+  score: number;
+  url?: string;
+  wordCount: number;
+  readingTime: number;
+  createdAt: string;
+  updatedAt?: string;
+  publishedAt?: string;
+  createdBy: string;
+  tags: Array<{ id: string; name: string; color?: string }>;
+  domain: string;
+}
 
-const DocumentsListPage: React.FC = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [selectedType, setSelectedType] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState('');
-  const [sortBy, setSortBy] = useState<'title' | 'createdAt' | 'updatedAt' | 'size'>('updatedAt');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [showUpload, setShowUpload] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+const statusConfig = {
+  draft: { label: 'پیش‌نویس', color: '#fbbf24' },
+  review: { label: 'در حال بررسی', color: '#3b82f6' },
+  published: { label: 'منتشر شده', color: '#10b981' },
+  archived: { label: 'بایگانی شده', color: '#6b7280' },
+};
 
-  // Filter and sort documents
-  const filteredAndSortedDocuments = useMemo(() => {
-    let filtered = mockDocuments.filter(doc => {
-      const matchesSearch = searchTerm === '' || 
-        doc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        doc.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        doc.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
-      
-      const matchesCategory = selectedCategory === '' || doc.category === selectedCategory;
-      const matchesType = selectedType === '' || doc.type === selectedType;
-      const matchesStatus = selectedStatus === '' || doc.status === selectedStatus;
-      
-      return matchesSearch && matchesCategory && matchesType && matchesStatus;
-    });
-
-    // Sort documents
-    filtered.sort((a, b) => {
-      let aValue: any = a[sortBy];
-      let bValue: any = b[sortBy];
-      
-      if (sortBy === 'createdAt' || sortBy === 'updatedAt') {
-        aValue = new Date(aValue).getTime();
-        bValue = new Date(bValue).getTime();
-      }
-      
-      if (sortBy === 'title') {
-        aValue = aValue.toLowerCase();
-        bValue = bValue.toLowerCase();
-      }
-      
-      if (sortOrder === 'asc') {
-        return aValue > bValue ? 1 : -1;
-      } else {
-        return aValue < bValue ? 1 : -1;
-      }
-    });
-
-    return filtered;
-  }, [searchTerm, selectedCategory, selectedType, selectedStatus, sortBy, sortOrder]);
-
-  const handleFileUpload = async (files: File[]) => {
-    // Simulate upload process
-    console.log('Uploading files:', files);
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    setShowUpload(false);
-  };
-
-  const getStatusBadge = (status: Document['status']) => {
-    const statusMap = {
-      active: { variant: 'success' as const, label: LEGAL_TERMINOLOGY.status.active },
-      archived: { variant: 'secondary' as const, label: LEGAL_TERMINOLOGY.status.archived },
-      pending_review: { variant: 'warning' as const, label: LEGAL_TERMINOLOGY.status.pending_review },
-      under_revision: { variant: 'error' as const, label: LEGAL_TERMINOLOGY.status.under_revision }
-    };
-    return statusMap[status];
-  };
-
-  const getPriorityBadge = (priority: Document['priority']) => {
-    const priorityMap = {
-      high: { variant: 'error' as const, label: LEGAL_TERMINOLOGY.priority.high },
-      medium: { variant: 'warning' as const, label: LEGAL_TERMINOLOGY.priority.medium },
-      low: { variant: 'secondary' as const, label: LEGAL_TERMINOLOGY.priority.low }
-    };
-    return priorityMap[priority];
-  };
-
-  const getTypeIcon = (type: Document['type']) => {
-    const iconMap = {
-      contract: FileCheck,
-      legal_opinion: FileText,
-      court_ruling: AlertTriangle,
-      legislation: FileText,
-      correspondence: FileText,
-      other: FileText
-    };
-    return iconMap[type] || FileText;
-  };
-
-  const toggleSelect = (id: string) => {
-    setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
-  };
-  const selectAll = () => setSelectedIds(filteredAndSortedDocuments.map(d => d.id));
-  const deselectAll = () => setSelectedIds([]);
-
-  const handleBulkDelete = async (ids: string[]) => { console.log('bulk delete', ids); };
-  const handleBulkCategorize = async (ids: string[], category: string) => { console.log('bulk categorize', ids, category); };
-  const handleBulkTag = async (ids: string[], tags: string[]) => { console.log('bulk tag', ids, tags); };
-  const handleBulkExport = async (ids: string[], format: 'json' | 'csv' | 'xlsx') => { console.log('bulk export', ids, format); };
-  const handleBulkStatusChange = async (ids: string[], status: string) => { console.log('bulk status change', ids, status); };
-
-  const categories = Array.from(new Set(mockDocuments.map(d => d.category))).map((name, idx) => ({ id: String(idx+1), name }));
-  const tags = Array.from(new Set(mockDocuments.flatMap(d => d.tags))).map((name, idx) => ({ id: String(idx+1), name }));
-  const sources = [{ name: 'example.com', count: 12 }, { name: 'gov.ir', count: 8 }];
-
-  const [advFilters, setAdvFilters] = useState({
+export default function EnhancedDocumentsPage() {
+  const queryClient = useQueryClient();
+  
+  // State Management
+  const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const [previewDocument, setPreviewDocument] = useState<DocumentItem | null>(null);
+  const [showImportExport, setShowImportExport] = useState<{ isOpen: boolean; mode: 'import' | 'export' }>({
+    isOpen: false,
+    mode: 'import'
+  });
+  
+  const [filters, setFilters] = useState<FilterState>({
     query: '',
     category: 'همه',
     source: 'همه',
     status: 'همه',
     dateFrom: '',
     dateTo: '',
-    tags: [] as string[],
-    minScore: null as number | null,
-    maxScore: null as number | null,
+    tags: [],
+    minScore: null,
+    maxScore: null,
     sortBy: 'created_at',
-    sortOrder: 'desc' as 'asc' | 'desc',
+    sortOrder: 'desc',
     page: 1,
     limit: 25,
   });
 
-  const handleAdvancedFiltersChange = (partial: Partial<typeof advFilters>) => {
-    setAdvFilters(prev => ({ ...prev, ...partial }));
-  };
+  // Search suggestions state
+  const [suggestions, setSuggestions] = useState<string[]>([]);
 
-  const DocumentCard: React.FC<{ document: Document }> = ({ document }) => {
-    const TypeIcon = getTypeIcon(document.type);
-    const statusBadge = getStatusBadge(document.status);
-    const priorityBadge = getPriorityBadge(document.priority);
-    
-    if (viewMode === 'list') {
-      return (
-        <Card className="hover:shadow-md transition-shadow duration-200">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-4">
-              {/* Icon and Title */}
-              <div className="flex items-center gap-3 flex-1 min-w-0">
-                <input type="checkbox" checked={selectedIds.includes(document.id)} onChange={() => toggleSelect(document.id)} className="ml-2" />
-                <TypeIcon className="w-8 h-8 text-primary-500 flex-shrink-0" />
-                <div className="min-w-0 flex-1">
-                  <h3 className="font-medium text-neutral-900 dark:text-neutral-100 truncate">
-                    {document.title}
-                  </h3>
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400 truncate mt-1">
-                    {document.description}
-                  </p>
-                </div>
-              </div>
+  // Data Fetching
+  const { data: documentsData, isLoading: documentsLoading, error: documentsError } = useQuery({
+    queryKey: ['documents', filters],
+    queryFn: () => apiClient.searchDocuments(filters),
+    keepPreviousData: true,
+  });
 
-              {/* Metadata */}
-              <div className="hidden md:flex items-center gap-4 text-sm text-neutral-500 dark:text-neutral-400">
-                <span>{document.category}</span>
-                <span>{formatBytes(document.size)}</span>
-                <span>{formatRelativeTime(document.updatedAt)}</span>
-              </div>
+  const { data: categoriesData } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => apiClient.getCategories(),
+  });
 
-              {/* Status and Actions */}
-              <div className="flex items-center gap-3">
-                <StatusBadge variant={statusBadge.variant} size="sm">
-                  {statusBadge.label}
-                </StatusBadge>
-                
-                <Button variant="ghost" size="sm" icon={MoreVertical} />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      );
+  const { data: tagsData } = useQuery({
+    queryKey: ['tags'],
+    queryFn: () => apiClient.getTags(),
+  });
+
+  const { data: statisticsData } = useQuery({
+    queryKey: ['document-statistics'],
+    queryFn: () => apiClient.getDocumentStatistics(),
+  });
+
+  // Mutations
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => apiClient.deleteDocument(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['documents']);
+      queryClient.invalidateQueries(['document-statistics']);
+      setSelectedItems(prev => prev.filter(item => item !== id));
+    },
+  });
+
+  const bulkDeleteMutation = useMutation({
+    mutationFn: (ids: string[]) => apiClient.bulkDeleteDocuments(ids),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['documents']);
+      queryClient.invalidateQueries(['document-statistics']);
+      setSelectedItems([]);
+    },
+  });
+
+  const bulkCategorizeMutation = useMutation({
+    mutationFn: ({ ids, category }: { ids: string[]; category: string }) => 
+      apiClient.bulkCategorizeDocuments(ids, category),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['documents']);
+      setSelectedItems([]);
+    },
+  });
+
+  const bulkTagMutation = useMutation({
+    mutationFn: ({ ids, tags }: { ids: string[]; tags: string[] }) => 
+      apiClient.bulkTagDocuments(ids, tags),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['documents']);
+      setSelectedItems([]);
+    },
+  });
+
+  const statusChangeMutation = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: string }) =>
+      apiClient.updateDocumentStatus(id, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['documents']);
+    },
+  });
+
+  // Computed values
+  const documents = documentsData?.items || [];
+  const pagination = documentsData?.pagination;
+  const categories = categoriesData || [];
+  const tags = tagsData || [];
+  const sources = statisticsData?.topDomains ? 
+    Object.entries(statisticsData.topDomains).map(([name, count]) => ({ name, count: count as number })) : 
+    [];
+
+  // Handlers
+  const handleFiltersChange = useCallback((newFilters: Partial<FilterState>) => {
+    setFilters(prev => ({ ...prev, ...newFilters }));
+  }, []);
+
+  const handleSearch = useCallback(async (query: string) => {
+    if (query.trim()) {
+      try {
+        const suggestions = await apiClient.getDocumentSuggestions(query);
+        setSuggestions(suggestions);
+      } catch (error) {
+        console.error('Failed to get suggestions:', error);
+      }
     }
+    setFilters(prev => ({ ...prev, query, page: 1 }));
+  }, []);
 
-    return (
-      <Card className="hover:shadow-md transition-shadow duration-200 group">
-        <CardContent className="p-4 space-y-3">
-          {/* Header */}
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <input type="checkbox" checked={selectedIds.includes(document.id)} onChange={() => toggleSelect(document.id)} className="ml-2" />
-              <TypeIcon className="w-5 h-5 text-primary-500" />
-              {document.isConfidential && (
-                <StatusBadge variant="error" size="sm">محرمانه</StatusBadge>
-              )}
-            </div>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              icon={MoreVertical}
-              className="opacity-0 group-hover:opacity-100 transition-opacity"
-            />
-          </div>
-
-          {/* Title and Description */}
-          <div>
-            <h3 className="font-medium text-neutral-900 dark:text-neutral-100 line-clamp-2 mb-1">
-              {document.title}
-            </h3>
-            {document.description && (
-              <p className="text-sm text-neutral-600 dark:text-neutral-400 line-clamp-2">
-                {document.description}
-              </p>
-            )}
-          </div>
-
-          {/* Tags */}
-          {document.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1">
-              {document.tags.slice(0, 3).map((tag, index) => (
-                <span 
-                  key={index}
-                  className="px-2 py-1 text-xs bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 rounded"
-                >
-                  {tag}
-                </span>
-              ))}
-              {document.tags.length > 3 && (
-                <span className="px-2 py-1 text-xs text-neutral-500 dark:text-neutral-400">
-                  +{document.tags.length - 3}
-                </span>
-              )}
-            </div>
-          )}
-
-          {/* Footer */}
-          <div className="flex items-center justify-between pt-2 border-t border-neutral-100 dark:border-neutral-800">
-            <div className="flex items-center gap-2">
-              <StatusBadge variant={statusBadge.variant} size="sm">
-                {statusBadge.label}
-              </StatusBadge>
-              <StatusBadge variant={priorityBadge.variant} size="sm">
-                {priorityBadge.label}
-              </StatusBadge>
-            </div>
-            
-            <div className="text-xs text-neutral-500 dark:text-neutral-400">
-              {formatBytes(document.size)} • {document.format}
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div className="flex items-center justify-between pt-2">
-            <div className="flex items-center gap-1 text-xs text-neutral-500 dark:text-neutral-400">
-              <User className="w-3 h-3" />
-              <span>{document.createdBy}</span>
-            </div>
-            
-            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              <Button variant="ghost" size="sm" icon={Eye} />
-              <Button variant="ghost" size="sm" icon={Download} />
-              <Button variant="ghost" size="sm" icon={Edit3} />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+  const handleSelectItem = useCallback((id: string) => {
+    setSelectedItems(prev => 
+      prev.includes(id) 
+        ? prev.filter(item => item !== id)
+        : [...prev, id]
     );
-  };
+  }, []);
+
+  const handleSelectAll = useCallback(() => {
+    setSelectedItems(documents.map(doc => doc.id));
+  }, [documents]);
+
+  const handleDeselectAll = useCallback(() => {
+    setSelectedItems([]);
+  }, []);
+
+  const handlePreviewDocument = useCallback(async (document: DocumentItem) => {
+    try {
+      // Fetch complete document data including versions and history
+      const fullDocument = await apiClient.getDocumentById(document.id);
+      setPreviewDocument(fullDocument);
+    } catch (error) {
+      console.error('Failed to fetch document details:', error);
+      setPreviewDocument(document);
+    }
+  }, []);
+
+  const handleEditDocument = useCallback((document: DocumentItem) => {
+    // Implement document editing logic
+    console.log('Edit document:', document.id);
+  }, []);
+
+  const handleDeleteDocument = useCallback(async (id: string) => {
+    if (confirm('آیا از حذف این سند اطمینان دارید؟')) {
+      try {
+        await deleteMutation.mutateAsync(id);
+      } catch (error) {
+        console.error('Failed to delete document:', error);
+      }
+    }
+  }, [deleteMutation]);
+
+  const handleStatusChange = useCallback(async (id: string, status: string) => {
+    try {
+      await statusChangeMutation.mutateAsync({ id, status });
+    } catch (error) {
+      console.error('Failed to change status:', error);
+    }
+  }, [statusChangeMutation]);
+
+  const handleExportDocument = useCallback(async (id: string, format: string) => {
+    try {
+      const blob = await apiClient.exportDocuments({ ids: [id] }, format as any);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `document-${id}.${format}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to export document:', error);
+    }
+  }, []);
+
+  const handleVersionRevert = useCallback(async (id: string, version: number) => {
+    if (confirm(`آیا از بازگردانی به نسخه ${version} اطمینان دارید؟`)) {
+      try {
+        await apiClient.revertDocumentVersion(id, version);
+        queryClient.invalidateQueries(['documents']);
+        setPreviewDocument(null);
+      } catch (error) {
+        console.error('Failed to revert version:', error);
+      }
+    }
+  }, [queryClient]);
+
+  // Bulk operations handlers
+  const handleBulkDelete = useCallback(async (ids: string[]) => {
+    try {
+      await bulkDeleteMutation.mutateAsync(ids);
+    } catch (error) {
+      console.error('Failed to bulk delete:', error);
+      throw error;
+    }
+  }, [bulkDeleteMutation]);
+
+  const handleBulkCategorize = useCallback(async (ids: string[], category: string) => {
+    try {
+      await bulkCategorizeMutation.mutateAsync({ ids, category });
+    } catch (error) {
+      console.error('Failed to bulk categorize:', error);
+      throw error;
+    }
+  }, [bulkCategorizeMutation]);
+
+  const handleBulkTag = useCallback(async (ids: string[], tags: string[]) => {
+    try {
+      await bulkTagMutation.mutateAsync({ ids, tags });
+    } catch (error) {
+      console.error('Failed to bulk tag:', error);
+      throw error;
+    }
+  }, [bulkTagMutation]);
+
+  const handleBulkExport = useCallback(async (ids: string[], format: 'json' | 'csv' | 'xlsx') => {
+    try {
+      const blob = await apiClient.exportDocuments({ ids }, format);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `documents-export.${format}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to bulk export:', error);
+      throw error;
+    }
+  }, []);
+
+  const handleBulkStatusChange = useCallback(async (ids: string[], status: string) => {
+    try {
+      await Promise.all(ids.map(id => apiClient.updateDocumentStatus(id, status)));
+      queryClient.invalidateQueries(['documents']);
+    } catch (error) {
+      console.error('Failed to change status:', error);
+      throw error;
+    }
+  }, [queryClient]);
+
+  // Import/Export handlers
+  const handleImport = useCallback(async (file: File, options: any) => {
+    try {
+      return await apiClient.validateImportFile(file);
+    } catch (error) {
+      console.error('Failed to import:', error);
+      throw error;
+    }
+  }, []);
+
+  const handleExport = useCallback(async (filters: any, format: any, options: any) => {
+    try {
+      const blob = await apiClient.exportDocuments(filters, format);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `documents-export.${format}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to export:', error);
+      throw error;
+    }
+  }, []);
+
+  if (documentsError) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="text-red-500 mb-2">خطا در بارگذاری اسناد</div>
+          <Button variant="outline" onClick={() => queryClient.invalidateQueries(['documents'])}>
+            تلاش مجدد
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      {/* Page Header */}
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
-            {LEGAL_TERMINOLOGY.pages.documents}
-          </h1>
-          <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
-            مدیریت و سازماندهی اسناد و مدارک حقوقی
+          <h1 className="text-3xl font-bold text-gray-900">مدیریت اسناد</h1>
+          <p className="text-gray-600 mt-1">
+            جستجو، مدیریت و سازماندهی اسناد حقوقی
           </p>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <Button
             variant="outline"
-            icon={showFilters ? Filter : Filter}
-            onClick={() => setShowFilters(!showFilters)}
-            className={showFilters ? 'bg-primary-50 text-primary-600' : ''}
+            onClick={() => setShowImportExport({ isOpen: true, mode: 'import' })}
+            leftIcon={<Plus size={18} />}
           >
-            فیلترها
+            درون‌ریزی
           </Button>
+          
           <Button
             variant="primary"
-            icon={Upload}
-            onClick={() => setShowUpload(true)}
+            onClick={() => {/* Handle create document */}}
+            leftIcon={<Plus size={18} />}
           >
-            آپلود سند
+            ایجاد سند جدید
           </Button>
         </div>
       </div>
 
-      {/* Advanced Filter and Bulk Ops */}
+      {/* Statistics Cards */}
+      {statisticsData && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <Card variant="ghost" padding="sm">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <FileText size={20} className="text-blue-600" />
+              </div>
+              <div>
+                <div className="text-sm text-gray-600">کل اسناد</div>
+                <div className="text-xl font-bold text-gray-900">
+                  {statisticsData.totalDocuments?.toLocaleString('fa-IR') || '0'}
+                </div>
+              </div>
+            </div>
+          </Card>
+          
+          <Card variant="ghost" padding="sm">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <TrendingUp size={20} className="text-green-600" />
+              </div>
+              <div>
+                <div className="text-sm text-gray-600">امروز</div>
+                <div className="text-xl font-bold text-gray-900">
+                  {statisticsData.todayCount?.toLocaleString('fa-IR') || '0'}
+                </div>
+              </div>
+            </div>
+          </Card>
+          
+          <Card variant="ghost" padding="sm">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-yellow-100 rounded-lg">
+                <Clock size={20} className="text-yellow-600" />
+              </div>
+              <div>
+                <div className="text-sm text-gray-600">در انتظار بررسی</div>
+                <div className="text-xl font-bold text-gray-900">
+                  {statisticsData.pendingReview?.toLocaleString('fa-IR') || '0'}
+                </div>
+              </div>
+            </div>
+          </Card>
+          
+          <Card variant="ghost" padding="sm">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-purple-100 rounded-lg">
+                <Tag size={20} className="text-purple-600" />
+              </div>
+              <div>
+                <div className="text-sm text-gray-600">دسته‌بندی‌ها</div>
+                <div className="text-xl font-bold text-gray-900">
+                  {categories.length.toLocaleString('fa-IR')}
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Advanced Filter */}
       <AdvancedDocumentFilter
-        filters={advFilters as any}
-        onFiltersChange={handleAdvancedFiltersChange}
+        filters={filters}
+        onFiltersChange={handleFiltersChange}
         categories={categories}
         sources={sources}
         tags={tags}
-        suggestions={["قرارداد", "نظریه حقوقی", "دیوان عدالت"]}
-        isLoading={false}
-        onSearch={(q) => setSearchTerm(q)}
-        onExport={(fmt) => console.log('export', fmt)}
-        onImport={() => setShowUpload(true)}
-        resultCount={filteredAndSortedDocuments.length}
+        suggestions={suggestions}
+        isLoading={documentsLoading}
+        onSearch={handleSearch}
+        onExport={(format) => setShowImportExport({ isOpen: true, mode: 'export' })}
+        onImport={() => setShowImportExport({ isOpen: true, mode: 'import' })}
+        resultCount={pagination?.totalItems}
       />
+
+      {/* Bulk Operations Bar */}
       <BulkOperationsBar
-        selectedItems={selectedIds}
-        totalItems={filteredAndSortedDocuments.length}
-        onSelectAll={selectAll}
-        onDeselectAll={deselectAll}
+        selectedItems={selectedItems}
+        totalItems={documents.length}
+        onSelectAll={handleSelectAll}
+        onDeselectAll={handleDeselectAll}
         onBulkDelete={handleBulkDelete}
         onBulkCategorize={handleBulkCategorize}
         onBulkTag={handleBulkTag}
@@ -423,180 +491,278 @@ const DocumentsListPage: React.FC = () => {
         onBulkStatusChange={handleBulkStatusChange}
         categories={categories}
         tags={tags}
+        isLoading={bulkDeleteMutation.isLoading || bulkCategorizeMutation.isLoading}
       />
 
-      {/* Search and Controls */}
-      <Card>
-        <CardContent className="p-4 space-y-4">
-          {/* Search Bar */}
-          <div className="flex flex-col gap-4 sm:flex-row">
-            <Input
-              placeholder="جستجو در عنوان، توضیحات و برچسب‌ها..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              icon={Search}
-              className="flex-1"
-            />
-            
-            <div className="flex items-center gap-2">
-              {/* View Mode Toggle */}
-              <div className="flex rounded-lg border border-neutral-200 dark:border-neutral-700 p-1">
-                <Button
-                  variant={viewMode === 'grid' ? 'primary' : 'ghost'}
-                  size="sm"
-                                     icon={Grid}
-                  onClick={() => setViewMode('grid')}
-                  className="h-8 w-8 p-0"
-                />
-                <Button
-                  variant={viewMode === 'list' ? 'primary' : 'ghost'}
-                  size="sm"
-                  icon={List}
-                  onClick={() => setViewMode('list')}
-                  className="h-8 w-8 p-0"
-                />
-              </div>
-
-              {/* Sort Controls */}
-              <Select
-                options={[
-                  { value: 'updatedAt', label: 'تاریخ به‌روزرسانی' },
-                  { value: 'createdAt', label: 'تاریخ ایجاد' },
-                  { value: 'title', label: 'عنوان' },
-                  { value: 'size', label: 'حجم فایل' }
-                ]}
-                value={sortBy}
-                onChange={(value) => setSortBy(value as any)}
-                size="sm"
-              />
-              
-              <Button
-                variant="outline"
-                size="sm"
-                icon={sortOrder === 'asc' ? SortAsc : SortDesc}
-                onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                className="h-10 w-10 p-0"
-              />
-            </div>
+      {/* View Controls */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-gray-600">نمایش:</span>
+          <div className="flex rounded-lg border border-gray-300 p-1">
+            <button
+              onClick={() => setViewMode('grid')}
+              className={`p-2 rounded ${viewMode === 'grid' ? 'bg-blue-100 text-blue-700' : 'text-gray-500'}`}
+            >
+              <Grid size={16} />
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={`p-2 rounded ${viewMode === 'list' ? 'bg-blue-100 text-blue-700' : 'text-gray-500'}`}
+            >
+              <List size={16} />
+            </button>
           </div>
-
-          {/* Filters */}
-          {showFilters && (
-            <div className="flex flex-wrap gap-4 pt-4 border-t border-neutral-100 dark:border-neutral-800">
-              <Select
-                label="دسته‌بندی"
-                options={[
-                  { value: '', label: 'همه دسته‌ها' },
-                  { value: 'قراردادها', label: 'قراردادها' },
-                  { value: 'نظریات حقوقی', label: 'نظریات حقوقی' },
-                  { value: 'آراء قضایی', label: 'آراء قضایی' }
-                ]}
-                value={selectedCategory}
-                onChange={setSelectedCategory}
-                size="sm"
-                className="w-48"
-              />
-              
-              <Select
-                label="نوع سند"
-                options={[
-                  { value: '', label: 'همه انواع' },
-                  { value: 'contract', label: LEGAL_TERMINOLOGY.documentTypes.contract },
-                  { value: 'legal_opinion', label: LEGAL_TERMINOLOGY.documentTypes.legal_opinion },
-                  { value: 'court_ruling', label: LEGAL_TERMINOLOGY.documentTypes.court_ruling },
-                  { value: 'legislation', label: LEGAL_TERMINOLOGY.documentTypes.legislation }
-                ]}
-                value={selectedType}
-                onChange={setSelectedType}
-                size="sm"
-                className="w-48"
-              />
-              
-              <Select
-                label="وضعیت"
-                options={[
-                  { value: '', label: 'همه وضعیت‌ها' },
-                  { value: 'active', label: LEGAL_TERMINOLOGY.status.active },
-                  { value: 'archived', label: LEGAL_TERMINOLOGY.status.archived },
-                  { value: 'pending_review', label: LEGAL_TERMINOLOGY.status.pending_review },
-                  { value: 'under_revision', label: LEGAL_TERMINOLOGY.status.under_revision }
-                ]}
-                value={selectedStatus}
-                onChange={setSelectedStatus}
-                size="sm"
-                className="w-48"
-              />
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Results Summary */}
-      <div className="flex items-center justify-between text-sm text-neutral-600 dark:text-neutral-400">
-        <span>
-          {filteredAndSortedDocuments.length} سند از {mockDocuments.length} سند
-        </span>
-        <div className="flex items-center gap-4">
-          <span>مرتب‌سازی بر اساس {sortBy === 'updatedAt' ? 'تاریخ به‌روزرسانی' : sortBy === 'createdAt' ? 'تاریخ ایجاد' : sortBy === 'title' ? 'عنوان' : 'حجم فایل'}</span>
         </div>
+        
+        {pagination && (
+          <div className="text-sm text-gray-600">
+            نمایش {documents.length.toLocaleString('fa-IR')} از {pagination.totalItems.toLocaleString('fa-IR')} سند
+          </div>
+        )}
       </div>
 
-      {/* Documents Grid/List */}
-      {filteredAndSortedDocuments.length === 0 ? (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <FileText className="w-16 h-16 text-neutral-300 dark:text-neutral-600 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-              هیچ سندی یافت نشد
-            </h3>
-            <p className="text-neutral-500 dark:text-neutral-400 mb-4">
-              با تغییر فیلترها یا جستجوی جدید دوباره تلاش کنید
-            </p>
-            <Button variant="primary" icon={Upload} onClick={() => setShowUpload(true)}>
-              آپلود اولین سند
-            </Button>
-          </CardContent>
+      {/* Documents List */}
+      {documentsLoading ? (
+        <div className="flex justify-center py-12">
+          <LoadingSpinner size="lg" />
+        </div>
+      ) : documents.length === 0 ? (
+        <Card variant="ghost" padding="lg" className="text-center py-12">
+          <FileText size={48} className="mx-auto text-gray-300 mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">هیچ سندی یافت نشد</h3>
+          <p className="text-gray-500 mb-4">
+            {filters.query ? 'جستجوی شما نتیجه‌ای نداشت' : 'هنوز سندی اضافه نشده است'}
+          </p>
+          <Button variant="primary" leftIcon={<Plus size={18} />}>
+            ایجاد اولین سند
+          </Button>
         </Card>
       ) : (
-        <div className={cn(
-          viewMode === 'grid' 
-            ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'
-            : 'space-y-3'
-        )}>
-          {filteredAndSortedDocuments.map((document) => (
-            <DocumentCard key={document.id} document={document} />
+        <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' : 'space-y-4'}>
+          {documents.map((document) => (
+            <DocumentCard
+              key={document.id}
+              document={document}
+              viewMode={viewMode}
+              isSelected={selectedItems.includes(document.id)}
+              onSelect={() => handleSelectItem(document.id)}
+              onPreview={() => handlePreviewDocument(document)}
+              onEdit={() => handleEditDocument(document)}
+              onDelete={() => handleDeleteDocument(document.id)}
+              onStatusChange={(status) => handleStatusChange(document.id, status)}
+            />
           ))}
         </div>
       )}
 
-      {/* Upload Modal */}
-      {showUpload && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <Card className="w-full max-w-2xl max-h-[90vh] overflow-auto">
-            <CardHeader>
-              <CardTitle>آپلود سند جدید</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <FileUpload
-                accept=".pdf,.doc,.docx,.txt"
-                multiple
-                maxSize={10 * 1024 * 1024}
-                maxFiles={5}
-                onUpload={handleFileUpload}
-                hint="فرمت‌های مجاز: PDF, DOC, DOCX, TXT - حداکثر حجم: ۱۰ مگابایت"
-              />
-              
-              <div className="flex justify-end gap-2 pt-4 border-t border-neutral-100 dark:border-neutral-800">
-                <Button variant="outline" onClick={() => setShowUpload(false)}>
-                  انصراف
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+      {/* Pagination */}
+      {pagination && pagination.totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2 mt-8">
+          <Button
+            variant="outline"
+            onClick={() => handleFiltersChange({ page: filters.page - 1 })}
+            disabled={filters.page === 1}
+          >
+            قبلی
+          </Button>
+          
+          <span className="text-sm text-gray-600 mx-4">
+            صفحه {filters.page.toLocaleString('fa-IR')} از {pagination.totalPages.toLocaleString('fa-IR')}
+          </span>
+          
+          <Button
+            variant="outline"
+            onClick={() => handleFiltersChange({ page: filters.page + 1 })}
+            disabled={filters.page === pagination.totalPages}
+          >
+            بعدی
+          </Button>
         </div>
       )}
+
+      {/* Document Preview Modal */}
+      <DocumentPreview
+        document={previewDocument}
+        isOpen={!!previewDocument}
+        onClose={() => setPreviewDocument(null)}
+        onEdit={handleEditDocument}
+        onStatusChange={handleStatusChange}
+        onDelete={handleDeleteDocument}
+        onExport={handleExportDocument}
+        onVersionRevert={handleVersionRevert}
+      />
+
+      {/* Import/Export Modal */}
+      <ImportExportModal
+        isOpen={showImportExport.isOpen}
+        mode={showImportExport.mode}
+        onClose={() => setShowImportExport({ isOpen: false, mode: 'import' })}
+        onImport={handleImport}
+        onExport={handleExport}
+        categories={categories}
+        currentFilters={filters}
+      />
     </div>
   );
-};
+}
 
-export default DocumentsListPage;
+// Document Card Component
+interface DocumentCardProps {
+  document: DocumentItem;
+  viewMode: ViewMode;
+  isSelected: boolean;
+  onSelect: () => void;
+  onPreview: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+  onStatusChange: (status: string) => void;
+}
+
+function DocumentCard({
+  document,
+  viewMode,
+  isSelected,
+  onSelect,
+  onPreview,
+  onEdit,
+  onDelete,
+  onStatusChange,
+}: DocumentCardProps) {
+  const statusInfo = statusConfig[document.status];
+
+  if (viewMode === 'list') {
+    return (
+      <Card variant="interactive" padding="md" className={`transition-all ${isSelected ? 'ring-2 ring-blue-500 bg-blue-50' : ''}`}>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={onSelect}
+            className={`w-5 h-5 border-2 rounded flex items-center justify-center ${
+              isSelected ? 'bg-blue-600 border-blue-600 text-white' : 'border-gray-300'
+            }`}
+          >
+            {isSelected && <Check size={12} />}
+          </button>
+          
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-gray-900 truncate cursor-pointer hover:text-blue-600" onClick={onPreview}>
+                  {document.title}
+                </h3>
+                <div className="flex items-center gap-4 mt-1 text-sm text-gray-500">
+                  <span>{document.category}</span>
+                  <span>{format(new Date(document.createdAt), 'yyyy/MM/dd', { locale: faIR })}</span>
+                  <span>{document.wordCount.toLocaleString('fa-IR')} کلمه</span>
+                  <div className="flex items-center gap-1">
+                    <Star size={14} className="text-yellow-500" />
+                    {(document.score * 100).toFixed(0)}%
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <Badge
+                  category={statusInfo.label}
+                  color={statusInfo.color}
+                  variant="filled"
+                  size="sm"
+                />
+                
+                <div className="flex items-center gap-1">
+                  <Button variant="ghost" size="sm" onClick={onPreview}>
+                    <Eye size={16} />
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={onEdit}>
+                    <Edit3 size={16} />
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={onDelete}>
+                    <Trash2 size={16} />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
+  return (
+    <Card variant="interactive" padding="md" className={`transition-all ${isSelected ? 'ring-2 ring-blue-500 bg-blue-50' : ''}`}>
+      <div className="space-y-4">
+        <div className="flex items-start justify-between">
+          <button
+            onClick={onSelect}
+            className={`w-5 h-5 border-2 rounded flex items-center justify-center ${
+              isSelected ? 'bg-blue-600 border-blue-600 text-white' : 'border-gray-300'
+            }`}
+          >
+            {isSelected && <Check size={12} />}
+          </button>
+          
+          <Badge
+            category={statusInfo.label}
+            color={statusInfo.color}
+            variant="filled"
+            size="sm"
+          />
+        </div>
+        
+        <div>
+          <h3 className="font-semibold text-gray-900 mb-2 cursor-pointer hover:text-blue-600" onClick={onPreview}>
+            {document.title}
+          </h3>
+          <p className="text-sm text-gray-600 line-clamp-3">
+            {document.content.slice(0, 150)}...
+          </p>
+        </div>
+        
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-sm text-gray-500">
+            <span>{document.category}</span>
+            <div className="flex items-center gap-1">
+              <Star size={12} className="text-yellow-500" />
+              {(document.score * 100).toFixed(0)}%
+            </div>
+          </div>
+          
+          <div className="flex items-center justify-between text-xs text-gray-500">
+            <span>{format(new Date(document.createdAt), 'yyyy/MM/dd', { locale: faIR })}</span>
+            <span>{document.wordCount.toLocaleString('fa-IR')} کلمه</span>
+          </div>
+        </div>
+        
+        {document.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {document.tags.slice(0, 3).map((tag) => (
+              <Badge
+                key={tag.id}
+                category={tag.name}
+                color={tag.color || '#6b7280'}
+                variant="outline"
+                size="sm"
+              />
+            ))}
+            {document.tags.length > 3 && (
+              <span className="text-xs text-gray-500">+{document.tags.length - 3}</span>
+            )}
+          </div>
+        )}
+        
+        <div className="flex items-center gap-1 pt-2 border-t border-gray-200">
+          <Button variant="ghost" size="sm" onClick={onPreview} className="flex-1">
+            <Eye size={14} />
+          </Button>
+          <Button variant="ghost" size="sm" onClick={onEdit} className="flex-1">
+            <Edit3 size={14} />
+          </Button>
+          {document.url && (
+            <Button variant="ghost" size="sm" onClick={() => window.open(document.url, '_blank')} className="flex-1">
+              <ExternalLink size={14} />
+            </Button>
+          )}
+        </div>
+      </div>
+    </Card>
+  );
+}
