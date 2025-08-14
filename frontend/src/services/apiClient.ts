@@ -376,9 +376,18 @@ class ApiClient {
     // ===== ANALYTICS & STATISTICS =====
 
     async getDocumentAnalytics(dateRange = {}) {
-        return this.fetch('/documents/analytics', {
-            method: 'POST',
-            body: JSON.stringify(dateRange),
+        // Convert dateRange to query parameters for GET request
+        const params = new URLSearchParams();
+        Object.entries(dateRange).forEach(([key, value]) => {
+            if (value !== undefined && value !== null) {
+                params.append(key, String(value));
+            }
+        });
+        const queryString = params.toString();
+        const path = queryString ? `/documents/analytics?${queryString}` : '/documents/analytics';
+        
+        return this.fetch(path, {
+            method: 'GET',
         });
     }
 
@@ -389,9 +398,18 @@ class ApiClient {
     // ===== EXISTING METHODS =====
 
     async getAnalytics(dateRange = {}) {
-        return this.fetchWithFallback('/analytics', mockData.analytics, {
-            method: 'POST',
-            body: JSON.stringify(dateRange),
+        // Convert dateRange to query parameters for GET request
+        const params = new URLSearchParams();
+        Object.entries(dateRange).forEach(([key, value]) => {
+            if (value !== undefined && value !== null) {
+                params.append(key, String(value));
+            }
+        });
+        const queryString = params.toString();
+        const path = queryString ? `/analytics?${queryString}` : '/analytics';
+        
+        return this.fetchWithFallback(path, mockData.analytics, {
+            method: 'GET',
         });
     }
 
