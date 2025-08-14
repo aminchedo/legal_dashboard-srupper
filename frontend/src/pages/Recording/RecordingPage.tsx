@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+```typescript
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   Play, 
   Square, 
@@ -7,6 +8,7 @@ import {
   Database,
   Activity,
   Zap,
+  Brain,
   Search,
   Trash2,
   AlertCircle,
@@ -16,38 +18,434 @@ import {
   Filter,
   BarChart3,
   Server,
+  Wifi,
+  WifiOff,
   Plus,
   RefreshCw,
-  Target,
   Gauge,
-  Wrench
+  Target,
+  Wrench,
+  ChevronDown,
+  ChevronUp,
+  Download,
+  Eye,
+  Layers
 } from 'lucide-react';
 
-// Import new components and types
-import Header from '../../components/Recording/Header';
-import Button from '../../components/Recording/Button';
-import Card from '../../components/Recording/Card';
-import Modal from '../../components/Recording/Modal';
-import { Input, Select, Textarea } from '../../components/Recording/FormField';
-import { colors, spacing, componentStyles, breakpoints } from '../../components/Recording/theme';
-import {
-  ScrapingJob,
-  ScrapingSource,
-  ScrapingLog,
-  ScrapingSettings,
-  SystemHealth,
-  CreateSourceForm
-} from '../../components/Recording/types';
+// Types based on actual backend API
+interface ScrapingJob {
+  id: string;
+  url: string;
+  source_id: string;
+  status: 'pending' | 'running' | 'completed' | 'failed';
+  progress: number;
+  result?: {
+    documentsCreated: number;
+    pagesProcessed: number;
+    bytesProcessed: number;
+  };
+  error?: string;
+  created_at: string;
+  updated_at?: string;
+  completed_at?: string;
+  created_by: string;
+}
 
-const API_BASE = 'http://localhost:3000/api';
+interface ScrapingSource {
+  id: string;
+  name: string;
+  base_url: string;
+  url?: string;
+  category?: string;
+  priority?: number;
+  status?: string;
+  selectors: {
+    content: string;
+    title?: string;
+    date?: string;
+    category?: string;
+    next_page?: string;
+  };
+  headers?: Record<string, string>;
+  created_at: string;
+  updated_at?: string;
+}
 
-// Helper function to get auth headers
-const getAuthHeaders = () => {
-  const token = localStorage.getItem('accessToken');
-  return token ? { Authorization: `Bearer ${token}` } : {};
+interface ScrapingLog {
+  id: string;
+  timestamp: Date;
+  type: 'info' | 'success' | 'warning' | 'error';
+  message: string;
+  details?: string;
+  source?: string;
+  jobId?: string;
+}
+
+interface ScrapingSettings {
+  maxPages: number;
+  delay: number;
+  minContentLength: number;
+  enableRating: boolean;
+  intelligentMode: boolean;
+  useProxies: boolean;
+  parallelJobs: number;
+  contentFilter: string[];
+  language: 'fa' | 'en' | 'auto';
+  depth: number;
+  userAgent: string;
+}
+
+interface SystemHealth {
+  status: string;
+  queue: {
+    waiting: number;
+    active: number;
+    completed: number;
+    failed: number;
+    delayed: number;
+  };
+  perSource: Array<{
+    source: string;
+    count: number;
+  }>;
+  uptime: number;
+}
+
+// Sub-components for better organization
+const ConnectionStatus: React.FC<{ isConnected: boolean }> = ({ isConnected }) => (
+  <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-lg text-sm font-medium ${
+    isConnected 
+      ? 'bg-green-100 text-green-800 border border-green-200' 
+      : 'bg-red-100 text-red-800 border border-red-200'
+  }`}>
+    {isConnected ? <Wifi size={16} /> : <WifiOff size={16} />}
+    <span>{isConnected ? 'متصل' : 'قطع'}</span>
+  </div>
+);
+
+const SystemHealthCard: React.FC<{ 
+  icon: React.ReactNode; 
+  value: number; 
+  label: string; 
+  color: string;
+}> = ({ icon, value, label, color }) => (
+  <div className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-md transition-shadow">
+    <div className="flex items-center justify-between">
+      <div className={`p-2 rounded-lg ${color}`}>
+        {icon}
+      </div>
+      <div className="text-right">
+        <div className="text-2xl font-bold text-gray-900">{value}</div>
+        <div className="text-sm text-gray-600">{label}</div>
+      </div>
+    </div>
+  </div>
+);
+
+const LogEntry: React.FC<{ log: ScrapingLog }> = ({ log }) => {
+  const getLogStyle = (type: ScrapingLog['type']) => {
+    switch (type) {
+      case 'success': 
+        return {
+          icon: <CheckCircle size={16} className="text-green-600" />,
+          bg: 'bg-green-50 border-green-200 text-green-800'
+        };
+      case 'error': 
+        return {
+          icon: <XCircle size={16} className="text-red-600" />,
+          bg: 'bg-red-50 border-red-200 text-red-800'
+        };
+      case 'warning': 
+        return {
+          icon: <AlertCircle size={16} className="text-yellow-600" />,
+          bg: 'bg-yellow-50 border-yellow-200 text-yellow-800'
+        };
+      default: 
+        return {
+          icon: <Activity size={16} className="text-blue-600" />,
+          bg: 'bg-blue-50 border-blue-200 text-blue-800'
+        };
+    }
+  };
+
+  const style = getLogStyle(log.type);
+
+  return (
+    <div className={`p-4 rounded-lg border ${style.bg} transition-all duration-200 hover:shadow-sm`}>
+      <div className="flex items-start gap-3">
+        {style.icon}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between mb-1">
+            <h4 className="font-medium truncate">{log.message}</h4>
+            <span className="text-xs opacity-75 whitespace-nowrap mr-2">
+              {log.timestamp.toLocaleTimeString('fa-IR')}
+            </span>
+          </div>
+          {log.details && (
+            <p className="text-sm opacity-90">{log.details}</p>
+          )}
+          {(log.source || log.jobId) && (
+            <div className="flex gap-4 mt-2 text-xs opacity-75">
+              {log.source && <span>منبع: {log.source}</span>}
+              {log.jobId && <span>Job: {log.jobId}</span>}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 };
 
-const AdvancedScrapingDashboard: React.FC = () => {
+const SourceSelector: React.FC<{
+  sources: ScrapingSource[];
+  selectedSources: string[];
+  onSelectionChange: (sourceId: string) => void;
+  disabled?: boolean;
+}> = ({ sources, selectedSources, onSelectionChange, disabled = false }) => (
+  <div className="space-y-3">
+    <div className="flex items-center justify-between">
+      <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+        <Globe size={20} className="text-blue-600" />
+        منابع موجود
+        <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm">
+          {sources.length}
+        </span>
+      </h3>
+    </div>
+    
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-80 overflow-y-auto">
+      {sources.map((source) => (
+        <label 
+          key={source.id} 
+          className={`relative p-4 rounded-lg border-2 cursor-pointer transition-all ${
+            disabled ? 'opacity-50 cursor-not-allowed' : ''
+          } ${
+            selectedSources.includes(source.id)
+              ? 'border-blue-500 bg-blue-50 shadow-sm'
+              : 'border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300'
+          }`}
+        >
+          <input
+            type="checkbox"
+            checked={selectedSources.includes(source.id)}
+            onChange={() => !disabled && onSelectionChange(source.id)}
+            disabled={disabled}
+            className="absolute top-3 left-3 w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+            aria-labelledby={`source-${source.id}-label`}
+          />
+          
+          <div className="mr-8">
+            <div className="flex items-center gap-2 mb-2">
+              <h4 id={`source-${source.id}-label`} className="font-medium text-gray-900 text-sm">
+                {source.name}
+              </h4>
+              <span className={`px-2 py-1 text-xs rounded-full border ${
+                source.status === 'active' 
+                  ? 'bg-green-100 text-green-800 border-green-200' 
+                  : 'bg-gray-100 text-gray-600 border-gray-200'
+              }`}>
+                {source.status === 'active' ? 'فعال' : 'غیرفعال'}
+              </span>
+            </div>
+            
+            <div className="text-xs text-gray-600 space-y-1">
+              <div>دسته: {source.category || 'نامعلوم'}</div>
+              <div className="truncate">URL: {source.url || source.base_url}</div>
+              <div>اولویت: {source.priority || 2}</div>
+            </div>
+          </div>
+        </label>
+      ))}
+    </div>
+  </div>
+);
+
+const SettingsPanel: React.FC<{
+  settings: ScrapingSettings;
+  onSettingsChange: (settings: ScrapingSettings) => void;
+  disabled?: boolean;
+}> = ({ settings, onSettingsChange, disabled = false }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const updateSetting = (key: keyof ScrapingSettings, value: any) => {
+    onSettingsChange({ ...settings, [key]: value });
+  };
+
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 p-6">
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="w-full flex items-center justify-between text-lg font-semibold text-gray-900 mb-4"
+      >
+        <div className="flex items-center gap-2">
+          <Settings size={20} className="text-gray-600" />
+          تنظیمات
+        </div>
+        {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+      </button>
+
+      {isExpanded && (
+        <div className="space-y-6">
+          {/* Basic Settings */}
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                حداکثر صفحات هر منبع: {settings.maxPages}
+              </label>
+              <input
+                type="range"
+                min="1"
+                max="100"
+                value={settings.maxPages}
+                onChange={(e) => updateSetting('maxPages', parseInt(e.target.value))}
+                disabled={disabled}
+                className="w-full h-2 bg-gray-200 rounded-lg cursor-pointer disabled:opacity-50"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                عمق اسکریپینگ: {settings.depth}
+              </label>
+              <input
+                type="range"
+                min="1"
+                max="20"
+                value={settings.depth}
+                onChange={(e) => updateSetting('depth', parseInt(e.target.value))}
+                disabled={disabled}
+                className="w-full h-2 bg-gray-200 rounded-lg cursor-pointer disabled:opacity-50"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                تأخیر (ثانیه): {settings.delay}
+              </label>
+              <input
+                type="range"
+                min="1"
+                max="10"
+                value={settings.delay}
+                onChange={(e) => updateSetting('delay', parseInt(e.target.value))}
+                disabled={disabled}
+                className="w-full h-2 bg-gray-200 rounded-lg cursor-pointer disabled:opacity-50"
+              />
+            </div>
+          </div>
+
+          {/* Advanced Options */}
+          <div className="space-y-3">
+            <h4 className="font-medium text-gray-900">گزینه‌های پیشرفته</h4>
+            
+            <label className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                checked={settings.intelligentMode}
+                onChange={(e) => updateSetting('intelligentMode', e.target.checked)}
+                disabled={disabled}
+                className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 disabled:opacity-50"
+              />
+              <span className="text-sm text-gray-700">حالت هوشمند</span>
+            </label>
+
+            <label className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                checked={settings.useProxies}
+                onChange={(e) => updateSetting('useProxies', e.target.checked)}
+                disabled={disabled}
+                className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 disabled:opacity-50"
+              />
+              <span className="text-sm text-gray-700">استفاده از پروکسی</span>
+            </label>
+
+            <label className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                checked={settings.enableRating}
+                onChange={(e) => updateSetting('enableRating', e.target.checked)}
+                disabled={disabled}
+                className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 disabled:opacity-50"
+              />
+              <span className="text-sm text-gray-700">رتبه‌بندی کیفیت</span>
+            </label>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const JobStatus: React.FC<{ 
+  jobs: ScrapingJob[]; 
+  isActive: boolean;
+}> = ({ jobs, isActive }) => {
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed': return 'text-green-600';
+      case 'running': return 'text-blue-600';
+      case 'failed': return 'text-red-600';
+      case 'pending': return 'text-yellow-600';
+      default: return 'text-gray-600';
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'completed': return <CheckCircle size={16} />;
+      case 'running': return <Activity size={16} className="animate-spin" />;
+      case 'failed': return <XCircle size={16} />;
+      case 'pending': return <Clock size={16} />;
+      default: return <AlertCircle size={16} />;
+    }
+  };
+
+  if (!jobs.length && !isActive) return null;
+
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 p-6">
+      <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+        <Activity size={20} className="text-blue-600" />
+        Jobs فعال
+        <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm">
+          {jobs.length}
+        </span>
+      </h3>
+      
+      <div className="space-y-3 max-h-64 overflow-y-auto">
+        {jobs.slice(0, 10).map((job) => (
+          <div key={job.id} className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+            <div className="flex items-center gap-2 mb-2">
+              <span className={getStatusColor(job.status)}>
+                {getStatusIcon(job.status)}
+              </span>
+              <p className="font-medium text-gray-900 truncate text-sm">{job.url}</p>
+            </div>
+            
+            <div className="flex items-center gap-4 text-xs text-gray-600">
+              <span>پیشرفت: {job.progress}%</span>
+              <span>وضعیت: {job.status}</span>
+              {job.result && <span>اسناد: {job.result.documentsCreated}</span>}
+            </div>
+            
+            {job.progress > 0 && job.progress < 100 && (
+              <div className="w-full bg-gray-200 rounded-full h-1 mt-2">
+                <div 
+                  className="bg-blue-600 h-1 rounded-full transition-all duration-500"
+                  style={{ width: `${job.progress}%` }}
+                />
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// Main Component
+const ScrapingPage: React.FC = () => {
   // State Management
   const [isScrapingActive, setIsScrapingActive] = useState(false);
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
@@ -56,6 +454,7 @@ const AdvancedScrapingDashboard: React.FC = () => {
   const [scrapingLogs, setScrapingLogs] = useState<ScrapingLog[]>([]);
   const [systemHealth, setSystemHealth] = useState<SystemHealth | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  const [filterLogs, setFilterLogs] = useState<string>('all');
   
   const [settings, setSettings] = useState<ScrapingSettings>({
     maxPages: 10,
@@ -71,31 +470,17 @@ const AdvancedScrapingDashboard: React.FC = () => {
     userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
   });
 
-  const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
-  const [showCreateSource, setShowCreateSource] = useState(false);
-  const [filterLogs, setFilterLogs] = useState<string>('all');
-  const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timeout | null>(null);
-  
-  const [createSourceForm, setCreateSourceForm] = useState<CreateSourceForm>({
-    name: '',
-    base_url: '',
-    category: 'دادگستری',
-    priority: 2,
-    status: 'active',
-    selectors: {
-      content: 'article, main, .content, #content',
-      title: 'h1, h2, title',
-      date: 'time, .date, .publish-date',
-      category: '.category, .cat',
-      next_page: 'a[rel="next"], .pagination a.next'
-    },
-    headers: {}
-  });
-  
   const logsEndRef = useRef<HTMLDivElement>(null);
   const ws = useRef<WebSocket | null>(null);
 
-  // API Functions
+  // API Configuration
+  const API_BASE = 'http://localhost:3000/api';
+  
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('accessToken');
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  };
+
   const apiCall = async (endpoint: string, options: RequestInit = {}) => {
     try {
       const response = await fetch(`${API_BASE}${endpoint}`, {
@@ -119,7 +504,20 @@ const AdvancedScrapingDashboard: React.FC = () => {
     }
   };
 
-  // Real API Integration
+  // Core Functions
+  const addLog = useCallback((type: ScrapingLog['type'], message: string, details?: string, source?: string, jobId?: string) => {
+    const newLog: ScrapingLog = {
+      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+      timestamp: new Date(),
+      type,
+      message,
+      details,
+      source,
+      jobId
+    };
+    setScrapingLogs(prev => [newLog, ...prev.slice(0, 199)]);
+  }, []);
+
   const loadSources = async () => {
     try {
       const data = await apiCall('/scraping/sources');
@@ -150,7 +548,7 @@ const AdvancedScrapingDashboard: React.FC = () => {
     }
   };
 
-  const startRealScraping = async () => {
+  const startScraping = async () => {
     if (selectedSources.length === 0) {
       addLog('warning', 'لطفاً حداقل یک منبع انتخاب کنید', 'برای شروع عملیات اسکریپینگ باید منابع مورد نظر را انتخاب نمایید');
       return;
@@ -206,13 +604,11 @@ const AdvancedScrapingDashboard: React.FC = () => {
         );
 
         let allCompleted = true;
-        let totalProgress = 0;
 
-        jobStatuses.forEach((job, index) => {
+        jobStatuses.forEach((job) => {
           if (job && job.status !== 'completed' && job.status !== 'failed') {
             allCompleted = false;
           }
-          totalProgress += job?.progress || 0;
 
           if (job?.status === 'completed') {
             const source = availableSources.find(s => s.id === job.source_id);
@@ -251,48 +647,6 @@ const AdvancedScrapingDashboard: React.FC = () => {
     }
   };
 
-  const createNewSource = async () => {
-    try {
-      const sourceData = {
-        name: createSourceForm.name,
-        baseUrl: createSourceForm.base_url,
-        category: createSourceForm.category,
-        priority: createSourceForm.priority,
-        status: createSourceForm.status,
-        selectors: createSourceForm.selectors,
-        headers: createSourceForm.headers
-      };
-
-      await apiCall('/scraping/sources', {
-        method: 'POST',
-        body: JSON.stringify(sourceData)
-      });
-
-      addLog('success', 'منبع جدید اضافه شد', `${createSourceForm.name} با موفقیت ثبت شد`);
-      setShowCreateSource(false);
-      await loadSources();
-      
-      // Reset form
-      setCreateSourceForm({
-        name: '',
-        base_url: '',
-        category: 'دادگستری',
-        priority: 2,
-        status: 'active',
-        selectors: {
-          content: 'article, main, .content, #content',
-          title: 'h1, h2, title',
-          date: 'time, .date, .publish-date',
-          category: '.category, .cat',
-          next_page: 'a[rel="next"], .pagination a.next'
-        },
-        headers: {}
-      });
-    } catch (error) {
-      addLog('error', 'خطا در ایجاد منبع', error instanceof Error ? error.message : 'خطای ناشناخته');
-    }
-  };
-
   const runGovernmentScrapers = async () => {
     try {
       addLog('info', 'شروع اسکریپرهای دولتی', 'اجرای تمام اسکریپرهای پیش‌تعریف شده');
@@ -305,34 +659,25 @@ const AdvancedScrapingDashboard: React.FC = () => {
     }
   };
 
-  // Utility Functions
-  const addLog = (type: ScrapingLog['type'], message: string, details?: string, source?: string, jobId?: string) => {
-    const newLog: ScrapingLog = {
-      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-      timestamp: new Date(),
-      type,
-      message,
-      details,
-      source,
-      jobId
-    };
-    setScrapingLogs(prev => [newLog, ...prev.slice(0, 199)]);
+  const handleSourceSelection = (sourceId: string) => {
+    setSelectedSources(prev =>
+      prev.includes(sourceId)
+        ? prev.filter(id => id !== sourceId)
+        : [...prev, sourceId]
+    );
   };
 
-  // Auto-scroll logs to bottom only if user is near bottom
-  useEffect(() => {
-    const logsContainer = logsEndRef.current?.parentElement;
-    if (logsContainer && scrapingLogs.length > 0) {
-      const { scrollTop, scrollHeight, clientHeight } = logsContainer;
-      const isNearBottom = scrollTop + clientHeight >= scrollHeight - 50;
-      
-      if (isNearBottom) {
-        logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-      }
-    }
-  }, [scrapingLogs]);
+  const clearLogs = () => {
+    setScrapingLogs([]);
+    addLog('info', 'لاگ‌ها پاک شدند', 'تاریخچه عملیات پاک گردید');
+  };
 
-  // Initial load and periodic refresh
+  const filteredLogs = scrapingLogs.filter(log => {
+    if (filterLogs === 'all') return true;
+    return log.type === filterLogs;
+  });
+
+  // Effects
   useEffect(() => {
     const initialize = async () => {
       await Promise.all([
@@ -349,877 +694,231 @@ const AdvancedScrapingDashboard: React.FC = () => {
       loadSystemHealth();
     }, 5000);
 
-    setRefreshInterval(interval);
-
-    return () => {
-      if (interval) clearInterval(interval);
-    };
+    return () => clearInterval(interval);
   }, []);
 
-  // WebSocket connection for real-time updates
   useEffect(() => {
-    const connectWebSocket = () => {
-      const wsUrl = API_BASE.replace('/api', '').replace('http', 'ws');
-      ws.current = new WebSocket(`${wsUrl}/ws`);
-
-      ws.current.onopen = () => {
-        console.log('WebSocket connected');
-        addLog('success', 'اتصال زنده برقرار شد', 'WebSocket متصل شد');
-      };
-
-      ws.current.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          
-          if (data.type === 'scraping_update') {
-            addLog('info', `بروزرسانی ${data.jobId}`, 
-              `Progress: ${data.progress}% - ${data.url}`);
-          } else if (data.type === 'job_completed') {
-            addLog('success', 'Job تکمیل شد', `${data.jobId} با موفقیت پایان یافت`);
-            loadJobs();
-          } else if (data.type === 'job_failed') {
-            addLog('error', 'Job ناموفق', `${data.jobId}: ${data.error}`);
-            loadJobs();
-          }
-        } catch (error) {
-          console.error('WebSocket message parse error:', error);
-        }
-      };
-
-      ws.current.onclose = () => {
-        console.log('WebSocket disconnected');
-        addLog('warning', 'اتصال زنده قطع شد', 'WebSocket متصل نیست');
-        setTimeout(connectWebSocket, 5000);
-      };
-
-      ws.current.onerror = (error) => {
-        console.error('WebSocket error:', error);
-        addLog('error', 'خطا در اتصال زنده', 'مشکل در WebSocket');
-      };
-    };
-
-    connectWebSocket();
-
-    return () => {
-      if (ws.current) {
-        ws.current.close();
-      }
-    };
-  }, []);
-
-  const handleSourceSelection = (sourceId: string) => {
-    setSelectedSources(prev =>
-      prev.includes(sourceId)
-        ? prev.filter(id => id !== sourceId)
-        : [...prev, sourceId]
-    );
-  };
-
-  const filteredLogs = scrapingLogs.filter(log => {
-    if (filterLogs === 'all') return true;
-    return log.type === filterLogs;
-  });
-
-  const getLogIcon = (type: ScrapingLog['type']) => {
-    switch (type) {
-      case 'success': return <CheckCircle size={16} style={{ color: colors.status.success.bg }} />;
-      case 'error': return <XCircle size={16} style={{ color: colors.status.error.bg }} />;
-      case 'warning': return <AlertCircle size={16} style={{ color: colors.status.warning.bg }} />;
-      default: return <Activity size={16} style={{ color: colors.status.info.bg }} />;
-    }
-  };
-
-  const getLogBgColor = (type: ScrapingLog['type']) => {
-    switch (type) {
-      case 'success': return { backgroundColor: colors.status.success.lighter, borderColor: colors.status.success.light };
-      case 'error': return { backgroundColor: colors.status.error.lighter, borderColor: colors.status.error.light };
-      case 'warning': return { backgroundColor: colors.status.warning.lighter, borderColor: colors.status.warning.light };
-      default: return { backgroundColor: colors.status.info.lighter, borderColor: colors.status.info.light };
-    }
-  };
-
-  const clearLogs = () => {
-    setScrapingLogs([]);
-    addLog('info', 'لاگ‌ها پاک شدند', 'تاریخچه عملیات پاک گردید');
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed': return colors.status.success.bg;
-      case 'running': return colors.status.info.bg;
-      case 'failed': return colors.status.error.bg;
-      case 'pending': return colors.status.warning.bg;
-      default: return colors.text.muted;
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'completed': return <CheckCircle size={16} />;
-      case 'running': return <Activity size={16} className="animate-spin" />;
-      case 'failed': return <XCircle size={16} />;
-      case 'pending': return <Clock size={16} />;
-      default: return <AlertCircle size={16} />;
-    }
-  };
-
-  // Responsive grid styles
-  const containerStyles: React.CSSProperties = {
-    minHeight: '100vh',
-    background: '#ffffff',
-    padding: spacing.lg,
-  };
-
-  const maxWidthContainerStyles: React.CSSProperties = {
-    maxWidth: '1400px',
-    margin: '0 auto',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: spacing.lg,
-  };
-
-  const gridStyles: React.CSSProperties = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-    gap: spacing.lg,
-  };
-
-  const responsiveGridStyles = `
-    @media (min-width: ${breakpoints.xl}) {
-      .main-grid {
-        grid-template-columns: 2fr 1fr;
-      }
-    }
-    
-    @media (max-width: ${breakpoints.md}) {
-      .system-health-grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
+    const logsContainer = logsEndRef.current?.parentElement;
+    if (logsContainer && scrapingLogs.length > 0) {
+      const { scrollTop, scrollHeight, clientHeight } = logsContainer;
+      const isNearBottom = scrollTop + clientHeight >= scrollHeight - 50;
       
-      .sources-grid {
-        grid-template-columns: 1fr;
+      if (isNearBottom) {
+        logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
       }
     }
-    
-    @media (max-width: ${breakpoints.sm}) {
-      .system-health-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-  `;
+  }, [scrapingLogs]);
 
   return (
-    <>
-      <style>{responsiveGridStyles}</style>
-      <div style={containerStyles}>
-        <div style={maxWidthContainerStyles}>
-          
-          {/* Header */}
-          <Header isConnected={isConnected} />
-
-          {/* System Health Dashboard */}
-          {systemHealth && (
-            <div 
-              className="system-health-grid"
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(5, 1fr)',
-                gap: spacing.md,
-                marginBottom: spacing.lg,
-              }}
-            >
-              <Card hover={false} padding="md">
-                <div style={{ textAlign: 'center' }}>
-                  <Server size={24} style={{ color: colors.accent.success, margin: '0 auto 8px' }} />
-                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: colors.text.primary }}>
-                    {systemHealth.queue.active}
-                  </div>
-                  <div style={{ fontSize: '12px', color: colors.text.muted }}>فعال</div>
-                </div>
-              </Card>
-              
-              <Card hover={false} padding="md">
-                <div style={{ textAlign: 'center' }}>
-                  <Clock size={24} style={{ color: colors.accent.warning, margin: '0 auto 8px' }} />
-                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: colors.text.primary }}>
-                    {systemHealth.queue.waiting}
-                  </div>
-                  <div style={{ fontSize: '12px', color: colors.text.muted }}>در انتظار</div>
-                </div>
-              </Card>
-              
-              <Card hover={false} padding="md">
-                <div style={{ textAlign: 'center' }}>
-                  <CheckCircle size={24} style={{ color: colors.status.success.bg, margin: '0 auto 8px' }} />
-                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: colors.text.primary }}>
-                    {systemHealth.queue.completed}
-                  </div>
-                  <div style={{ fontSize: '12px', color: colors.text.muted }}>تکمیل شده</div>
-                </div>
-              </Card>
-              
-              <Card hover={false} padding="md">
-                <div style={{ textAlign: 'center' }}>
-                  <XCircle size={24} style={{ color: colors.status.error.bg, margin: '0 auto 8px' }} />
-                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: colors.text.primary }}>
-                    {systemHealth.queue.failed}
-                  </div>
-                  <div style={{ fontSize: '12px', color: colors.text.muted }}>ناموفق</div>
-                </div>
-              </Card>
-              
-              <Card hover={false} padding="md">
-                <div style={{ textAlign: 'center' }}>
-                  <Gauge size={24} style={{ color: colors.accent.secondary, margin: '0 auto 8px' }} />
-                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: colors.text.primary }}>
-                    {Math.floor((systemHealth.uptime || 0) / 3600)}h
-                  </div>
-                  <div style={{ fontSize: '12px', color: colors.text.muted }}>آپتایم</div>
-                </div>
-              </Card>
+    <div className="min-h-screen bg-gray-50 p-6" dir="rtl">
+      <div className="max-w-7xl mx-auto space-y-6">
+        
+        {/* Header */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+          <div className="text-center">
+            <div className="flex items-center justify-center gap-4 mb-4">
+              <Brain className="text-blue-600" size={40} />
+              <h1 className="text-4xl font-bold text-gray-900">سیستم اسکریپینگ هوشمند</h1>
+              <ConnectionStatus isConnected={isConnected} />
             </div>
-          )}
+            <p className="text-gray-600 text-lg">پلتفرم پیشرفته جمع‌آوری خودکار اطلاعات حقوقی</p>
+          </div>
+        </div>
 
-          {/* Main Grid */}
-          <div className="main-grid" style={gridStyles}>
+        {/* System Health Dashboard */}
+        {systemHealth && (
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <SystemHealthCard
+              icon={<Server size={20} className="text-white" />}
+              value={systemHealth.queue.active}
+              label="فعال"
+              color="bg-green-500"
+            />
+            <SystemHealthCard
+              icon={<Clock size={20} className="text-white" />}
+              value={systemHealth.queue.waiting}
+              label="در انتظار"
+              color="bg-yellow-500"
+            />
+            <SystemHealthCard
+              icon={<CheckCircle size={20} className="text-white" />}
+              value={systemHealth.queue.completed}
+              label="تکمیل شده"
+              color="bg-blue-500"
+            />
+            <SystemHealthCard
+              icon={<XCircle size={20} className="text-white" />}
+              value={systemHealth.queue.failed}
+              label="ناموفق"
+              color="bg-red-500"
+            />
+            <SystemHealthCard
+              icon={<Gauge size={20} className="text-white" />}
+              value={Math.floor((systemHealth.uptime || 0) / 3600)}
+              label="آپتایم (ساعت)"
+              color="bg-purple-500"
+            />
+          </div>
+        )}
+
+        {/* Main Grid */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          
+          {/* Control Panel */}
+          <div className="xl:col-span-2 space-y-6">
             
-            {/* Control Panel */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.lg }}>
-              
-              {/* Quick Action Buttons */}
-              <Card title="عملیات سریع" icon={Zap}>
-                <div style={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
-                  alignItems: 'center',
-                  marginBottom: spacing.lg,
-                  gap: spacing.md,
-                  flexWrap: 'wrap'
-                }}>
-                  {/* Document Stats */}
-                  <div style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: spacing.lg, 
-                    fontSize: '14px',
-                    flexWrap: 'wrap'
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: spacing.sm }}>
-                      <Database size={16} style={{ color: colors.accent.primary }} />
-                      <span style={{ color: colors.text.muted }}>اسناد کل:</span>
-                      <span style={{ color: colors.text.primary, fontWeight: '600' }}>
-                        {systemHealth?.perSource.reduce((total, source) => total + source.count, 0) || 0}
-                      </span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: spacing.sm }}>
-                      <Activity size={16} style={{ color: colors.accent.warning }} />
-                      <span style={{ color: colors.text.muted }}>در حال پردازش:</span>
-                      <span style={{ color: colors.text.primary, fontWeight: '600' }}>
-                        {systemHealth?.queue.active || 0}
-                      </span>
-                    </div>
-                  </div>
-                </div>
+            {/* Quick Actions */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                  <Zap className="text-yellow-500" size={20} />
+                  عملیات سریع
+                </h3>
                 
-                <div style={{ 
-                  display: 'flex', 
-                  justifyContent: 'flex-end', 
-                  gap: spacing.md,
-                  flexWrap: 'wrap'
-                }}>
-                  <Button
-                    onClick={startRealScraping}
-                    disabled={selectedSources.length === 0 || isScrapingActive}
-                    variant="success"
-                    icon={isScrapingActive ? undefined : Zap}
-                    loading={isScrapingActive}
-                    aria-label="شروع عملیات اسکریپینگ"
-                  >
-                    شروع اسکریپینگ
-                  </Button>
-
-                  <Button
-                    onClick={runGovernmentScrapers}
-                    disabled={isScrapingActive}
-                    variant="primary"
-                    icon={Target}
-                    aria-label="اجرای اسکریپرهای دولتی"
-                  >
-                    اسکریپرهای دولتی
-                  </Button>
-
-                  <Button
-                    onClick={stopAllJobs}
-                    disabled={!isScrapingActive && systemHealth?.queue.active === 0}
-                    variant="danger"
-                    icon={Square}
-                    aria-label="توقف همه عملیات"
-                  >
-                    توقف همه
-                  </Button>
-                </div>
-              </Card>
-
-              {/* Active Jobs */}
-              {activeJobs.length > 0 && (
-                <Card title="Job های فعال" icon={Activity}>
-                  <div style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: spacing.sm,
-                    marginBottom: spacing.md
-                  }}>
-                    <span style={{
-                      backgroundColor: colors.status.success.bg + '30',
-                      color: colors.status.success.text,
-                      padding: `${spacing.xs} ${spacing.sm}`,
-                      borderRadius: '12px',
-                      fontSize: '12px',
-                      fontWeight: '500'
-                    }}>
-                      {activeJobs.length}
+                <div className="flex items-center gap-6 text-sm text-gray-600">
+                  <div className="flex items-center gap-2">
+                    <Database size={16} className="text-blue-500" />
+                    <span>اسناد کل:</span>
+                    <span className="font-semibold text-gray-900">
+                      {systemHealth?.perSource.reduce((total, source) => total + source.count, 0) || 0}
                     </span>
                   </div>
-                  
-                  <div style={{ 
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: spacing.md,
-                    maxHeight: '300px',
-                    overflowY: 'auto',
-                    ...componentStyles.scrollbar
-                  } as React.CSSProperties}>
-                    {activeJobs.slice(0, 10).map((job) => (
-                      <div key={job.id} style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: spacing.md,
-                        background: colors.background.tertiary + '50',
-                        borderRadius: '8px',
-                        border: `1px solid ${colors.border.primary}`
-                      }}>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            gap: spacing.sm, 
-                            marginBottom: spacing.xs 
-                          }}>
-                            <span style={{ color: getStatusColor(job.status) }}>
-                              {getStatusIcon(job.status)}
-                            </span>
-                            <p style={{ 
-                              fontWeight: '500', 
-                              color: colors.text.primary, 
-                              margin: 0,
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap'
-                            }}>
-                              {job.url}
-                            </p>
-                          </div>
-                          <div style={{ 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            gap: spacing.md, 
-                            fontSize: '12px', 
-                            color: colors.text.muted,
-                            flexWrap: 'wrap'
-                          }}>
-                            <span>پیشرفت: {job.progress}%</span>
-                            <span>وضعیت: {job.status}</span>
-                            {job.result && (
-                              <span>اسناد: {job.result.documentsCreated}</span>
-                            )}
-                          </div>
-                          {job.progress > 0 && job.progress < 100 && (
-                            <div style={{
-                              width: '100%',
-                              background: colors.background.surface,
-                              borderRadius: '4px',
-                              height: '4px',
-                              marginTop: spacing.sm,
-                              overflow: 'hidden'
-                            }}>
-                              <div 
-                                style={{
-                                  background: `linear-gradient(90deg, ${colors.accent.primary}, ${colors.accent.secondary})`,
-                                  height: '100%',
-                                  borderRadius: '4px',
-                                  transition: 'width 500ms ease',
-                                  width: `${job.progress}%`
-                                }}
-                              />
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
+                  <div className="flex items-center gap-2">
+                    <Activity size={16} className="text-green-500" />
+                    <span>در حال پردازش:</span>
+                    <span className="font-semibold text-gray-900">
+                      {systemHealth?.queue.active || 0}
+                    </span>
                   </div>
-                </Card>
-              )}
-
-              {/* Source Selection */}
-              <Card title="منابع موجود" icon={Globe}>
-                <div style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: spacing.sm,
-                  marginBottom: spacing.md
-                }}>
-                  <span style={{
-                    backgroundColor: colors.accent.primary + '30',
-                    color: colors.text.primary,
-                    padding: `${spacing.xs} ${spacing.sm}`,
-                    borderRadius: '12px',
-                    fontSize: '12px',
-                    fontWeight: '500'
-                  }}>
-                    {availableSources.length}
-                  </span>
                 </div>
-                
-                <div style={{ 
-                  display: 'flex', 
-                  gap: spacing.sm, 
-                  marginBottom: spacing.lg,
-                  flexWrap: 'wrap'
-                }}>
-                  <Button
-                    onClick={() => setShowCreateSource(true)}
-                    variant="secondary"
-                    icon={Plus}
-                    size="sm"
-                    aria-label="افزودن منبع جدید"
-                  >
-                    منبع جدید
-                  </Button>
-                  
-                  <Button
-                    onClick={loadSources}
-                    variant="secondary"
-                    icon={RefreshCw}
-                    size="sm"
-                    aria-label="بروزرسانی منابع"
-                  >
-                    بروزرسانی
-                  </Button>
-                </div>
-                
-                <div className="sources-grid" style={{ 
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-                  gap: spacing.md,
-                  maxHeight: '400px',
-                  overflowY: 'auto',
-                  ...componentStyles.scrollbar
-                } as React.CSSProperties}>
-                  {availableSources.map((source) => (
-                    <label 
-                      key={source.id} 
-                      style={{
-                        position: 'relative',
-                        padding: spacing.md,
-                        borderRadius: '12px',
-                        border: `2px solid ${
-                          selectedSources.includes(source.id)
-                            ? colors.accent.primary
-                            : colors.border.primary
-                        }`,
-                        background: selectedSources.includes(source.id)
-                          ? colors.accent.primary + '20'
-                          : colors.background.tertiary + '50',
-                        cursor: 'pointer',
-                        transition: 'all 150ms ease',
-                        display: 'block'
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!selectedSources.includes(source.id)) {
-                          e.currentTarget.style.background = colors.background.tertiary;
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!selectedSources.includes(source.id)) {
-                          e.currentTarget.style.background = colors.background.tertiary + '50';
-                        }
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedSources.includes(source.id)}
-                        onChange={() => handleSourceSelection(source.id)}
-                        style={{
-                          position: 'absolute',
-                          top: spacing.md,
-                          right: spacing.md,
-                          width: '18px',
-                          height: '18px',
-                          accentColor: colors.accent.primary,
-                          borderRadius: '4px'
-                        }}
-                        aria-label={`انتخاب منبع ${source.name}`}
-                      />
-                      
-                      <div style={{ marginLeft: spacing.xl }}>
-                        <div style={{ 
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          gap: spacing.sm, 
-                          marginBottom: spacing.sm,
-                          flexWrap: 'wrap'
-                        }}>
-                          <h4 style={{ 
-                            fontWeight: '600', 
-                            color: colors.text.primary, 
-                            fontSize: '14px',
-                            margin: 0
-                          }}>
-                            {source.name}
-                          </h4>
-                          <span style={{
-                            padding: `${spacing.xs} ${spacing.sm}`,
-                            fontSize: '11px',
-                            borderRadius: '8px',
-                            backgroundColor: source.status === 'active' 
-                              ? colors.status.success.bg + '30' 
-                              : colors.status.error.bg + '30',
-                            color: source.status === 'active' 
-                              ? colors.status.success.text 
-                              : colors.status.error.text
-                          }}>
-                            {source.status === 'active' ? 'فعال' : 'غیرفعال'}
-                          </span>
-                        </div>
-                        
-                        <div style={{ 
-                          fontSize: '11px', 
-                          color: colors.text.muted, 
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: spacing.xs
-                        }}>
-                          <div>دسته: {source.category || 'نامعلوم'}</div>
-                          <div style={{ 
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap'
-                          }}>
-                            URL: {source.url || source.base_url}
-                          </div>
-                          <div>اولویت: {source.priority || 2}</div>
-                        </div>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-
-                {selectedSources.length > 0 && (
-                  <div style={{
-                    marginTop: spacing.md,
-                    padding: spacing.md,
-                    background: colors.accent.primary + '10',
-                    border: `1px solid ${colors.accent.primary}30`,
-                    borderRadius: '8px'
-                  }}>
-                    <p style={{ 
-                      fontSize: '14px', 
-                      color: colors.accent.primary,
-                      margin: 0,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: spacing.sm
-                    }}>
-                      <Globe size={16} />
-                      {selectedSources.length} منبع انتخاب شده
-                    </p>
-                  </div>
-                )}
-              </Card>
-
-            </div>
-
-            {/* Settings Panel */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.lg }}>
-              
-              {/* Settings */}
-              <Card title="تنظیمات" icon={Settings}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.lg }}>
-                  <div>
-                    <label style={{
-                      display: 'block',
-                      fontSize: '14px',
-                      fontWeight: '500',
-                      color: colors.text.secondary,
-                      marginBottom: spacing.sm
-                    }}>
-                      حداکثر صفحات: {settings.maxPages}
-                    </label>
-                    <input
-                      type="range"
-                      min="1"
-                      max="100"
-                      value={settings.maxPages}
-                      onChange={(e) => setSettings(prev => ({ ...prev, maxPages: parseInt(e.target.value) }))}
-                      disabled={isScrapingActive}
-                      style={{
-                        width: '100%',
-                        height: '6px',
-                        background: colors.background.surface,
-                        borderRadius: '3px',
-                        outline: 'none',
-                        cursor: isScrapingActive ? 'not-allowed' : 'pointer'
-                      }}
-                    />
-                  </div>
-
-                  <div>
-                    <label style={{
-                      display: 'block',
-                      fontSize: '14px',
-                      fontWeight: '500',
-                      color: colors.text.secondary,
-                      marginBottom: spacing.sm
-                    }}>
-                      عمق اسکریپینگ: {settings.depth}
-                    </label>
-                    <input
-                      type="range"
-                      min="1"
-                      max="20"
-                      value={settings.depth}
-                      onChange={(e) => setSettings(prev => ({ ...prev, depth: parseInt(e.target.value) }))}
-                      disabled={isScrapingActive}
-                      style={{
-                        width: '100%',
-                        height: '6px',
-                        background: colors.background.surface,
-                        borderRadius: '3px',
-                        outline: 'none',
-                        cursor: isScrapingActive ? 'not-allowed' : 'pointer'
-                      }}
-                    />
-                  </div>
-
-                  <div>
-                    <label style={{
-                      display: 'block',
-                      fontSize: '14px',
-                      fontWeight: '500',
-                      color: colors.text.secondary,
-                      marginBottom: spacing.sm
-                    }}>
-                      تأخیر (ثانیه): {settings.delay}
-                    </label>
-                    <input
-                      type="range"
-                      min="1"
-                      max="10"
-                      value={settings.delay}
-                      onChange={(e) => setSettings(prev => ({ ...prev, delay: parseInt(e.target.value) }))}
-                      disabled={isScrapingActive}
-                      style={{
-                        width: '100%',
-                        height: '6px',
-                        background: colors.background.surface,
-                        borderRadius: '3px',
-                        outline: 'none',
-                        cursor: isScrapingActive ? 'not-allowed' : 'pointer'
-                      }}
-                    />
-                  </div>
-
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.sm }}>
-                    <label style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: spacing.sm,
-                      fontSize: '14px',
-                      color: colors.text.secondary,
-                      cursor: 'pointer'
-                    }}>
-                      <input
-                        type="checkbox"
-                        checked={settings.intelligentMode}
-                        onChange={(e) => setSettings(prev => ({ ...prev, intelligentMode: e.target.checked }))}
-                        disabled={isScrapingActive}
-                        style={{
-                          width: '16px',
-                          height: '16px',
-                          accentColor: colors.accent.primary,
-                          borderRadius: '4px'
-                        }}
-                      />
-                      حالت هوشمند
-                    </label>
-
-                    <label style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: spacing.sm,
-                      fontSize: '14px',
-                      color: colors.text.secondary,
-                      cursor: 'pointer'
-                    }}>
-                      <input
-                        type="checkbox"
-                        checked={settings.useProxies}
-                        onChange={(e) => setSettings(prev => ({ ...prev, useProxies: e.target.checked }))}
-                        disabled={isScrapingActive}
-                        style={{
-                          width: '16px',
-                          height: '16px',
-                          accentColor: colors.accent.primary,
-                          borderRadius: '4px'
-                        }}
-                      />
-                      استفاده از پروکسی
-                    </label>
-
-                    <label style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: spacing.sm,
-                      fontSize: '14px',
-                      color: colors.text.secondary,
-                      cursor: 'pointer'
-                    }}>
-                      <input
-                        type="checkbox"
-                        checked={settings.enableRating}
-                        onChange={(e) => setSettings(prev => ({ ...prev, enableRating: e.target.checked }))}
-                        disabled={isScrapingActive}
-                        style={{
-                          width: '16px',
-                          height: '16px',
-                          accentColor: colors.accent.primary,
-                          borderRadius: '4px'
-                        }}
-                      />
-                      رتبه‌بندی کیفیت
-                    </label>
-                  </div>
-
-                  <Button
-                    onClick={() => setShowAdvancedSettings(!showAdvancedSettings)}
-                    variant="secondary"
-                    icon={Wrench}
-                    aria-label="نمایش تنظیمات پیشرفته"
-                  >
-                    تنظیمات پیشرفته
-                  </Button>
-                </div>
-              </Card>
-
-              {/* System Stats */}
-              {systemHealth && systemHealth.perSource.length > 0 && (
-                <Card title="آمار منابع" icon={BarChart3}>
-                  <div style={{ 
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: spacing.sm,
-                    maxHeight: '200px',
-                    overflowY: 'auto',
-                    ...componentStyles.scrollbar
-                  } as React.CSSProperties}>
-                    {systemHealth.perSource.map((stat, index) => (
-                      <div key={index} style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: spacing.sm,
-                        background: colors.background.tertiary + '50',
-                        borderRadius: '8px'
-                      }}>
-                        <span style={{ 
-                          fontSize: '14px', 
-                          color: colors.text.secondary,
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                          flex: 1
-                        }}>
-                          {stat.source}
-                        </span>
-                        <span style={{ 
-                          fontSize: '14px', 
-                          fontWeight: '500', 
-                          color: colors.text.primary,
-                          marginLeft: spacing.sm
-                        }}>
-                          {stat.count}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </Card>
-              )}
-
-              {/* Control Buttons */}
-              <Card>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.md }}>
-                  <Button
-                    onClick={clearLogs}
-                    variant="secondary"
-                    icon={Trash2}
-                    aria-label="پاک کردن لاگ‌ها"
-                  >
-                    پاک کردن لاگ‌ها
-                  </Button>
-                </div>
-              </Card>
-            </div>
-          </div>
-
-          {/* Live Logs Section */}
-          <Card>
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'space-between',
-              marginBottom: spacing.lg,
-              flexWrap: 'wrap',
-              gap: spacing.md
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: spacing.md }}>
-                <h3 style={{ 
-                  fontSize: '20px', 
-                  fontWeight: '700', 
-                  color: colors.text.primary,
-                  margin: 0,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: spacing.sm
-                }}>
-                  <Activity size={24} style={{ color: colors.accent.success }} />
-                  لاگ‌های زنده سیستم
-                </h3>
-                <span style={{
-                  backgroundColor: colors.accent.success + '30',
-                  color: colors.status.success.text,
-                  padding: `${spacing.xs} ${spacing.sm}`,
-                  borderRadius: '12px',
-                  fontSize: '12px',
-                  fontWeight: '500'
-                }}>
-                  {scrapingLogs.length}
-                </span>
               </div>
               
-              <div style={{ display: 'flex', alignItems: 'center', gap: spacing.sm }}>
+              <div className="flex flex-wrap gap-3">
+                <button
+                  onClick={startScraping}
+                  disabled={selectedSources.length === 0 || isScrapingActive}
+                  className="flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                >
+                  {isScrapingActive ? (
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  ) : (
+                    <Play size={18} />
+                  )}
+                  شروع اسکریپینگ
+                </button>
+
+                <button
+                  onClick={runGovernmentScrapers}
+                  disabled={isScrapingActive}
+                  className="flex items-center gap-2 bg-green-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                >
+                  <Target size={18} />
+                  اسکریپرهای دولتی
+                </button>
+
+                <button
+                  onClick={stopAllJobs}
+                  disabled={!isScrapingActive && systemHealth?.queue.active === 0}
+                  className="flex items-center gap-2 bg-red-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                >
+                  <Square size={18} />
+                  توقف همه
+                </button>
+
+                <button
+                  onClick={loadSources}
+                  className="flex items-center gap-2 bg-gray-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-700 transition-colors focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                >
+                  <RefreshCw size={18} />
+                  بروزرسانی
+                </button>
+              </div>
+            </div>
+
+            {/* Job Status */}
+            <JobStatus jobs={activeJobs} isActive={isScrapingActive} />
+
+            {/* Source Selection */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <SourceSelector
+                sources={availableSources}
+                selectedSources={selectedSources}
+                onSelectionChange={handleSourceSelection}
+                disabled={isScrapingActive}
+              />
+              
+              {selectedSources.length > 0 && (
+                <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-800 flex items-center gap-2">
+                    <Globe size={16} />
+                    {selectedSources.length} منبع انتخاب شده
+                  </p>
+                </div>
+              )}
+            </div>
+
+          </div>
+
+          {/* Settings Panel */}
+          <div className="space-y-6">
+            
+            <SettingsPanel
+              settings={settings}
+              onSettingsChange={setSettings}
+              disabled={isScrapingActive}
+            />
+
+            {/* System Stats */}
+            {systemHealth && systemHealth.perSource.length > 0 && (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <BarChart3 size={20} className="text-purple-600" />
+                  آمار منابع
+                </h3>
+                
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {systemHealth.perSource.map((stat, index) => (
+                    <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                      <span className="text-sm text-gray-700 truncate">{stat.source}</span>
+                      <span className="text-sm font-medium text-gray-900">{stat.count}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Control Buttons */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <button
+                onClick={clearLogs}
+                className="w-full flex items-center justify-center gap-2 bg-gray-600 text-white px-6 py-4 rounded-lg font-medium hover:bg-gray-700 transition-colors focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+              >
+                <Trash2 size={20} />
+                پاک کردن لاگ‌ها
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Live Logs Section */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+          <div className="p-6 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+                <Activity size={20} className="text-blue-600" />
+                لاگ‌های زنده سیستم
+                <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm">
+                  {scrapingLogs.length}
+                </span>
+              </h3>
+              
+              <div className="flex items-center gap-2">
+                <label htmlFor="log-filter" className="text-sm text-gray-600">فیلتر:</label>
                 <select
+                  id="log-filter"
                   value={filterLogs}
                   onChange={(e) => setFilterLogs(e.target.value)}
-                  style={{
-                    background: colors.background.tertiary,
-                    color: colors.text.primary,
-                    border: `1px solid ${colors.border.primary}`,
-                    borderRadius: '8px',
-                    padding: `${spacing.sm} ${spacing.md}`,
-                    fontSize: '14px'
-                  }}
-                  aria-label="فیلتر نوع لاگ"
+                  className="bg-white border border-gray-300 rounded-lg px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="all">همه</option>
                   <option value="info">اطلاعات</option>
@@ -1229,348 +928,44 @@ const AdvancedScrapingDashboard: React.FC = () => {
                 </select>
               </div>
             </div>
-            
-            <div style={{
-              height: '400px',
-              overflowY: 'auto',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: spacing.sm,
-              background: `linear-gradient(135deg, ${colors.status.info.lighter}40, ${colors.text.primary}70, ${colors.status.info.lighter}30)`,
-              backdropFilter: 'blur(8px)',
-              borderRadius: '12px',
-              border: `1px solid ${colors.border.secondary}20`,
-              padding: spacing.md,
-              ...componentStyles.scrollbar
-            } as React.CSSProperties}>
-              {filteredLogs.length === 0 ? (
-                <div style={{ 
-                  textAlign: 'center', 
-                  color: colors.text.muted, 
-                  padding: spacing.xl
-                }}>
-                  <Search size={48} style={{ margin: '0 auto 16px', opacity: 0.5 }} />
-                  <p style={{ fontWeight: '500', margin: '0 0 8px' }}>هنوز لاگی ثبت نشده است</p>
-                  <p style={{ fontSize: '14px', margin: 0 }}>پس از شروع عملیات، فعالیت‌ها اینجا نمایش داده می‌شوند</p>
-                </div>
-              ) : (
-                filteredLogs.map((log) => (
-                  <div
-                    key={log.id}
-                    style={{
-                      padding: spacing.md,
-                      borderRadius: '8px',
-                      border: `1px solid`,
-                      transition: 'all 150ms ease',
-                      backdropFilter: 'blur(4px)',
-                      ...getLogBgColor(log.type)
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: spacing.md }}>
-                      {getLogIcon(log.type)}
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ 
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          justifyContent: 'space-between', 
-                          marginBottom: spacing.xs,
-                          gap: spacing.md
-                        }}>
-                          <p style={{ 
-                            fontWeight: '500', 
-                            color: colors.text.inverse,
-                            margin: 0,
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                            flex: 1
-                          }}>
-                            {log.message}
-                          </p>
-                          <span style={{ 
-                            fontSize: '12px', 
-                            color: colors.text.inverse + '80',
-                            whiteSpace: 'nowrap',
-                            marginLeft: spacing.sm
-                          }}>
-                            {log.timestamp.toLocaleTimeString('fa-IR')}
-                          </span>
-                        </div>
-                        {log.details && (
-                          <p style={{ 
-                            fontSize: '14px', 
-                            color: colors.text.inverse + 'C0',
-                            margin: `${spacing.xs} 0 0`
-                          }}>
-                            {log.details}
-                          </p>
-                        )}
-                        {log.source && (
-                          <p style={{ 
-                            fontSize: '12px', 
-                            color: colors.text.inverse + '80',
-                            margin: `${spacing.xs} 0 0`
-                          }}>
-                            منبع: {log.source}
-                          </p>
-                        )}
-                        {log.jobId && (
-                          <p style={{ 
-                            fontSize: '12px', 
-                            color: colors.text.inverse + '80',
-                            margin: `${spacing.xs} 0 0`
-                          }}>
-                            Job ID: {log.jobId}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-              <div ref={logsEndRef} />
-            </div>
-          </Card>
-
-          {/* Create Source Modal */}
-          <Modal
-            isOpen={showCreateSource}
-            onClose={() => setShowCreateSource(false)}
-            title="افزودن منبع جدید"
-            maxWidth="800px"
-          >
-            <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.lg }}>
-              <Input
-                label="نام منبع"
-                value={createSourceForm.name}
-                onChange={(e) => setCreateSourceForm(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="مثال: دادگستری ایران"
-                required
-              />
-              
-              <Input
-                label="URL پایه"
-                type="url"
-                value={createSourceForm.base_url}
-                onChange={(e) => setCreateSourceForm(prev => ({ ...prev, base_url: e.target.value }))}
-                placeholder="https://example.com"
-                required
-              />
-              
-              <div style={{ 
-                display: 'grid', 
-                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
-                gap: spacing.md 
-              }}>
-                <Select
-                  label="دسته‌بندی"
-                  value={createSourceForm.category}
-                  onChange={(e) => setCreateSourceForm(prev => ({ ...prev, category: e.target.value }))}
-                >
-                  <option value="دادگستری">دادگستری</option>
-                  <option value="قانون">قانون</option>
-                  <option value="وکالت">وکالت</option>
-                  <option value="دولتی">دولتی</option>
-                  <option value="اقتصادی">اقتصادی</option>
-                </Select>
-                
-                <Input
-                  label="اولویت"
-                  type="number"
-                  min="1"
-                  max="10"
-                  value={createSourceForm.priority.toString()}
-                  onChange={(e) => setCreateSourceForm(prev => ({ ...prev, priority: parseInt(e.target.value) || 2 }))}
-                />
+          </div>
+          
+          <div className="h-96 overflow-y-auto p-4 space-y-3">
+            {filteredLogs.length === 0 ? (
+              <div className="text-center text-gray-500 py-8">
+                <Search size={48} className="mx-auto mb-4 opacity-50" />
+                <p className="font-medium">هنوز لاگی ثبت نشده است</p>
+                <p className="text-sm">پس از شروع عملیات، فعالیت‌ها اینجا نمایش داده می‌شوند</p>
               </div>
-              
-              <Input
-                label="Selector محتوا"
-                value={createSourceForm.selectors.content}
-                onChange={(e) => setCreateSourceForm(prev => ({ 
-                  ...prev, 
-                  selectors: { ...prev.selectors, content: e.target.value }
-                }))}
-                placeholder="article, main, .content, #content"
-                description="Selector CSS برای استخراج محتوای اصلی"
-              />
-              
-              <div style={{ 
-                display: 'grid', 
-                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
-                gap: spacing.md 
-              }}>
-                <Input
-                  label="Selector عنوان"
-                  value={createSourceForm.selectors.title}
-                  onChange={(e) => setCreateSourceForm(prev => ({ 
-                    ...prev, 
-                    selectors: { ...prev.selectors, title: e.target.value }
-                  }))}
-                  placeholder="h1, h2, title"
-                />
-                
-                <Input
-                  label="Selector تاریخ"
-                  value={createSourceForm.selectors.date}
-                  onChange={(e) => setCreateSourceForm(prev => ({ 
-                    ...prev, 
-                    selectors: { ...prev.selectors, date: e.target.value }
-                  }))}
-                  placeholder="time, .date, .publish-date"
-                />
-              </div>
-            </div>
-            
-            <div style={{ 
-              display: 'flex', 
-              gap: spacing.md, 
-              marginTop: spacing.xl,
-              justifyContent: 'flex-end',
-              flexWrap: 'wrap'
-            }}>
-              <Button
-                onClick={createNewSource}
-                disabled={!createSourceForm.name || !createSourceForm.base_url}
-                variant="success"
-                aria-label="ایجاد منبع جدید"
-              >
-                ایجاد منبع
-              </Button>
-              
-              <Button
-                onClick={() => setShowCreateSource(false)}
-                variant="secondary"
-                aria-label="انصراف از ایجاد منبع"
-              >
-                انصراف
-              </Button>
-            </div>
-          </Modal>
-
-          {/* Advanced Settings Modal */}
-          <Modal
-            isOpen={showAdvancedSettings}
-            onClose={() => setShowAdvancedSettings(false)}
-            title="تنظیمات پیشرفته"
-            maxWidth="600px"
-          >
-            <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.lg }}>
-              <div>
-                <label style={{
-                  display: 'block',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                  color: colors.text.secondary,
-                  marginBottom: spacing.sm
-                }}>
-                  Job های موازی: {settings.parallelJobs}
-                </label>
-                <input
-                  type="range"
-                  min="1"
-                  max="10"
-                  value={settings.parallelJobs}
-                  onChange={(e) => setSettings(prev => ({ ...prev, parallelJobs: parseInt(e.target.value) }))}
-                  style={{
-                    width: '100%',
-                    height: '6px',
-                    background: colors.background.surface,
-                    borderRadius: '3px',
-                    outline: 'none',
-                    cursor: 'pointer'
-                  }}
-                />
-              </div>
-              
-              <Textarea
-                label="User Agent"
-                value={settings.userAgent}
-                onChange={(e) => setSettings(prev => ({ ...prev, userAgent: e.target.value }))}
-                placeholder="Mozilla/5.0..."
-                style={{ height: '80px' }}
-              />
-              
-              <Select
-                label="زبان پردازش"
-                value={settings.language}
-                onChange={(e) => setSettings(prev => ({ ...prev, language: e.target.value as 'fa' | 'en' | 'auto' }))}
-              >
-                <option value="auto">تشخیص خودکار</option>
-                <option value="fa">فارسی</option>
-                <option value="en">انگلیسی</option>
-              </Select>
-            </div>
-            
-            <div style={{ 
-              display: 'flex', 
-              gap: spacing.md, 
-              marginTop: spacing.xl,
-              justifyContent: 'flex-end'
-            }}>
-              <Button
-                onClick={() => setShowAdvancedSettings(false)}
-                variant="primary"
-                aria-label="ذخیره تنظیمات پیشرفته"
-              >
-                ذخیره تنظیمات
-              </Button>
-              
-              <Button
-                onClick={() => setShowAdvancedSettings(false)}
-                variant="secondary"
-                aria-label="انصراف از تنظیمات پیشرفته"
-              >
-                انصراف
-              </Button>
-            </div>
-          </Modal>
-
-          {/* Warning for no selection */}
-          {selectedSources.length === 0 && !isScrapingActive && (
-            <Card>
-              <div style={{
-                background: `linear-gradient(135deg, ${colors.background.secondary}, ${colors.accent.primary}20, ${colors.background.secondary})`,
-                border: `1px solid ${colors.border.primary}`,
-                borderRadius: '16px',
-                padding: spacing.xl,
-                textAlign: 'center'
-              }}>
-                <div style={{ 
-                  display: 'flex', 
-                  flexDirection: 'column', 
-                  alignItems: 'center', 
-                  justifyContent: 'center', 
-                  gap: spacing.md, 
-                  color: colors.text.primary 
-                }}>
-                  <div style={{
-                    padding: spacing.md,
-                    background: colors.status.warning.bg + '30',
-                    borderRadius: '50%'
-                  }}>
-                    <AlertCircle size={32} style={{ color: colors.status.warning.bg }} />
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.sm }}>
-                    <h3 style={{ fontWeight: '700', fontSize: '20px', margin: 0 }}>انتخاب منبع ضروری است</h3>
-                    <p style={{ 
-                      color: colors.text.secondary, 
-                      fontSize: '16px', 
-                      maxWidth: '600px', 
-                      margin: 0,
-                      lineHeight: '1.5'
-                    }}>
-                      لطفاً حداقل یک منبع را انتخاب کنید تا بتوانید عملیات اسکریپینگ را آغاز نمایید
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </Card>
-          )}
+            ) : (
+              filteredLogs.map((log) => (
+                <LogEntry key={log.id} log={log} />
+              ))
+            )}
+            <div ref={logsEndRef} />
+          </div>
         </div>
+
+        {/* Warning for no selection */}
+        {selectedSources.length === 0 && !isScrapingActive && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-8 text-center">
+            <div className="flex flex-col items-center justify-center gap-4">
+              <div className="p-3 bg-yellow-100 rounded-full">
+                <AlertCircle size={32} className="text-yellow-600" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="font-semibold text-xl text-yellow-800">انتخاب منبع ضروری است</h3>
+                <p className="text-yellow-700 text-lg max-w-2xl mx-auto">
+                  لطفاً حداقل یک منبع را انتخاب کنید تا بتوانید عملیات اسکریپینگ را آغاز نمایید
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-    </>
+    </div>
   );
 };
 
-export default AdvancedScrapingDashboard;
+export default ScrapingPage;
+```
