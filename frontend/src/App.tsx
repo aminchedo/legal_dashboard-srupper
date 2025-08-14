@@ -10,7 +10,7 @@ import SystemHealthPage from './pages/System/SystemHealthPage';
 import ProxiesPage from './pages/Proxies/ProxiesPage';
 import SettingsPage from './pages/Settings/SettingsPage';
 import HelpPage from './pages/Help/HelpPage';
-import RecordingPage from './pages/Recording/RecordingPage';
+import RecordingPage from './pages/Recording/Modal';
  import DataPage from './pages/Data/DataPage';
  
 // Create QueryClient with proper configuration
