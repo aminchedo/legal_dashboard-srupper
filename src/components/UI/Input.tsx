@@ -1,147 +1,358 @@
-import React, { forwardRef } from 'react';
+import React, { forwardRef, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../utils/cn';
 
-export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  variant?: 'default' | 'filled' | 'outline';
-  inputSize?: 'sm' | 'md' | 'lg';
-  error?: boolean;
-  helperText?: string;
+export interface InputProps {
+  type?: 'text' | 'email' | 'password' | 'number' | 'tel' | 'url' | 'search';
+  placeholder?: string;
+  value?: string;
+  defaultValue?: string;
+  onChange?: (value: string) => void;
+  onFocus?: () => void;
+  onBlur?: () => void;
+  disabled?: boolean;
+  loading?: boolean;
+  error?: string;
+  success?: boolean;
+  warning?: string;
   label?: string;
-  leftIcon?: React.ReactNode;
-  rightIcon?: React.ReactNode;
+  helperText?: string;
+  required?: boolean;
+  size?: 'sm' | 'md' | 'lg';
+  variant?: 'default' | 'outlined' | 'filled';
+  icon?: React.ReactNode;
+  iconPosition?: 'left' | 'right';
+  clearable?: boolean;
+  className?: string;
   fullWidth?: boolean;
+  autoFocus?: boolean;
+  maxLength?: number;
+  minLength?: number;
+  pattern?: string;
+  name?: string;
+  id?: string;
 }
 
 const Input = forwardRef<HTMLInputElement, InputProps>(
-  (
-    {
-      className,
-      variant = 'default',
-      inputSize = 'md',
-      error = false,
-      helperText,
-      label,
-      leftIcon,
-      rightIcon,
-      fullWidth = false,
-      id,
-      ...props
-    },
-    ref
-  ) => {
-    const inputId = id || `input-${Math.random().toString(36).substr(2, 9)}`;
+  ({
+    type = 'text',
+    placeholder,
+    value,
+    defaultValue,
+    onChange,
+    onFocus,
+    onBlur,
+    disabled = false,
+    loading = false,
+    error,
+    success = false,
+    warning,
+    label,
+    helperText,
+    required = false,
+    size = 'md',
+    variant = 'default',
+    icon,
+    iconPosition = 'left',
+    clearable = false,
+    className,
+    fullWidth = false,
+    autoFocus = false,
+    maxLength,
+    minLength,
+    pattern,
+    name,
+    id,
+  }, ref) => {
+    const [isFocused, setIsFocused] = useState(false);
+    const [internalValue, setInternalValue] = useState(defaultValue || '');
 
-    const baseClasses = 'transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50';
-
-    const variantClasses = {
-      default: 'border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500',
-      filled: 'border-0 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:bg-white dark:focus:bg-gray-800',
-      outline: 'border-2 border-gray-300 dark:border-gray-600 bg-transparent text-gray-900 dark:text-white focus:ring-0 focus:border-blue-500',
-    };
+    const currentValue = value !== undefined ? value : internalValue;
 
     const sizeClasses = {
       sm: 'px-3 py-2 text-sm',
-      md: 'px-4 py-3 text-base',
-      lg: 'px-5 py-4 text-lg',
+      md: 'px-4 py-2.5 text-sm',
+      lg: 'px-4 py-3 text-base',
     };
 
-    const errorClasses = error
-      ? 'border-red-300 dark:border-red-600 text-red-900 dark:text-red-100 focus:ring-red-500 focus:border-red-500'
-      : '';
-
-    const widthClasses = fullWidth ? 'w-full' : '';
-
-    const iconPaddingClasses = {
-      left: leftIcon ? (inputSize === 'sm' ? 'pl-10' : inputSize === 'lg' ? 'pl-12' : 'pl-11') : '',
-      right: rightIcon ? (inputSize === 'sm' ? 'pr-10' : inputSize === 'lg' ? 'pr-12' : 'pr-11') : '',
+    const variantClasses = {
+      default: 'premium-input',
+      outlined: 'premium-input border-2',
+      filled: 'premium-input bg-gray-50 border-gray-200 focus:bg-white',
     };
 
-    const inputClasses = cn(
-      baseClasses,
-      variantClasses[variant],
-      sizeClasses[inputSize],
-      errorClasses,
-      widthClasses,
-      iconPaddingClasses.left,
-      iconPaddingClasses.right,
-      'rounded-lg',
-      className
-    );
-
-    const iconSizeClasses = {
-      sm: 'h-4 w-4',
-      md: 'h-5 w-5',
-      lg: 'h-6 w-6',
+    const stateClasses = {
+      default: 'border-gray-300 focus:border-blue-500 focus:ring-blue-500',
+      error: 'border-red-300 focus:border-red-500 focus:ring-red-500',
+      success: 'border-green-300 focus:border-green-500 focus:ring-green-500',
+      warning: 'border-yellow-300 focus:border-yellow-500 focus:ring-yellow-500',
     };
 
-    const iconPositionClasses = {
-      left: {
-        sm: 'left-3',
-        md: 'left-3',
-        lg: 'left-4',
-      },
-      right: {
-        sm: 'right-3',
-        md: 'right-3',
-        lg: 'right-4',
-      },
+    const getStateClass = () => {
+      if (error) return stateClasses.error;
+      if (success) return stateClasses.success;
+      if (warning) return stateClasses.warning;
+      return stateClasses.default;
     };
 
-    return (
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const newValue = e.target.value;
+      if (value === undefined) {
+        setInternalValue(newValue);
+      }
+      onChange?.(newValue);
+    };
+
+    const handleFocus = () => {
+      setIsFocused(true);
+      onFocus?.();
+    };
+
+    const handleBlur = () => {
+      setIsFocused(false);
+      onBlur?.();
+    };
+
+    const handleClear = () => {
+      if (value === undefined) {
+        setInternalValue('');
+      }
+      onChange?.('');
+    };
+
+    const inputElement = (
       <div className={cn('relative', fullWidth && 'w-full')}>
+        {/* Label */}
         {label && (
-          <label
-            htmlFor={inputId}
-            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+          <motion.label
+            htmlFor={id}
+            className={cn(
+              'block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 persian-text',
+              required && 'after:content-["*"] after:ml-1 after:text-red-500'
+            )}
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2 }}
           >
             {label}
-          </label>
+          </motion.label>
         )}
-        
+
+        {/* Input Container */}
         <div className="relative">
-          {leftIcon && (
-            <div className={cn(
-              'absolute inset-y-0 flex items-center pointer-events-none text-gray-400 dark:text-gray-500',
-              iconPositionClasses.left[inputSize]
-            )}>
-              <div className={iconSizeClasses[inputSize]}>
-                {leftIcon}
-              </div>
+          {/* Left Icon */}
+          {icon && iconPosition === 'left' && (
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <motion.div
+                className="text-gray-400"
+                animate={loading ? { rotate: 360 } : {}}
+                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+              >
+                {icon}
+              </motion.div>
             </div>
           )}
-          
+
+          {/* Input Field */}
           <input
             ref={ref}
-            id={inputId}
-            className={inputClasses}
-            {...props}
+            type={type}
+            id={id}
+            name={name}
+            value={currentValue}
+            placeholder={placeholder}
+            onChange={handleChange}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            disabled={disabled || loading}
+            autoFocus={autoFocus}
+            maxLength={maxLength}
+            minLength={minLength}
+            pattern={pattern}
+            className={cn(
+              'premium-input w-full transition-all duration-200',
+              sizeClasses[size],
+              variantClasses[variant],
+              getStateClass(),
+              icon && iconPosition === 'left' && 'pl-10',
+              icon && iconPosition === 'right' && 'pr-10',
+              clearable && currentValue && 'pr-10',
+              disabled && 'opacity-50 cursor-not-allowed',
+              className
+            )}
           />
-          
-          {rightIcon && (
-            <div className={cn(
-              'absolute inset-y-0 flex items-center pointer-events-none text-gray-400 dark:text-gray-500',
-              iconPositionClasses.right[inputSize]
-            )}>
-              <div className={iconSizeClasses[inputSize]}>
-                {rightIcon}
+
+          {/* Right Icon or Clear Button */}
+          <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+            {loading && (
+              <motion.div
+                className="text-gray-400"
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </motion.div>
+            )}
+            
+            {!loading && icon && iconPosition === 'right' && (
+              <div className="text-gray-400">
+                {icon}
               </div>
-            </div>
-          )}
+            )}
+            
+            {!loading && clearable && currentValue && (
+              <motion.button
+                type="button"
+                onClick={handleClear}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </motion.button>
+            )}
+          </div>
+
+          {/* Focus Ring Animation */}
+          <AnimatePresence>
+            {isFocused && (
+              <motion.div
+                className="absolute inset-0 rounded-lg ring-2 ring-blue-500 ring-opacity-20 pointer-events-none"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.2 }}
+              />
+            )}
+          </AnimatePresence>
         </div>
-        
-        {helperText && (
-          <p className={cn(
-            'mt-2 text-sm',
-            error ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'
-          )}>
-            {helperText}
-          </p>
+
+        {/* Helper Text and Error Messages */}
+        <AnimatePresence>
+          {(helperText || error || warning) && (
+            <motion.div
+              className="mt-2"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              {error && (
+                <p className="text-sm text-red-600 dark:text-red-400 persian-text">
+                  {error}
+                </p>
+              )}
+              {warning && !error && (
+                <p className="text-sm text-yellow-600 dark:text-yellow-400 persian-text">
+                  {warning}
+                </p>
+              )}
+              {helperText && !error && !warning && (
+                <p className="text-sm text-gray-500 dark:text-gray-400 persian-text">
+                  {helperText}
+                </p>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Character Counter */}
+        {maxLength && (
+          <div className="mt-1 text-right">
+            <span className={cn(
+              'text-xs',
+              currentValue.length > maxLength * 0.9 ? 'text-red-500' : 'text-gray-400'
+            )}>
+              {currentValue.length}/{maxLength}
+            </span>
+          </div>
         )}
       </div>
     );
+
+    return inputElement;
   }
 );
 
 Input.displayName = 'Input';
+
+// Specialized Input Components
+export const SearchInput: React.FC<{
+  placeholder?: string;
+  value?: string;
+  onChange?: (value: string) => void;
+  onSearch?: (value: string) => void;
+  loading?: boolean;
+  className?: string;
+}> = ({ placeholder = 'جستجو...', value, onChange, onSearch, loading, className }) => {
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      onSearch?.(value || '');
+    }
+  };
+
+  return (
+    <Input
+      type="search"
+      placeholder={placeholder}
+      value={value}
+      onChange={onChange}
+      onKeyPress={handleKeyPress}
+      loading={loading}
+      icon={
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+      }
+      iconPosition="left"
+      className={className}
+    />
+  );
+};
+
+export const PasswordInput: React.FC<{
+  placeholder?: string;
+  value?: string;
+  onChange?: (value: string) => void;
+  showToggle?: boolean;
+  className?: string;
+}> = ({ placeholder = 'رمز عبور', value, onChange, showToggle = true, className }) => {
+  const [showPassword, setShowPassword] = useState(false);
+
+  return (
+    <Input
+      type={showPassword ? 'text' : 'password'}
+      placeholder={placeholder}
+      value={value}
+      onChange={onChange}
+      icon={
+        showToggle ? (
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            {showPassword ? (
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
+              </svg>
+            ) : (
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+            )}
+          </button>
+        ) : undefined
+      }
+      iconPosition="right"
+      className={className}
+    />
+  );
+};
 
 export default Input;

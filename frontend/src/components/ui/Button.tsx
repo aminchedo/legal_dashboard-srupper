@@ -1,268 +1,234 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { LucideIcon, Loader2 } from 'lucide-react';
-import { cn } from '../../lib/utils';
+import React from 'react';
+import { motion } from 'framer-motion';
+import { cn } from '../../utils/cn';
 
-export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'ghost' | 'outline';
-  size?: 'sm' | 'md' | 'lg' | 'xl';
-  icon?: LucideIcon;
-  iconPosition?: 'left' | 'right';
-  loading?: boolean;
-  fullWidth?: boolean;
-  asChild?: boolean;
+export interface ButtonProps {
   children: React.ReactNode;
-  ripple?: boolean; // Enable ripple effect
-  bounce?: boolean; // Enable bounce animation
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'success';
+  size?: 'sm' | 'md' | 'lg' | 'xl';
+  loading?: boolean;
+  disabled?: boolean;
+  fullWidth?: boolean;
+  icon?: React.ReactNode;
+  iconPosition?: 'left' | 'right';
+  onClick?: () => void;
+  className?: string;
+  type?: 'button' | 'submit' | 'reset';
+  gradient?: boolean;
+  animate?: boolean;
 }
 
-const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({
-    className,
-    variant = 'primary',
-    size = 'md',
-    icon: Icon,
-    iconPosition = 'left',
-    loading = false,
-    fullWidth = false,
-    asChild = false,
-    disabled,
-    children,
-    ripple = true,
-    bounce = false,
-    onClick,
-    ...props
-  }, ref) => {
-    const [isPressed, setIsPressed] = useState(false);
-    const [ripples, setRipples] = useState<Array<{ id: number; x: number; y: number }>>([]);
+const Button: React.FC<ButtonProps> = ({
+  children,
+  variant = 'primary',
+  size = 'md',
+  loading = false,
+  disabled = false,
+  fullWidth = false,
+  icon,
+  iconPosition = 'left',
+  onClick,
+  className,
+  type = 'button',
+  gradient = false,
+  animate = true,
+}) => {
+  const sizeClasses = {
+    sm: 'px-3 py-2 text-sm',
+    md: 'px-4 py-2.5 text-sm',
+    lg: 'px-6 py-3 text-base',
+    xl: 'px-8 py-4 text-lg',
+  };
 
-    const baseClasses = cn(
-      'relative inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-all duration-200',
-      'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500',
-      'disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none',
-      'overflow-hidden', // For ripple effect
-      'rtl:flex-row-reverse select-none'
-    );
+  const variantClasses = {
+    primary: gradient 
+      ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg hover:shadow-xl hover:from-blue-600 hover:to-purple-700'
+      : 'bg-blue-600 text-white shadow-md hover:bg-blue-700 hover:shadow-lg',
+    secondary: 'bg-gray-100 text-gray-900 border border-gray-200 hover:bg-gray-200 hover:border-gray-300',
+    outline: 'bg-transparent text-blue-600 border-2 border-blue-600 hover:bg-blue-50 hover:border-blue-700',
+    ghost: 'bg-transparent text-gray-600 hover:bg-gray-100 hover:text-gray-900',
+    danger: 'bg-red-600 text-white shadow-md hover:bg-red-700 hover:shadow-lg',
+    success: 'bg-green-600 text-white shadow-md hover:bg-green-700 hover:shadow-lg',
+  };
 
-    const variants = {
-      primary: cn(
-        'bg-primary-600 text-white shadow-sm border border-primary-600',
-        'hover:bg-primary-700 hover:border-primary-700 hover:shadow-md',
-        'active:bg-primary-800 active:shadow-sm',
-        'focus:ring-primary-200 dark:focus:ring-primary-800'
-      ),
-      secondary: cn(
-        'bg-neutral-100 text-neutral-900 shadow-sm border border-neutral-200',
-        'hover:bg-neutral-200 hover:border-neutral-300 hover:shadow-md',
-        'active:bg-neutral-300 active:shadow-sm',
-        'focus:ring-neutral-200 dark:bg-neutral-800 dark:text-neutral-100 dark:border-neutral-700',
-        'dark:hover:bg-neutral-700 dark:hover:border-neutral-600'
-      ),
-      success: cn(
-        'bg-success-600 text-white shadow-sm border border-success-600',
-        'hover:bg-success-700 hover:border-success-700 hover:shadow-md',
-        'active:bg-success-800 active:shadow-sm',
-        'focus:ring-success-200 dark:focus:ring-success-800'
-      ),
-      warning: cn(
-        'bg-warning-600 text-white shadow-sm border border-warning-600',
-        'hover:bg-warning-700 hover:border-warning-700 hover:shadow-md',
-        'active:bg-warning-800 active:shadow-sm',
-        'focus:ring-warning-200 dark:focus:ring-warning-800'
-      ),
-      error: cn(
-        'bg-error-600 text-white shadow-sm border border-error-600',
-        'hover:bg-error-700 hover:border-error-700 hover:shadow-md',
-        'active:bg-error-800 active:shadow-sm',
-        'focus:ring-error-200 dark:focus:ring-error-800'
-      ),
-      ghost: cn(
-        'text-neutral-700 dark:text-neutral-300',
-        'hover:bg-neutral-100 dark:hover:bg-neutral-800',
-        'active:bg-neutral-200 dark:active:bg-neutral-700'
-      ),
-      outline: cn(
-        'bg-transparent text-neutral-700 border border-neutral-300 shadow-sm',
-        'hover:bg-neutral-50 hover:border-neutral-400 hover:shadow-md',
-        'active:bg-neutral-100 active:shadow-sm',
-        'focus:ring-neutral-200 dark:text-neutral-300 dark:border-neutral-600',
-        'dark:hover:bg-neutral-800 dark:hover:border-neutral-500'
-      )
-    };
+  const disabledClasses = disabled || loading
+    ? 'opacity-50 cursor-not-allowed pointer-events-none'
+    : '';
 
-    const sizes = {
-      sm: 'h-8 px-3 text-sm',
-      md: 'h-10 px-4 text-sm',
-      lg: 'h-12 px-6 text-base',
-      xl: 'h-14 px-8 text-lg'
-    };
-
-    const widthClasses = fullWidth ? 'w-full' : '';
-
-    const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-      if (disabled || loading) return;
-
-      // Create ripple effect
-      if (ripple) {
-        const rect = e.currentTarget.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        const newRipple = { id: Date.now(), x, y };
-        
-        setRipples(prev => [...prev, newRipple]);
-        
-        // Remove ripple after animation
-        setTimeout(() => {
-          setRipples(prev => prev.filter(r => r.id !== newRipple.id));
-        }, 600);
-      }
-
-      // Handle bounce effect
-      if (bounce) {
-        setIsPressed(true);
-        setTimeout(() => setIsPressed(false), 150);
-      }
-
-      onClick?.(e);
-    };
-
-    const renderContent = () => {
-      if (loading) {
-        return (
-          <AnimatePresence mode="wait">
-            <motion.div
-              key="loading"
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              transition={{ duration: 0.2 }}
-              className="flex items-center gap-2 rtl:flex-row-reverse"
-            >
-              <Loader2 className="w-4 h-4 animate-spin" />
-              {typeof children === 'string' ? 'در حال پردازش...' : children}
-            </motion.div>
-          </AnimatePresence>
-        );
-      }
-
-      const content = (
-        <>
-          {Icon && iconPosition === 'left' && (
-            <motion.div
-              initial={false}
-              animate={{ rotate: isPressed && bounce ? 360 : 0 }}
-              transition={{ duration: 0.3, type: "spring" }}
-            >
-              <Icon className="w-4 h-4 flex-shrink-0" />
-            </motion.div>
-          )}
-          <span className="min-w-0">{children}</span>
-          {Icon && iconPosition === 'right' && (
-            <motion.div
-              initial={false}
-              animate={{ rotate: isPressed && bounce ? 360 : 0 }}
-              transition={{ duration: 0.3, type: "spring" }}
-            >
-              <Icon className="w-4 h-4 flex-shrink-0" />
-            </motion.div>
-          )}
-        </>
-      );
-
-      return (
+  const buttonContent = (
+    <div className="flex items-center justify-center space-x-2">
+      {icon && iconPosition === 'left' && (
         <motion.div
-          className="flex items-center gap-2 rtl:flex-row-reverse relative z-10"
-          initial={false}
-          animate={{ 
-            scale: isPressed && bounce ? 0.95 : 1,
-          }}
-          transition={{ duration: 0.1, type: "spring", stiffness: 400 }}
+          className="flex-shrink-0"
+          animate={loading ? { rotate: 360 } : {}}
+          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
         >
-          {content}
+          {icon}
         </motion.div>
-      );
-    };
-
-    const buttonVariants = {
-      idle: { scale: 1 },
-      hover: { scale: 1.02 },
-      tap: { scale: 0.98 }
-    };
-
-    if (asChild) {
-      return React.cloneElement(
-        children as React.ReactElement,
-        {
-          className: cn(
-            baseClasses,
-            variants[variant],
-            sizes[size],
-            widthClasses,
-            className,
-            (children as React.ReactElement).props.className
-          ),
-          ref,
-          onClick: handleClick,
-        }
-      );
-    }
-
-    return (
-      <motion.button
-        ref={ref}
-        disabled={disabled || loading}
-        onClick={handleClick}
-        className={cn(
-          baseClasses,
-          variants[variant],
-          sizes[size],
-          widthClasses,
-          className
-        )}
-        variants={buttonVariants}
-        initial="idle"
-        whileHover={!disabled && !loading ? "hover" : "idle"}
-        whileTap={!disabled && !loading ? "tap" : "idle"}
-        transition={{ duration: 0.15, ease: "easeOut" }}
-        {...props}
-      >
-        {/* Ripple Effects */}
-        <AnimatePresence>
-          {ripples.map((ripple) => (
-            <motion.span
-              key={ripple.id}
-              className="absolute bg-white/30 rounded-full pointer-events-none"
-              style={{
-                left: ripple.x - 20,
-                top: ripple.y - 20,
-                width: 40,
-                height: 40,
-              }}
-              initial={{ scale: 0, opacity: 0.8 }}
-              animate={{ scale: 4, opacity: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.6, ease: "easeOut" }}
-            />
-          ))}
-        </AnimatePresence>
-
-        {/* Button Content */}
-        {renderContent()}
-
-        {/* Shine Effect on Hover */}
+      )}
+      
+      <span className="persian-text">
+        {loading ? 'در حال بارگذاری...' : children}
+      </span>
+      
+      {icon && iconPosition === 'right' && (
         <motion.div
-          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent"
-          initial={{ x: "-100%" }}
-          whileHover={{ x: "100%" }}
-          transition={{ duration: 0.6, ease: "easeInOut" }}
-          style={{ pointerEvents: "none" }}
-        />
-      </motion.button>
+          className="flex-shrink-0"
+          animate={loading ? { rotate: 360 } : {}}
+          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+        >
+          {icon}
+        </motion.div>
+      )}
+    </div>
+  );
+
+  const buttonElement = (
+    <button
+      type={type}
+      onClick={onClick}
+      disabled={disabled || loading}
+      className={cn(
+        'premium-button font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2',
+        sizeClasses[size],
+        variantClasses[variant],
+        disabledClasses,
+        fullWidth && 'w-full',
+        className
+      )}
+    >
+      {buttonContent}
+    </button>
+  );
+
+  if (animate) {
+    return (
+      <motion.div
+        whileHover={!disabled && !loading ? { scale: 1.02 } : undefined}
+        whileTap={!disabled && !loading ? { scale: 0.98 } : undefined}
+        transition={{ duration: 0.1 }}
+      >
+        {buttonElement}
+      </motion.div>
     );
   }
-);
 
-Button.displayName = 'Button';
+  return buttonElement;
+};
+
+// Specialized Button Components
+export const IconButton: React.FC<{
+  icon: React.ReactNode;
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
+  size?: 'sm' | 'md' | 'lg';
+  loading?: boolean;
+  disabled?: boolean;
+  onClick?: () => void;
+  className?: string;
+  tooltip?: string;
+}> = ({ 
+  icon, 
+  variant = 'ghost', 
+  size = 'md', 
+  loading, 
+  disabled, 
+  onClick, 
+  className,
+  tooltip 
+}) => {
+  const sizeClasses = {
+    sm: 'w-8 h-8',
+    md: 'w-10 h-10',
+    lg: 'w-12 h-12',
+  };
+
+  const variantClasses = {
+    primary: 'bg-blue-600 text-white hover:bg-blue-700',
+    secondary: 'bg-gray-100 text-gray-600 hover:bg-gray-200',
+    ghost: 'bg-transparent text-gray-400 hover:text-gray-600 hover:bg-gray-100',
+    danger: 'bg-red-600 text-white hover:bg-red-700',
+  };
+
+  return (
+    <motion.button
+      onClick={onClick}
+      disabled={disabled || loading}
+      className={cn(
+        'premium-button rounded-full flex items-center justify-center transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2',
+        sizeClasses[size],
+        variantClasses[variant],
+        disabled && 'opacity-50 cursor-not-allowed',
+        className
+      )}
+      whileHover={!disabled && !loading ? { scale: 1.05 } : undefined}
+      whileTap={!disabled && !loading ? { scale: 0.95 } : undefined}
+      title={tooltip}
+    >
+      <motion.div
+        animate={loading ? { rotate: 360 } : {}}
+        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+      >
+        {icon}
+      </motion.div>
+    </motion.button>
+  );
+};
+
+export const ActionButton: React.FC<{
+  children: React.ReactNode;
+  icon?: React.ReactNode;
+  variant?: 'primary' | 'secondary' | 'success' | 'danger';
+  size?: 'sm' | 'md' | 'lg';
+  loading?: boolean;
+  disabled?: boolean;
+  onClick?: () => void;
+  className?: string;
+}> = ({ 
+  children, 
+  icon, 
+  variant = 'primary', 
+  size = 'md', 
+  loading, 
+  disabled, 
+  onClick, 
+  className 
+}) => {
+  return (
+    <Button
+      variant={variant}
+      size={size}
+      loading={loading}
+      disabled={disabled}
+      onClick={onClick}
+      icon={icon}
+      iconPosition="left"
+      className={cn('font-semibold', className)}
+    >
+      {children}
+    </Button>
+  );
+};
+
+export const FloatingActionButton: React.FC<{
+  icon: React.ReactNode;
+  onClick?: () => void;
+  className?: string;
+  tooltip?: string;
+}> = ({ icon, onClick, className, tooltip }) => {
+  return (
+    <motion.button
+      onClick={onClick}
+      className={cn(
+        'fixed bottom-6 right-6 w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg hover:shadow-xl flex items-center justify-center transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 z-50',
+        className
+      )}
+      whileHover={{ scale: 1.1, y: -2 }}
+      whileTap={{ scale: 0.9 }}
+      title={tooltip}
+    >
+      {icon}
+    </motion.button>
+  );
+};
 
 export default Button;
-export { Button };
