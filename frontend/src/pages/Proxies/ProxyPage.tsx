@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { DownloadOutlined, FilterOutlined, GlobalOutlined, PlusOutlined, ReloadOutlined, SearchOutlined, SettingOutlined, UploadOutlined } from '@ant-design/icons';
+import { DownloadOutlined, FilterOutlined, GlobalOutlined, PlusOutlined, ReloadOutlined, SearchOutlined, SettingOutlined, UploadOutlined } from '../../icons/antd-stub';
 import { Search, Plus, Upload, RefreshCw, Download } from '../../utils/iconRegistry';
 import { useProxies, useProxyBulkImport, useProxyDelete, useProxyUpsert } from '../../hooks/useProxies';
 import { ProxyRecord, ProxyType } from '../../types';

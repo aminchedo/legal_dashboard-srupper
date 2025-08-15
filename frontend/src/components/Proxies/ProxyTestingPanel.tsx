@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ThunderboltOutlined, GlobalOutlined, LoadingOutlined, ClusterOutlined, PlayCircleOutlined, SettingOutlined } from '@ant-design/icons';
+import { ThunderboltOutlined, GlobalOutlined, LoadingOutlined, ClusterOutlined, PlayCircleOutlined, SettingOutlined } from '../../icons/antd-stub';
 import { PlayCircle, Activity, Loader2 } from '../../utils/iconRegistry';
 import { ProxyRecord } from '../../types';
 import { databaseService } from '../../services/database';

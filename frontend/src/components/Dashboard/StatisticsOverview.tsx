@@ -1,4 +1,4 @@
-import { FileTextOutlined, FolderOpenOutlined, StarOutlined, AreaChartOutlined, DashboardOutlined } from '@ant-design/icons';
+import { FileTextOutlined, FolderOpenOutlined, StarOutlined, AreaChartOutlined, DashboardOutlined } from '../../icons/antd-stub';
 import MetricCard from '../MetricCard';
 
 export default function StatisticsOverview() {

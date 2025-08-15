@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { CheckCircleOutlined, SafetyCertificateOutlined, ClockCircleOutlined, GlobalOutlined, EnvironmentOutlined, ClusterOutlined, EditOutlined, FieldTimeOutlined, WarningOutlined, CloseCircleOutlined } from '@ant-design/icons';
+import { CheckCircleOutlined, SafetyCertificateOutlined, ClockCircleOutlined, GlobalOutlined, EnvironmentOutlined, ClusterOutlined, EditOutlined, FieldTimeOutlined, WarningOutlined, CloseCircleOutlined } from '../../icons/antd-stub';
 import { ProxyRecord, ProxyType } from '../../types';
 
 interface Props {

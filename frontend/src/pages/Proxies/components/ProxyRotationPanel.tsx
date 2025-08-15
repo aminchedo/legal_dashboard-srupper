@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ReloadOutlined } from '@ant-design/icons';
+import { ReloadOutlined } from '../../../icons/antd-stub';
 import { RotateCw } from '../../../utils/iconRegistry';
 import { useRotationSettings, useSaveRotationSettings } from '../../../hooks/useProxies';
 import { ProxyRotationSettings } from '../../../types';

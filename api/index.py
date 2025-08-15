@@ -292,9 +292,19 @@ def handler(request):
         
         # Route requests based on path
         if clean_path == "/" or clean_path == "/api" or clean_path == "":
-            response_data = {"status": "ok", "message": "Legal Dashboard API is running"}
+            response_data = {
+                "status": "ok", 
+                "message": "Legal Dashboard API is running",
+                "version": "1.0.0",
+                "timestamp": datetime.utcnow().isoformat()
+            }
         elif clean_path == "/api/health" or clean_path == "/health":
-            response_data = {"status": "healthy", "service": "Legal Dashboard API"}
+            response_data = {
+                "status": "healthy", 
+                "service": "Legal Dashboard API",
+                "timestamp": datetime.utcnow().isoformat(),
+                "uptime": "healthy"
+            }
         elif clean_path.startswith("/api/documents") or clean_path.startswith("/documents"):
             # Remove /api prefix if present
             endpoint_path = clean_path.replace("/api", "")
@@ -317,7 +327,22 @@ def handler(request):
             response_data = handle_scraping_endpoint(endpoint_path)
         else:
             log_info(f"Endpoint not found: {clean_path}")
-            response_data = {"error": "Endpoint not found", "path": clean_path}
+            response_data = {
+                "error": "Endpoint not found", 
+                "path": clean_path,
+                "available_endpoints": [
+                    "/api/health",
+                    "/api/documents",
+                    "/api/documents/search", 
+                    "/api/documents/categories",
+                    "/api/documents/statistics",
+                    "/api/documents/tags",
+                    "/api/analytics",
+                    "/api/analytics/categories",
+                    "/api/analytics/sources", 
+                    "/api/scraping/stats"
+                ]
+            }
             return create_response(response_data, 404)
         
         log_info("Request processed successfully", {"path": clean_path, "method": method})
