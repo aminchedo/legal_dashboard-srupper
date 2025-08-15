@@ -35,7 +35,7 @@ export interface ScrapingSettings {
   enableRating: boolean;
 }
 
-export type PageType = 'dashboard' | 'analytics' | 'recording' | 'jobs' | 'documents' | 'system' | 'proxies' | 'settings' | 'help' | 'data';
+export type PageType = 'dashboard' | 'scraping' | 'data' | 'analytics' | 'proxies' | 'settings' | 'help';
 
 export type ProxyType = 'HTTP' | 'HTTPS' | 'SOCKS4' | 'SOCKS5';
 
