@@ -1,11 +1,6 @@
 {
   "name": "legal-dashboard",
   "version": "1.0.0",
-  "scripts": {
-    "build": "cd frontend && npm install && npm run build && cp -r dist ../dist",
-    "dev": "cd frontend && npm run dev",
-    "start": "cd frontend && npm run start"
-  },
   "engines": {
     "node": "20.x"
   },

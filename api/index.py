@@ -1,8 +1,40 @@
-from http.server import BaseHTTPRequestHandler
 import json
 import urllib.parse
+import sys
+import traceback
+from datetime import datetime
 from typing import Dict, Any, Optional
+from http.server import HTTPStatus
 from analytics import handle_analytics_request
+
+# Simple logging for serverless environment
+def log_error(message: str, error: Exception = None, context: Dict[str, Any] = None):
+    """Log errors with context for debugging"""
+    timestamp = datetime.utcnow().isoformat()
+    log_entry = {
+        "timestamp": timestamp,
+        "level": "ERROR",
+        "message": message,
+        "error": str(error) if error else None,
+        "traceback": traceback.format_exc() if error else None,
+        "context": context or {}
+    }
+    
+    # Print to stderr for Vercel logs
+    print(json.dumps(log_entry, ensure_ascii=False), file=sys.stderr)
+
+def log_info(message: str, context: Dict[str, Any] = None):
+    """Log info messages"""
+    timestamp = datetime.utcnow().isoformat()
+    log_entry = {
+        "timestamp": timestamp,
+        "level": "INFO", 
+        "message": message,
+        "context": context or {}
+    }
+    
+    # Print to stdout for Vercel logs
+    print(json.dumps(log_entry, ensure_ascii=False))
 
 # Utility function for safe Persian text handling
 def safe_persian_decode(text: str) -> str:
@@ -12,279 +44,285 @@ def safe_persian_decode(text: str) -> str:
     except Exception:
         return text
 
-class handler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        """Handle GET requests"""
-        try:
-            # Parse the request path
-            path = self.path.split('?')[0]  # Remove query parameters from path
-            
-            # Handle different endpoints
-            if path == "/" or path == "":
-                response_data = {"status": "ok", "message": "Legal Dashboard API is running"}
-            elif path == "/health":
-                response_data = {"status": "healthy", "service": "Legal Dashboard API"}
-            elif path.startswith("/documents"):
-                response_data = self.handle_documents_endpoint()
-            elif path.startswith("/analytics"):
-                response_data = self.handle_analytics_endpoint()
-            elif path.startswith("/scraping"):
-                response_data = self.handle_scraping_endpoint()
-            else:
-                self.send_error(404, "Endpoint not found")
-                return
-            
-            # Send successful response
-            self.send_response(200)
-            self.send_header('Content-type', 'application/json; charset=utf-8')
-            self.send_header('Access-Control-Allow-Origin', '*')
-            self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-            self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-            self.end_headers()
-            
-            response_json = json.dumps(response_data, ensure_ascii=False)
-            self.wfile.write(response_json.encode('utf-8'))
-            
-        except Exception as e:
-            self.send_error(500, f'Server Error: {str(e)}')
+def parse_query_params(query_string: str) -> Dict[str, str]:
+    """Parse query parameters from URL"""
+    if not query_string:
+        return {}
     
-    def do_POST(self):
-        """Handle POST requests"""
-        try:
-            # Parse the request path
-            path = self.path.split('?')[0]  # Remove query parameters from path
-            
-            # Get request body
-            content_length = int(self.headers.get('Content-Length', 0))
-            body = self.rfile.read(content_length).decode('utf-8') if content_length > 0 else None
-            
-            # Handle different endpoints
-            if path.startswith("/analytics"):
-                response_data = handle_analytics_request(path, "POST", body)
-            else:
-                self.send_error(404, "Endpoint not found")
-                return
-            
-            # Send successful response
-            self.send_response(200)
-            self.send_header('Content-type', 'application/json; charset=utf-8')
-            self.send_header('Access-Control-Allow-Origin', '*')
-            self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-            self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-            self.end_headers()
-            
-            response_json = json.dumps(response_data, ensure_ascii=False)
-            self.wfile.write(response_json.encode('utf-8'))
-            
-        except Exception as e:
-            self.send_error(500, f'Server Error: {str(e)}')
+    query_params = urllib.parse.parse_qs(query_string)
     
-    def do_OPTIONS(self):
-        """Handle preflight requests"""
-        self.send_response(200)
-        self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-        self.end_headers()
-    
-    def handle_documents_endpoint(self):
-        """Handle document-related endpoints"""
-        path = self.path.split('?')[0]
-        query_params = self.parse_query_params()
-        
-        if path == "/documents":
-            return self.get_documents(query_params)
-        elif path == "/documents/search":
-            return self.search_documents(query_params)
-        elif path == "/documents/categories":
-            return self.get_categories(query_params)
-        elif path == "/documents/statistics":
-            return self.get_statistics(query_params)
-        elif path == "/documents/tags":
-            return self.get_tags(query_params)
+    # Convert lists to single values
+    params = {}
+    for key, value in query_params.items():
+        if value:
+            params[key] = safe_persian_decode(value[0])
         else:
-            return {"error": "Document endpoint not found", "path": path}
+            params[key] = ""
     
-    def handle_analytics_endpoint(self):
-        """Handle analytics endpoints"""
-        path = self.path.split('?')[0]
-        
-        # Use the analytics module to handle the request
-        return handle_analytics_request(path, "GET")
-    
-    def handle_scraping_endpoint(self):
-        """Handle scraping endpoints"""
-        path = self.path.split('?')[0]
-        
-        if path == "/scraping/stats":
-            return self.get_scraping_stats()
-        else:
-            return {"error": "Scraping endpoint not found", "path": path}
-    
-    def parse_query_params(self):
-        """Parse query parameters from URL"""
-        parsed_url = urllib.parse.urlparse(self.path)
-        query_params = urllib.parse.parse_qs(parsed_url.query)
-        
-        # Convert lists to single values
-        params = {}
-        for key, value in query_params.items():
-            if value:
-                params[key] = safe_persian_decode(value[0])
-            else:
-                params[key] = ""
-        
-        return params
-    
-    def get_documents(self, params):
-        """Get documents with filtering and pagination"""
-        try:
-            page = int(params.get("page", 1))
-            limit = int(params.get("limit", 20))
-            category = params.get("category", "")
-            status = params.get("status", "")
-            search = params.get("search", "")
-            
-            # Mock response for now - replace with actual database query
-            mock_documents = {
-                "items": [
-                    {
-                        "id": "1",
-                        "title": "قانون کار - اصلاحیه ۱۴۰۳",
-                        "domain": "dastour.ir",
-                        "status": "completed",
-                        "category": "حقوقی",
-                        "created_at": "2024-01-15T10:30:00Z"
-                    },
-                    {
-                        "id": "2", 
-                        "title": "آیین‌نامه تجارت الکترونیک",
-                        "domain": "majles.ir",
-                        "status": "completed",
-                        "category": "اقتصادی",
-                        "created_at": "2024-01-14T15:45:00Z"
-                    }
-                ],
-                "total": 12450,
-                "page": page,
-                "limit": limit,
-                "total_pages": 623
-            }
-            
-            return mock_documents
-        except Exception as e:
-            return {"error": "خطای سرور", "message": str(e)}
-    
-    def search_documents(self, params):
-        """Search documents with Persian text support"""
-        try:
-            query = params.get("query", "")
-            category = params.get("category", "")
-            source = params.get("source", "")
-            status = params.get("status", "")
-            
-            # Mock search results
-            mock_results = {
-                "items": [
-                    {
-                        "id": "1",
-                        "title": "قانون تجارت الکترونیکی",
-                        "content": "متن کامل قانون تجارت الکترونیکی جمهوری اسلامی ایران",
-                        "category": "قانون تجارت",
-                        "source": "majles.ir",
-                        "status": "completed",
-                        "score": 0.95,
-                        "tags": ["تجارت", "الکترونیک", "قانون"],
-                        "createdAt": "2024-01-15T10:30:00Z",
-                        "updatedAt": "2024-01-15T10:30:00Z"
-                    },
-                    {
-                        "id": "2",
-                        "title": "آیین‌نامه اجرایی قانون کار",
-                        "content": "آیین‌نامه اجرایی قانون کار و تأمین اجتماعی",
-                        "category": "قانون کار",
-                        "source": "ilo.ir",
-                        "status": "completed",
-                        "score": 0.88,
-                        "tags": ["کار", "تأمین اجتماعی", "آیین‌نامه"],
-                        "createdAt": "2024-01-14T14:20:00Z",
-                        "updatedAt": "2024-01-14T14:20:00Z"
-                    }
-                ],
-                "total": 12450,
-                "page": 1,
-                "limit": 20,
-                "filters": {
-                    "query": query,
-                    "category": category,
-                    "source": source,
-                    "status": status
-                }
-            }
-            
-            return mock_results
-        except Exception as e:
-            return {"error": "خطای جستجو", "message": str(e)}
-    
-    def get_categories(self, params):
-        """Get document categories"""
-        try:
-            mock_categories = [
-                {"id": "1", "name": "قانون تجارت", "count": 2340, "color": "#3B82F6"},
-                {"id": "2", "name": "قانون کار", "count": 1890, "color": "#10B981"},
-                {"id": "3", "name": "قانون مدنی", "count": 1560, "color": "#F59E0B"},
-                {"id": "4", "name": "قانون مجازات", "count": 1230, "color": "#EF4444"},
-                {"id": "5", "name": "آیین‌نامه‌ها", "count": 890, "color": "#8B5CF6"}
-            ]
-            return {"categories": mock_categories}
-        except Exception as e:
-            return {"error": "خطای دسته‌بندی", "message": str(e)}
-    
-    def get_statistics(self, params):
-        """Get document statistics"""
-        try:
-            mock_stats = {
-                "totalDocuments": 12450,
-                "totalCategories": 15,
-                "totalSources": 8,
-                "recentUploads": 234,
-                "processingJobs": 12,
-                "completedJobs": 89,
-                "failedJobs": 3,
-                "successRate": 96.7
-            }
-            return mock_stats
-        except Exception as e:
-            return {"error": "خطای آمار", "message": str(e)}
-    
-    def get_tags(self, params):
-        """Get document tags"""
-        try:
-            mock_tags = [
-                {"id": "1", "name": "تجارت", "count": 890, "color": "#3B82F6"},
-                {"id": "2", "name": "کار", "count": 670, "color": "#10B981"},
-                {"id": "3", "name": "مالیات", "count": 450, "color": "#F59E0B"},
-                {"id": "4", "name": "حقوق", "count": 380, "color": "#EF4444"},
-                {"id": "5", "name": "قانون", "count": 320, "color": "#8B5CF6"}
-            ]
-            return {"tags": mock_tags}
-        except Exception as e:
-            return {"error": "خطای برچسب‌ها", "message": str(e)}
-    
+    return params
 
+def create_response(data: Any, status_code: int = 200) -> Dict[str, Any]:
+    """Create a properly formatted response for Vercel"""
+    headers = {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+    }
     
-    def get_scraping_stats(self):
-        """Get scraping statistics"""
-        try:
-            mock_stats = {
-                "totalSources": 12,
-                "activeSources": 8,
-                "recentlyScraped": 45,
-                "successRate": 94.1,
-                "failedJobs": 3,
-                "queuedJobs": 7
+    return {
+        'statusCode': status_code,
+        'headers': headers,
+        'body': json.dumps(data, ensure_ascii=False)
+    }
+
+def handle_documents_endpoint(path: str, params: Dict[str, str]) -> Dict[str, Any]:
+    """Handle document-related endpoints"""
+    if path == "/documents":
+        return get_documents(params)
+    elif path == "/documents/search":
+        return search_documents(params)
+    elif path == "/documents/categories":
+        return get_categories(params)
+    elif path == "/documents/statistics":
+        return get_statistics(params)
+    elif path == "/documents/tags":
+        return get_tags(params)
+    else:
+        return {"error": "Document endpoint not found", "path": path}
+
+def handle_scraping_endpoint(path: str) -> Dict[str, Any]:
+    """Handle scraping endpoints"""
+    if path == "/scraping/stats":
+        return get_scraping_stats()
+    else:
+        return {"error": "Scraping endpoint not found", "path": path}
+
+def get_documents(params: Dict[str, str]) -> Dict[str, Any]:
+    """Get documents with filtering and pagination"""
+    try:
+        page = int(params.get("page", "1"))
+        limit = int(params.get("limit", "20"))
+        category = params.get("category", "")
+        status = params.get("status", "")
+        search = params.get("search", "")
+        
+        # Mock response for now - replace with actual database query
+        mock_documents = {
+            "items": [
+                {
+                    "id": "1",
+                    "title": "قانون کار - اصلاحیه ۱۴۰۳",
+                    "domain": "dastour.ir",
+                    "status": "completed",
+                    "category": "حقوقی",
+                    "created_at": "2024-01-15T10:30:00Z"
+                },
+                {
+                    "id": "2", 
+                    "title": "آیین‌نامه تجارت الکترونیک",
+                    "domain": "majles.ir",
+                    "status": "completed",
+                    "category": "اقتصادی",
+                    "created_at": "2024-01-14T15:45:00Z"
+                }
+            ],
+            "total": 12450,
+            "page": page,
+            "limit": limit,
+            "total_pages": 623
+        }
+        
+        return mock_documents
+    except Exception as e:
+        return {"error": "خطای سرور", "message": str(e)}
+
+def search_documents(params: Dict[str, str]) -> Dict[str, Any]:
+    """Search documents with Persian text support"""
+    try:
+        query = params.get("query", "")
+        category = params.get("category", "")
+        source = params.get("source", "")
+        status = params.get("status", "")
+        
+        # Mock search results
+        mock_results = {
+            "items": [
+                {
+                    "id": "1",
+                    "title": "قانون تجارت الکترونیکی",
+                    "content": "متن کامل قانون تجارت الکترونیکی جمهوری اسلامی ایران",
+                    "category": "قانون تجارت",
+                    "source": "majles.ir",
+                    "status": "completed",
+                    "score": 0.95,
+                    "tags": ["تجارت", "الکترونیک", "قانون"],
+                    "createdAt": "2024-01-15T10:30:00Z",
+                    "updatedAt": "2024-01-15T10:30:00Z"
+                },
+                {
+                    "id": "2",
+                    "title": "آیین‌نامه اجرایی قانون کار",
+                    "content": "آیین‌نامه اجرایی قانون کار و تأمین اجتماعی",
+                    "category": "قانون کار",
+                    "source": "ilo.ir",
+                    "status": "completed",
+                    "score": 0.88,
+                    "tags": ["کار", "تأمین اجتماعی", "آیین‌نامه"],
+                    "createdAt": "2024-01-14T14:20:00Z",
+                    "updatedAt": "2024-01-14T14:20:00Z"
+                }
+            ],
+            "total": 12450,
+            "page": 1,
+            "limit": 20,
+            "filters": {
+                "query": query,
+                "category": category,
+                "source": source,
+                "status": status
             }
-            return mock_stats
-        except Exception as e:
-            return {"error": "خطای آمار", "message": str(e)}
+        }
+        
+        return mock_results
+    except Exception as e:
+        return {"error": "خطای جستجو", "message": str(e)}
+
+def get_categories(params: Dict[str, str]) -> Dict[str, Any]:
+    """Get document categories"""
+    try:
+        mock_categories = [
+            {"id": "1", "name": "قانون تجارت", "count": 2340, "color": "#3B82F6"},
+            {"id": "2", "name": "قانون کار", "count": 1890, "color": "#10B981"},
+            {"id": "3", "name": "قانون مدنی", "count": 1560, "color": "#F59E0B"},
+            {"id": "4", "name": "قانون مجازات", "count": 1230, "color": "#EF4444"},
+            {"id": "5", "name": "آیین‌نامه‌ها", "count": 890, "color": "#8B5CF6"}
+        ]
+        return {"categories": mock_categories}
+    except Exception as e:
+        return {"error": "خطای دسته‌بندی", "message": str(e)}
+
+def get_statistics(params: Dict[str, str]) -> Dict[str, Any]:
+    """Get document statistics"""
+    try:
+        mock_stats = {
+            "totalDocuments": 12450,
+            "totalCategories": 15,
+            "totalSources": 8,
+            "recentUploads": 234,
+            "processingJobs": 12,
+            "completedJobs": 89,
+            "failedJobs": 3,
+            "successRate": 96.7
+        }
+        return mock_stats
+    except Exception as e:
+        return {"error": "خطای آمار", "message": str(e)}
+
+def get_tags(params: Dict[str, str]) -> Dict[str, Any]:
+    """Get document tags"""
+    try:
+        mock_tags = [
+            {"id": "1", "name": "تجارت", "count": 890, "color": "#3B82F6"},
+            {"id": "2", "name": "کار", "count": 670, "color": "#10B981"},
+            {"id": "3", "name": "مالیات", "count": 450, "color": "#F59E0B"},
+            {"id": "4", "name": "حقوق", "count": 380, "color": "#EF4444"},
+            {"id": "5", "name": "قانون", "count": 320, "color": "#8B5CF6"}
+        ]
+        return {"tags": mock_tags}
+    except Exception as e:
+        return {"error": "خطای برچسب‌ها", "message": str(e)}
+
+def get_scraping_stats() -> Dict[str, Any]:
+    """Get scraping statistics"""
+    try:
+        mock_stats = {
+            "totalSources": 12,
+            "activeSources": 8,
+            "recentlyScraped": 45,
+            "successRate": 94.1,
+            "failedJobs": 3,
+            "queuedJobs": 7
+        }
+        return mock_stats
+    except Exception as e:
+        return {"error": "خطای آمار", "message": str(e)}
+
+def handler(request, context):
+    """Main Vercel serverless handler"""
+    try:
+        # Log incoming request
+        log_info("Incoming request", {
+            "method": request.get('method', 'GET'),
+            "path": request.get('path', '/'),
+            "query": request.get('query', ''),
+            "headers": dict(request.get('headers', {}))
+        })
+        
+        # Get request information
+        method = request.get('method', 'GET').upper()
+        path = request.get('path', '/')
+        query_string = request.get('query', '')
+        body = request.get('body')
+        
+        # Parse path to remove query parameters
+        clean_path = path.split('?')[0]
+        
+        # Parse query parameters
+        params = parse_query_params(query_string)
+        
+        # Handle OPTIONS requests (CORS preflight)
+        if method == 'OPTIONS':
+            log_info("CORS preflight request handled")
+            return create_response({"message": "OK"}, 200)
+        
+        # Route requests based on path
+        if clean_path == "/" or clean_path == "/api" or clean_path == "":
+            response_data = {"status": "ok", "message": "Legal Dashboard API is running"}
+        elif clean_path == "/api/health" or clean_path == "/health":
+            response_data = {"status": "healthy", "service": "Legal Dashboard API"}
+        elif clean_path.startswith("/api/documents") or clean_path.startswith("/documents"):
+            # Remove /api prefix if present
+            endpoint_path = clean_path.replace("/api", "")
+            log_info(f"Processing documents endpoint: {endpoint_path}")
+            response_data = handle_documents_endpoint(endpoint_path, params)
+        elif clean_path.startswith("/api/analytics") or clean_path.startswith("/analytics"):
+            # Remove /api prefix if present
+            endpoint_path = clean_path.replace("/api", "")
+            log_info(f"Processing analytics endpoint: {endpoint_path}")
+            if method == "GET":
+                response_data = handle_analytics_request(endpoint_path, "GET")
+            elif method == "POST":
+                response_data = handle_analytics_request(endpoint_path, "POST", body)
+            else:
+                response_data = {"error": "Method not allowed", "method": method}
+        elif clean_path.startswith("/api/scraping") or clean_path.startswith("/scraping"):
+            # Remove /api prefix if present  
+            endpoint_path = clean_path.replace("/api", "")
+            log_info(f"Processing scraping endpoint: {endpoint_path}")
+            response_data = handle_scraping_endpoint(endpoint_path)
+        else:
+            log_info(f"Endpoint not found: {clean_path}")
+            response_data = {"error": "Endpoint not found", "path": clean_path}
+            return create_response(response_data, 404)
+        
+        log_info("Request processed successfully", {"path": clean_path, "method": method})
+        return create_response(response_data, 200)
+        
+    except Exception as e:
+        log_error("Server error in main handler", e, {
+            "path": request.get('path', '/'),
+            "method": request.get('method', 'GET'),
+            "query": request.get('query', ''),
+            "body_length": len(request.get('body', '')) if request.get('body') else 0
+        })
+        
+        error_response = {
+            "error": "Server Error",
+            "message": str(e),
+            "path": request.get('path', '/'),
+            "method": request.get('method', 'GET'),
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        return create_response(error_response, 500)
  

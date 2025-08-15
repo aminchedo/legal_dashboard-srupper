@@ -1,4 +1,5 @@
-": "legal-dashboard-frontend",
+{
+  "name": "legal-dashboard-frontend",
   "private": true,
   "version": "0.0.0",
   "type": "module",
