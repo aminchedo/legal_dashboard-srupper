@@ -1,0 +1,54 @@
+name: 🎬 Legal Dashboard Demo
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+    
+    - name: Fix Dependencies
+      run: |
+        cd frontend && rm -f package-lock.json && npm install
+        cd ../backend && rm -f package-lock.json && npm install
+        
+    - name: Run Demo
+      run: |
+        chmod +x record_demo.sh
+        timeout 120s ./record_demo.sh
+        
+    - name: Screenshots
+      run: |
+        sudo apt-get update && sudo apt-get install -y google-chrome-stable
+        npm install -g puppeteer
+        
+        cat > screenshot.js << 'EOF'
+        const puppeteer = require('puppeteer');
+        (async () => {
+          const browser = await puppeteer.launch({headless: true, args: ['--no-sandbox']});
+          const page = await browser.newPage();
+          try {
+            await page.goto('http://localhost:5173', {timeout: 15000});
+            await page.screenshot({path: 'dashboard.png', fullPage: true});
+          } catch(e) {
+            await page.screenshot({path: 'error.png'});
+          }
+          await browser.close();
+        })();
+        EOF
+        
+        ./record_demo.sh &
+        sleep 20
+        node screenshot.js
+        
+    - uses: actions/upload-artifact@v4
+      with:
+        name: results
+        path: "*.png"
