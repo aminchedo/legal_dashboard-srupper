@@ -1,12 +1,9 @@
 {
-  "build": {
-    "env": {
-      "VERCEL_PYTHON_VERSION": "3.11"
-    }
-  },
+  "buildCommand": "cd frontend && npm install && npm run build",
+  "outputDirectory": "frontend/dist",
   "functions": {
-    "api/*.py": {
-      "runtime": "python3.11"
+    "api/index.py": {
+      "runtime": "@vercel/python"
     }
   },
   "routes": [
@@ -15,9 +12,14 @@
       "dest": "/api/index.py"
     },
     {
+      "handle": "filesystem"
+    },
+    {
       "src": "/(.*)",
-      "dest": "/frontend/dist/$1"
+      "dest": "/index.html"
     }
   ],
-  "outputDirectory": "frontend/dist"
+  "env": {
+    "PYTHON_VERSION": "3.11"
+  }
 }
