@@ -66,8 +66,9 @@ def create_response(data: Any, status_code: int = 200) -> Dict[str, Any]:
     headers = {
         'Content-Type': 'application/json; charset=utf-8',
         'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS, PUT, DELETE',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+        'Cache-Control': 'no-cache, no-store, must-revalidate'
     }
     
     return {
@@ -248,22 +249,35 @@ def get_scraping_stats() -> Dict[str, Any]:
     except Exception as e:
         return {"error": "خطای آمار", "message": str(e)}
 
-def handler(request, context):
-    """Main Vercel serverless handler"""
+def handler(request):
+    """Main Vercel serverless handler - Vercel compatible format"""
     try:
+        # Extract request data - Vercel request format
+        method = request.get('httpMethod', request.get('method', 'GET')).upper()
+        path = request.get('path', request.get('rawPath', '/'))
+        query_string = request.get('queryStringParameters') or request.get('query', '')
+        headers = request.get('headers', {})
+        body = request.get('body', '')
+        
+        # Handle query string parameters
+        if isinstance(query_string, dict):
+            # Convert dict to query string format
+            query_parts = []
+            for key, value in query_string.items():
+                if value is not None:
+                    query_parts.append(f"{key}={urllib.parse.quote(str(value))}")
+            query_string = "&".join(query_parts)
+        elif not query_string:
+            query_string = ""
+        
         # Log incoming request
         log_info("Incoming request", {
-            "method": request.get('method', 'GET'),
-            "path": request.get('path', '/'),
-            "query": request.get('query', ''),
-            "headers": dict(request.get('headers', {}))
+            "method": method,
+            "path": path,
+            "query": query_string,
+            "headers": {k: v for k, v in headers.items() if k.lower() not in ['authorization', 'cookie']},
+            "body_length": len(body) if body else 0
         })
-        
-        # Get request information
-        method = request.get('method', 'GET').upper()
-        path = request.get('path', '/')
-        query_string = request.get('query', '')
-        body = request.get('body')
         
         # Parse path to remove query parameters
         clean_path = path.split('?')[0]
@@ -311,18 +325,25 @@ def handler(request, context):
         
     except Exception as e:
         log_error("Server error in main handler", e, {
-            "path": request.get('path', '/'),
-            "method": request.get('method', 'GET'),
-            "query": request.get('query', ''),
+            "path": request.get('path', request.get('rawPath', '/')),
+            "method": request.get('httpMethod', request.get('method', 'GET')),
+            "query": str(request.get('queryStringParameters', request.get('query', ''))),
             "body_length": len(request.get('body', '')) if request.get('body') else 0
         })
         
         error_response = {
-            "error": "Server Error",
+            "error": "Internal Server Error",
             "message": str(e),
-            "path": request.get('path', '/'),
-            "method": request.get('method', 'GET'),
-            "timestamp": datetime.utcnow().isoformat()
+            "path": request.get('path', request.get('rawPath', '/')),
+            "method": request.get('httpMethod', request.get('method', 'GET')),
+            "timestamp": datetime.utcnow().isoformat(),
+            "request_id": request.get('requestId', 'unknown')
         }
         return create_response(error_response, 500)
+
+# Make the handler function available as the main export for Vercel
+# This is the entry point that Vercel will call
+def main(request):
+    """Main entry point for Vercel - wrapper around handler"""
+    return handler(request)
  
