@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { CloudServerOutlined, DatabaseOutlined, ThunderboltOutlined, CloudOutlined, HddOutlined, UsbOutlined } from '@ant-design/icons';
+import { CloudServerOutlined, DatabaseOutlined, ThunderboltOutlined, CloudOutlined, HddOutlined, UsbOutlined } from '../../icons/antd-stub';
 import { Server, Database, PlugZap, CloudLightning, HardDrive, MemoryStick } from '../../utils/iconRegistry';
 
 type Health = {

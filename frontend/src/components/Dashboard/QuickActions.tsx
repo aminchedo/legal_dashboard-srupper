@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { CaretRightOutlined, ExperimentOutlined, FileTextOutlined, BarChartOutlined, SettingOutlined, ExclamationOutlined } from '@ant-design/icons';
+import { CaretRightOutlined, ExperimentOutlined, FileTextOutlined, BarChartOutlined, SettingOutlined, ExclamationOutlined } from '../../icons/antd-stub';
 import { Play, FlaskConical, FileText, BarChart3, Settings, Octagon } from '../../utils/iconRegistry';
 import Button from '../ui/Button';
 

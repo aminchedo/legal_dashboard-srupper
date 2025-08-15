@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { BarChartOutlined, DashboardOutlined, LineChartOutlined, PieChartOutlined } from '@ant-design/icons';
+import { BarChartOutlined, DashboardOutlined, LineChartOutlined, PieChartOutlined } from '../../../icons/antd-stub';
 import { BarChart3 } from '../../../utils/iconRegistry';
 import { ProxyRecord, ProxyTestResult } from '../../../types';
 // import { databaseService } from '../../lib/database';

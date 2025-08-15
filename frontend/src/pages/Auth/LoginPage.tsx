@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Form, Input, Button, message, Tabs } from 'antd';
-import { UserOutlined, LockOutlined, MailOutlined, EyeOutlined, EyeInvisibleOutlined, CheckCircleFilled } from '@ant-design/icons';
+import { UserOutlined, LockOutlined, MailOutlined, EyeOutlined, EyeInvisibleOutlined, CheckCircleFilled } from '../../icons/antd-stub';
 import { useNavigate, useLocation } from 'react-router-dom';
 import styled, { keyframes } from 'styled-components';
 
