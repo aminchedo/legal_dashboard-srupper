@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import ErrorBoundary from './components/ErrorBoundary';
 import AppLayout from './components/layout/AppLayout';
 import DashboardPage from './pages/Dashboard/DashboardPage';
-import DocumentsListPage from './pages/Documents/DocumentsListPage';
+import EnhancedDocumentsPage from './pages/Documents/EnhancedDocumentsPage';
 import AnalyticsPage from './pages/Analytics/AnalyticsPage';
 import JobsListPage from './pages/Jobs/JobsListPage';
 import SystemHealthPage from './pages/System/SystemHealthPage';
@@ -28,7 +28,7 @@ interface AppRoute {
 // تعریف مسیرهای اصلی برنامه با توضیحات فارسی
 const appRoutes: AppRoute[] = [
   { path: '/dashboard', component: DashboardPage, name: 'داشبورد', description: 'صفحه اصلی و نمای کلی' },
-  { path: '/documents', component: DocumentsListPage, name: 'مستندات', description: 'مدیریت اسناد حقوقی' },
+  { path: '/documents', component: EnhancedDocumentsPage, name: 'مستندات', description: 'مدیریت اسناد حقوقی' },
   { path: '/analytics', component: AnalyticsPage, name: 'آنالیز', description: 'آمار و تحلیل‌ها' },
   { path: '/jobs', component: JobsListPage, name: 'وظایف', description: 'مدیریت وظایف و پروژه‌ها' },
   { path: '/system', component: SystemHealthPage, name: 'وضعیت سیستم', description: 'نظارت بر سلامت سیستم' },
@@ -184,7 +184,7 @@ function App() {
               ))}
               
               {/* مسیرهای مستندات با wildcard */}
-              <Route path="/documents/*" element={<DocumentsListPage />} />
+              <Route path="/documents/*" element={<EnhancedDocumentsPage />} />
               <Route path="/jobs/*" element={<JobsListPage />} />
               
               {/* مسیرهای جایگزین (Aliases) برای سازگاری */}

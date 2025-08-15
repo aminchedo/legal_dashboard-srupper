@@ -144,6 +144,16 @@ class ApiClient {
         return this.fetchWithFallback(`/documents?${params}`, mockData.documents);
     }
 
+    async listDocumentsCursor(filters: Record<string, any> = {}) {
+        const params = new URLSearchParams();
+        Object.entries(filters).forEach(([key, value]) => {
+            if (value === undefined || value === null) return;
+            if (Array.isArray(value)) value.forEach(v => params.append(key, String(v)));
+            else params.append(key, String(value));
+        });
+        return this.fetch(`/documents/cursor?${params.toString()}`);
+    }
+
     async getDocumentById(id: string) {
         return this.fetch(`/documents/${id}`);
     }
@@ -210,6 +220,30 @@ class ApiClient {
     async getDocumentSuggestions(query: string) {
         const encodedQuery = safePersianEncode(query);
         return this.fetch(`/documents/suggestions?q=${encodedQuery}`);
+    }
+
+    // ===== SMART RATING & CATEGORIZATION =====
+
+    async rateDocument(id: string, score: number) {
+        return this.fetch(`/documents/${id}/rating`, {
+            method: 'POST',
+            body: JSON.stringify({ score }),
+        });
+    }
+
+    async getCategorizationSuggestions(id: string) {
+        return this.fetch(`/documents/${id}/categorization/suggestions`);
+    }
+
+    async applyCategorization(id: string, category: string) {
+        return this.fetch(`/documents/${id}/categorization`, {
+            method: 'POST',
+            body: JSON.stringify({ category }),
+        });
+    }
+
+    async getSmartAnalytics() {
+        return this.fetch('/documents/analytics/smart');
     }
 
     // ===== BULK OPERATIONS =====
