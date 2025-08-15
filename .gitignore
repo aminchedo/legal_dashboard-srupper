@@ -173,4 +173,5 @@ dmypy.json
 .vercel
 
 # Local development
-.local/
+.local/__pycache__/
+*.pyc
